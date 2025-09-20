@@ -69,4 +69,4 @@ yarn-error.log*
 # Ignore node_modules in src directory
 src/front/node_modules/*
 logs/*
-src/front/package*
+src/front/package-lock.json
