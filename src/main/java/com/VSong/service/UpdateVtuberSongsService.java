@@ -65,7 +65,7 @@ public class UpdateVtuberSongsService {
             logger.info("새로운 Vtuber 처리 완료: " + vtuber.getName());
         }
 
-        Instant threeDaysAgoInstant = LocalDateTime.now().minusDays(7).toInstant(ZoneOffset.UTC);
+        Instant threeDaysAgoInstant = LocalDateTime.now().minusDays(3).toInstant(ZoneOffset.UTC);
         for (VtuberEntity vtuber : existingVtubers) {
             logger.info("기존 Vtuber 최근 노래 검색 시작: " + vtuber.getName());
             fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), threeDaysAgoInstant);
