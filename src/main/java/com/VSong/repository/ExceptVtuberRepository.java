@@ -12,4 +12,5 @@ public interface ExceptVtuberRepository extends JpaRepository<ExceptVtuberEntity
 
     @Query("SELECT e.channelId FROM ExceptVtuberEntity e")
     List<String> findAllChannelIds();
+    boolean existsByChannelId(String channelId);
 }

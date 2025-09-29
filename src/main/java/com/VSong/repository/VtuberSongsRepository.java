@@ -15,6 +15,7 @@ import java.util.Optional;
 @Repository
 public interface VtuberSongsRepository extends JpaRepository<VtuberSongsEntity, Long> {
     Optional<VtuberSongsEntity> findByVideoId(String videoId);
+    boolean existsByVideoId(String videoId);
 
     List<VtuberSongsEntity> findByStatus(String status);
 

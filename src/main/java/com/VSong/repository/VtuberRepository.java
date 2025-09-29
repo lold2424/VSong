@@ -15,21 +15,20 @@ public interface VtuberRepository extends JpaRepository<VtuberEntity, Long> {
     void deleteByChannelId(String channelId);
 
     Optional<VtuberEntity> findByChannelId(String channelId);
-
-    @Query("SELECT v.channelId FROM VtuberEntity v WHERE v.gender = :gender")
-    List<String> findChannelIdsByGender(@Param("gender") String gender);
+    boolean existsByChannelId(String channelId);
 
     @Query("SELECT v.channelId FROM VtuberEntity v")
     List<String> findAllChannelIds();
 
+    @Query("SELECT v.channelId FROM VtuberEntity v WHERE v.gender = :gender")
+    List<String> findChannelIdsByGender(@Param("gender") String gender);
+
     @Query("SELECT v.channelId FROM VtuberEntity v WHERE v.gender IS NULL")
     List<String> findChannelIdsWithNullGender();
+
+    List<VtuberEntity> findByStatus(String status);
 
     List<VtuberEntity> findByChannelImgIsNull();
 
     List<VtuberEntity> findAllByNameContaining(String name);
-
-    List<VtuberEntity> findByStatus(String status);
-
-    List<VtuberEntity> findAllByGender(String gender);
 }

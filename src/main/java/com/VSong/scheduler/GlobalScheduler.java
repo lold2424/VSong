@@ -67,7 +67,7 @@ public class GlobalScheduler {
     }
 
     // UploadVtuberService - 버튜버 신규 채널 업로드
-    @Scheduled(cron = "0 10 0 * * ?", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 32 16 * * ?", zone = "Asia/Seoul")
     public void scheduleFetchAndSaveVtuberChannels() {
         logger.info("Executing scheduled task: fetchAndSaveVtuberChannels");
         uploadVtuberService.fetchAndSaveVtuberChannels();
