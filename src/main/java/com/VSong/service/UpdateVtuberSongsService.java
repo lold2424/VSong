@@ -47,7 +47,6 @@ public class UpdateVtuberSongsService {
         }
     }
 
-    @Scheduled(cron = "0 05 0 * * ?", zone = "Asia/Seoul")
     public void fetchVtuberSongs() {
         logger.info("=== fetchVtuberSongs 실행 시작 ===");
 
@@ -75,7 +74,6 @@ public class UpdateVtuberSongsService {
         logger.info("=== fetchVtuberSongs 실행 종료 ===");
     }
 
-    @Scheduled(cron = "30 2 0 * * MON", zone = "Asia/Seoul")
     public void updateSongStatusToExisting() {
         List<VtuberSongsEntity> newSongs = vtuberSongsRepository.findByStatus("new");
 
@@ -88,7 +86,6 @@ public class UpdateVtuberSongsService {
         logger.info("Updated " + newSongs.size() + " songs from 'new' to 'existing'.");
     }
 
-    @Scheduled(cron = "0 1 0 * * ?", zone = "Asia/Seoul")
     public void updateViewCounts() {
         resetKeyUsage(); // API 키 사용 상태를 리셋
         List<VtuberSongsEntity> songs = vtuberSongsRepository.findAll();
@@ -136,7 +133,7 @@ public class UpdateVtuberSongsService {
             do {
                 logger.info("플레이리스트 페이지 조회 중...");
                 YouTube.PlaylistItems.List playlistItemsRequest = youTube.playlistItems()
-                        .list("contentDetails,snippet");
+                        .list(List.of("contentDetails","snippet"));
                 playlistItemsRequest.setPlaylistId(uploadsPlaylistId);
                 playlistItemsRequest.setMaxResults(50L);
                 playlistItemsRequest.setPageToken(pageToken);
@@ -165,8 +162,8 @@ public class UpdateVtuberSongsService {
     }
 
     private String getUploadsPlaylistId(String channelId) throws IOException {
-        YouTube.Channels.List channelRequest = youTube.channels().list("contentDetails");
-        channelRequest.setId(channelId);
+        YouTube.Channels.List channelRequest = youTube.channels().list(List.of("contentDetails"));
+        channelRequest.setId(List.of(channelId));
         channelRequest.setKey(apiKeys.get(currentKeyIndex));
 
         ChannelListResponse channelResult = channelRequest.execute();
@@ -178,14 +175,22 @@ public class UpdateVtuberSongsService {
     }
 
     private void fetchAndProcessVideos(List<String> videoIds, String channelName) {
-        logger.info("동영상 상세 정보를 가져옵니다. 비디오 ID 수: " + videoIds.size());
+        if (videoIds == null || videoIds.isEmpty()) {
+            logger.warning("처리할 비디오 ID가 없습니다. 채널: " + channelName);
+            return;
+        }
+
+        logger.info("동영상 상세 정보를 가져옵니다. 비디오 ID 수: " + videoIds.size() + ", 채널: " + channelName);
+
         try {
-            YouTube.Videos.List videosRequest = youTube.videos().list("id,snippet,contentDetails,statistics");
-            videosRequest.setId(String.join(",", videoIds));
+            YouTube.Videos.List videosRequest = youTube.videos().list(List.of("id","snippet","contentDetails","statistics"));
+            videosRequest.setId(videoIds);
             videosRequest.setKey(apiKeys.get(currentKeyIndex));
 
             VideoListResponse videoResponse = videosRequest.execute();
             List<Video> videos = videoResponse.getItems();
+
+            logger.info("조회된 비디오 개수: " + videos.size() + ", 채널: " + channelName);
 
             for (Video video : videos) {
                 String videoId = video.getId();
@@ -217,6 +222,7 @@ public class UpdateVtuberSongsService {
             }
         } catch (IOException e) {
             logger.severe("IOException while fetching video details for " + channelName + " after all retries - " + e.getMessage());
+            switchApiKey();
         }
     }
 
@@ -275,16 +281,16 @@ public class UpdateVtuberSongsService {
         do {
             try {
                 logger.info("노래 검색 중... publishedAfter: " + publishedAfterInstant);
-                YouTube.Search.List search = youTube.search().list("id,snippet");
+                YouTube.Search.List search = youTube.search().list(List.of("id","snippet"));
                 search.setChannelId(channelId);
                 search.setQ(combinedQuery);
-                search.setType("video");
+                search.setType(List.of("video"));
                 search.setOrder("date");
                 search.setFields("nextPageToken,items(id/videoId,snippet/title,snippet/publishedAt,snippet/channelId)");
                 search.setMaxResults(50L);
                 search.setKey(apiKeys.get(currentKeyIndex));
                 search.setPageToken(pageToken);
-                search.setPublishedAfter(new com.google.api.client.util.DateTime(publishedAfterInstant.toEpochMilli()));
+                search.setPublishedAfter(publishedAfterInstant.toString());
 
                 SearchListResponse searchResponse = search.execute();
                 List<SearchResult> searchResults = searchResponse.getItems();
@@ -303,18 +309,37 @@ public class UpdateVtuberSongsService {
     }
 
     private void handleSearchResults(List<SearchResult> searchResults, String channelName) {
-        List<String> videoIds = new ArrayList<>();
-        for (SearchResult result : searchResults) {
-            videoIds.add(result.getId().getVideoId());
+        if (searchResults == null || searchResults.isEmpty()) {
+            logger.info("검색 결과가 없습니다. 채널: " + channelName);
+            return;
         }
 
+        List<String> videoIds = new ArrayList<>();
+        for (SearchResult result : searchResults) {
+            if (result.getId() != null && result.getId().getVideoId() != null) {
+                videoIds.add(result.getId().getVideoId());
+            } else {
+                logger.warning("검색 결과에서 videoId가 null입니다. 채널: " + channelName);
+            }
+        }
+
+        // videoIds가 비어있는지 확인
+        if (videoIds.isEmpty()) {
+            logger.warning("추출된 videoId가 없습니다. 채널: " + channelName);
+            return;
+        }
+
+        logger.info("비디오 세부 정보 조회 - 비디오 ID 개수: " + videoIds.size() + ", 채널: " + channelName);
+
         try {
-            YouTube.Videos.List videosRequest = youTube.videos().list("id,snippet,contentDetails,statistics");
-            videosRequest.setId(String.join(",", videoIds));
+            YouTube.Videos.List videosRequest = youTube.videos().list(List.of("id","snippet","contentDetails","statistics"));
+            videosRequest.setId(videoIds);
             videosRequest.setKey(apiKeys.get(currentKeyIndex));
 
             VideoListResponse videoResponse = videosRequest.execute();
             List<Video> videos = videoResponse.getItems();
+
+            logger.info("조회된 비디오 개수: " + videos.size() + ", 채널: " + channelName);
 
             for (Video video : videos) {
                 String videoId = video.getId();
@@ -328,21 +353,25 @@ public class UpdateVtuberSongsService {
                         logger.info("쇼츠 영상이지만 음악 카테고리가 아니므로 필터링: " + title);
                         continue;
                     }
-                    
+
                     if ("ignore".equals(classification)) {
+                        logger.info("영상 길이로 인해 무시: " + title);
                         continue;
                     }
 
                     Optional<VtuberSongsEntity> existingSongOpt = vtuberSongsRepository.findByVideoId(videoId);
                     if (!existingSongOpt.isPresent()) {
+                        logger.info("새로운 노래 발견: " + title + " (" + videoId + ")");
                         saveNewSong(video, channelName, classification);
+                    } else {
+                        logger.info("이미 존재하는 노래: " + title);
                     }
                 } else {
                     logger.info("노래와 관련 없는 동영상 필터링: " + title);
                 }
             }
         } catch (IOException e) {
-            logger.severe("Error fetching video details: " + e.getMessage());
+            logger.severe("비디오 세부 정보 조회 중 오류 발생. 채널: " + channelName + " - " + e.getMessage());
             switchApiKey();
         }
     }
@@ -360,8 +389,8 @@ public class UpdateVtuberSongsService {
 
     private long fetchViewCount(String videoId) {
         try {
-            YouTube.Videos.List request = youTube.videos().list("statistics");
-            request.setId(videoId);
+            YouTube.Videos.List request = youTube.videos().list(List.of("statistics"));
+            request.setId(List.of(videoId));
             request.setKey(apiKeys.get(currentKeyIndex));
             var response = executeRequestWithRetry(() -> request.execute());
             if (!response.getItems().isEmpty()) {

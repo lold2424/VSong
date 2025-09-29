@@ -76,7 +76,6 @@ private static final RateLimiter rateLimiter = RateLimiter.create(5.0);
      * 매일 자정에 실행되어 VTuber 데이터를 점진적으로 수집
      * 로컬 환경에서만 활성화됨
      */
-    @Scheduled(cron = "0 24 16 * * ?", zone = "Asia/Seoul")
     public void dailyFirstUpload() {
         if (!firstUploadEnabled) {
             logger.debug("첫 업로드 기능이 비활성화되어 있습니다.");
@@ -224,8 +223,8 @@ private static final RateLimiter rateLimiter = RateLimiter.create(5.0);
         rateLimiter.acquire();
         incrementApiUsage();
         
-        YouTube.Channels.List channelRequest = youTube.channels().list("contentDetails");
-        channelRequest.setId(channelId);
+        YouTube.Channels.List channelRequest = youTube.channels().list(List.of("contentDetails"));
+        channelRequest.setId(List.of(channelId));
         channelRequest.setKey(getCurrentApiKey());
 
         ChannelListResponse channelResult = channelRequest.execute();
@@ -253,7 +252,7 @@ private static final RateLimiter rateLimiter = RateLimiter.create(5.0);
                 incrementApiUsage();
                 
                 YouTube.PlaylistItems.List playlistItemsRequest = youTube.playlistItems()
-                        .list("contentDetails,snippet");
+                        .list(List.of("contentDetails","snippet"));
                 playlistItemsRequest.setPlaylistId(uploadsPlaylistId);
                 playlistItemsRequest.setMaxResults(50L);
                 playlistItemsRequest.setPageToken(pageToken);
@@ -309,8 +308,8 @@ private static final RateLimiter rateLimiter = RateLimiter.create(5.0);
             rateLimiter.acquire();
             incrementApiUsage();
             
-            YouTube.Videos.List videosRequest = youTube.videos().list("id,snippet,contentDetails,statistics");
-            videosRequest.setId(String.join(",", videoIds));
+            YouTube.Videos.List videosRequest = youTube.videos().list(List.of("id","snippet","contentDetails","statistics"));
+            videosRequest.setId(videoIds);
             videosRequest.setKey(getCurrentApiKey());
 
             VideoListResponse videoResponse = videosRequest.execute();

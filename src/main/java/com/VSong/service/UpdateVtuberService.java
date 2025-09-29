@@ -53,8 +53,8 @@ public class UpdateVtuberService {
         try {
             rateLimiter.acquire();
 
-            YouTube.Channels.List request = youTube.channels().list("snippet,statistics");
-            request.setId(String.join(",", channelIds));
+            YouTube.Channels.List request = youTube.channels().list(List.of("snippet","statistics"));
+            request.setId(channelIds);
             request.setFields("items(id,snippet/title,snippet/description,snippet/thumbnails/default/url,statistics/subscriberCount)");
             request.setKey("YOUR_API_KEY");
 

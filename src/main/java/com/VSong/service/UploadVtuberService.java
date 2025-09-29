@@ -37,9 +37,59 @@ public class UploadVtuberService {
     private final List<String> apiKeys;
     private int currentKeyIndex = 0;
     private final List<String> queries = Arrays.asList(
-            "버튜버", "Vtuber", "버츄얼 유튜버", "버츄버", "v-youtuber", "스텔라이브", "stellive", "V-LUP", "이세계아이돌", "VRECORD",
-            "일루전 라이브", "버츄얼 헤르츠", "싸이코드", "PLAVE", "츠라이컴퍼니", "러브다이아", "스타데이즈", "에스더",
-            "라이브루리", "HeartSoniC"
+            "버튜버", "Vtuber", "버츄얼 유튜버", "버츄버",
+            "이세계아이돌",
+            "V-LUP",
+            "RE:REVOLUTION",
+            "VRECORD",
+            "V&U",
+            "일루전 라이브",
+            "버츄얼 헤르츠",
+            "V-llage",
+            "레븐",
+            "스타게이저",
+            "싸이코드",
+            "PLAVE",
+            "러브다이아",
+            "미츄",
+            "스텔라이브",
+            "뻐스시간",
+            "스타데이즈",
+            "블루점프",
+            "팔레트",
+            "AkaiV Studio",
+            "리스텔라",
+            "에스더",
+            "포더모어",
+            "스코시즘",
+            "큐버스",
+            "라이브루리",
+            "플레이 바이 스쿨",
+            "VLYZ.",
+            "Artisons.",
+            "HONEYZ",
+            "PROJECT Serenity",
+            "위싱 라이브",
+            "브이아이",
+            "몽상컴퍼니",
+            "스테이터스",
+            "아쿠아벨",
+            "Plan.B Music",
+            "멜로데이즈",
+            "Re:AcT KR",
+            "GRIM PRODUCTION.",
+            "PJX.",
+            "D-ESTER",
+            "방과후버튜버",
+            "베리타",
+            "스타드림컴퍼니",
+            "HANAVI",
+            "UR:L",
+            "Priz",
+            "브이퍼리",
+            "크로아",
+            "하데스",
+            "ACAXIA."
     );
     private static final Logger logger = Logger.getLogger(UploadVtuberService.class.getName());
     private static final int MIN_SUBSCRIBERS = 3000;
@@ -87,10 +137,22 @@ public class UploadVtuberService {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
-        this.apiKeys = Arrays.asList(apiKeys.split(","));
-        this.apiKeyUsage = apiKeys.lines()
+
+        // API 키 문자열을 쉼표로 분할하고 공백 제거
+        this.apiKeys = Arrays.stream(apiKeys.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
+
+        // 분할된 apiKeys 리스트 기반으로 AtomicInteger 생성
+        this.apiKeyUsage = this.apiKeys.stream()
                 .map(key -> new AtomicInteger(0))
                 .collect(Collectors.toList());
+
+        // 초기화 로그
+        logger.info("API 키 " + this.apiKeys.size() + "개 로드 완료");
+        for (int i = 0; i < this.apiKeys.size(); i++) {
+            logger.info("API 키 " + (i + 1) + ": " + this.apiKeys.get(i).substring(0, 10) + "...");
+        }
 
         this.searchApiCounter = meterRegistry.counter("youtube.api.search");
         this.channelsApiCounter = meterRegistry.counter("youtube.api.channels");
@@ -101,19 +163,58 @@ public class UploadVtuberService {
     }
 
     private synchronized void rotateApiKey() {
-        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
-        if (currentKeyIndex == 0) {
-            logger.severe("모든 API 키의 할당량이 소진되었습니다.");
+        // API 키가 1개만 있는 경우 처리
+        if (apiKeys.size() == 1) {
+            logger.severe("API 키가 1개뿐이므로 더 이상 회전할 수 없습니다. 할당량이 소진되었습니다.");
             throw new RuntimeException("모든 API 키의 할당량이 소진되었습니다.");
         }
+
+        int nextKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
+
+        // 모든 키의 할당량이 소진된 경우 확인
+        if (nextKeyIndex == 0) {
+            // 한 바퀴 돌았는데 첫 번째 키도 할당량이 소진된 경우
+            boolean allKeysExhausted = apiKeyUsage.stream()
+                    .allMatch(usage -> usage.get() >= MAX_QUOTA_PER_KEY);
+
+            if (allKeysExhausted) {
+                logger.severe("모든 API 키의 할당량이 소진되었습니다.");
+                throw new RuntimeException("모든 API 키의 할당량이 소진되었습니다.");
+            }
+        }
+
+        currentKeyIndex = nextKeyIndex;
         logger.warning("API 키를 다음 키로 전환했습니다: " + getCurrentApiKey());
     }
 
     private void incrementApiKeyUsage() {
+        // 인덱스 범위 확인
+        if (currentKeyIndex >= apiKeyUsage.size()) {
+            logger.severe("잘못된 API 키 인덱스: " + currentKeyIndex + ", 리스트 크기: " + apiKeyUsage.size());
+            currentKeyIndex = 0; // 안전하게 0으로 리셋
+        }
+
         apiKeyUsage.get(currentKeyIndex).incrementAndGet();
-        if (apiKeyUsage.get(currentKeyIndex).get() >= MAX_QUOTA_PER_KEY) {
+        int currentUsage = apiKeyUsage.get(currentKeyIndex).get();
+
+        logger.info("현재 API 키 사용량: " + currentUsage + "/" + MAX_QUOTA_PER_KEY);
+
+        if (currentUsage >= MAX_QUOTA_PER_KEY) {
+            logger.warning("현재 API 키의 할당량이 소진되었습니다. 다음 키로 전환합니다.");
             rotateApiKey();
         }
+    }
+
+    private void logApiKeyStatus() {
+        logger.info("=== API 키 사용 현황 ===");
+        for (int i = 0; i < apiKeys.size(); i++) {
+            String keyInfo = "키 " + (i + 1) + ": " + apiKeyUsage.get(i).get() + "/" + MAX_QUOTA_PER_KEY;
+            if (i == currentKeyIndex) {
+                keyInfo += " (현재 사용 중)";
+            }
+            logger.info(keyInfo);
+        }
+        logger.info("=====================");
     }
 
     public void fetchAndSaveVtuberChannels() {
@@ -142,9 +243,9 @@ public class UploadVtuberService {
                     rateLimiter.acquire();
                     logger.info("YouTube Search API 호출 시작 (쿼리: " + query + ", 페이지: " + pagesFetched + ")");
 
-                    YouTube.Search.List search = youTube.search().list("id,snippet");
+                    YouTube.Search.List search = youTube.search().list(List.of("id","snippet"));
                     search.setQ(query);
-                    search.setType("channel");
+                    search.setType(List.of("channel"));
                     search.setFields("nextPageToken,items(id/channelId,snippet/title,snippet/description)");
                     search.setMaxResults(50L);
                     search.setKey(getCurrentApiKey());
@@ -224,8 +325,8 @@ public class UploadVtuberService {
         try {
             rateLimiter.acquire();
 
-            YouTube.Channels.List channelRequest = youTube.channels().list("snippet,statistics");
-            channelRequest.setId(String.join(",", channelIds));
+            YouTube.Channels.List channelRequest = youTube.channels().list(List.of("snippet","statistics"));
+            channelRequest.setId(channelIds);
             channelRequest.setFields("items(id,snippet/title,snippet/description,snippet/thumbnails/default/url,statistics/subscriberCount)");
             channelRequest.setKey(getCurrentApiKey());
 
@@ -337,8 +438,8 @@ public class UploadVtuberService {
         try {
             rateLimiter.acquire();
 
-            YouTube.Channels.List channelsList = youTube.channels().list("snippet");
-            channelsList.setId(channelId);
+            YouTube.Channels.List channelsList = youTube.channels().list(List.of("snippet"));
+            channelsList.setId(List.of(channelId));
             channelsList.setKey(getCurrentApiKey());
             channelsList.setFields("items(snippet/thumbnails/default/url)");
 
@@ -357,9 +458,5 @@ public class UploadVtuberService {
         return null;
     }
 
-    @Scheduled(cron = "0 24 13 * * ?", zone = "Asia/Seoul")
-    public void scheduledFetchAndSaveVtuberChannels() {
-        fetchAndSaveVtuberChannels();
-    }
 
 }
