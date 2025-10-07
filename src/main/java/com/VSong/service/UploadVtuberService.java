@@ -130,6 +130,45 @@ public class UploadVtuberService {
         logger.info("=== fetchAndSaveVtuberChannels 종료 ===");
     }
 
+    public List<String> fetchAllChannelIdsFromApi() {
+        logger.info("=== fetchAllChannelIdsFromApi 시작 ===");
+        List<String> allChannelIds = new java.util.ArrayList<>();
+        for (String query : queries) {
+            logger.info("ID 수집 쿼리 실행: {}", query);
+            String pageToken = null;
+            int pagesFetched = 0;
+            do {
+                if (pagesFetched >= MAX_PAGES_PER_QUERY) {
+                    logger.info("쿼리 '{}'에 대해 최대 페이지 수를 초과했습니다.", query);
+                    break;
+                }
+                pagesFetched++;
+                try {
+                    rateLimiter.acquire();
+                    YouTube.Search.List search = youTube.search().list(List.of("id"));
+                    search.setQ(query);
+                    search.setType(List.of("channel"));
+                    search.setFields("nextPageToken,items(id/channelId)");
+                    search.setMaxResults(50L);
+                    search.setKey(getCurrentApiKey());
+                    search.setPageToken(pageToken);
+                    incrementApiKeyUsage();
+                    searchApiCounter.increment();
+                    SearchListResponse searchResponse = search.execute();
+                    allChannelIds.addAll(searchResponse.getItems().stream()
+                            .map(result -> result.getId().getChannelId())
+                            .collect(Collectors.toList()));
+                    pageToken = searchResponse.getNextPageToken();
+                } catch (IOException e) {
+                    logger.error("API 호출 중 오류 발생: {}", e.getMessage());
+                    rotateApiKey();
+                }
+            } while (pageToken != null);
+        }
+        logger.info("=== fetchAllChannelIdsFromApi 종료, 총 {}개 ID 수집 ===", allChannelIds.size());
+        return allChannelIds.stream().distinct().collect(Collectors.toList());
+    }
+
     private void processChannels(List<String> channelIds) {
         logger.debug("processChannels 시작 - 채널 ID 개수: {}", channelIds.size());
         try {
