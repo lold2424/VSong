@@ -139,7 +139,6 @@ public class RelatedChannelService {
         this.apiKeys = Arrays.asList(apiKeys.split(","));
     }
 
-    @Scheduled(cron = "0 04 14 * * ?")
     public void discoverAndSaveFromRelatedChannels() {
         logger.info("=== 관련 채널 기반 버튜버 탐색 시작 ===");
 
