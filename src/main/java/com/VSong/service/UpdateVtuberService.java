@@ -125,7 +125,7 @@ public class UpdateVtuberService {
                 if (channel.getSnippet().getThumbnails() != null && channel.getSnippet().getThumbnails().getDefault() != null) {
                     vtuber.setChannelImg(channel.getSnippet().getThumbnails().getDefault().getUrl());
                 }
-                vtuber.setStatus("updated");
+                vtuber.setStatus("existing");
 
                 vtuberRepository.save(vtuber);
             }
