@@ -127,19 +127,18 @@ public class UpdateVtuberSongsService {
             List<Video> videos = videoResponse.getItems();
 
             for (Video video : videos) {
-                // 통합된 검증 로직 사용
                 if (validationService.isSongRelated(video)) {
                     String classification = validationService.classifyVideo(video);
                     if ("ignore".equals(classification)) continue;
 
                     if (!validationService.isSongAlreadyExists(video.getId())) {
-                        logger.info("노래로 판단된 동영상: " + video.getSnippet().getTitle() + " (" + video.getId() + ")");
+                        logger.info("노래로 판단된 동영상 (저장): " + video.getSnippet().getTitle() + " (" + video.getId() + ")");
                         saveNewSong(video, channelName, classification);
                     } else {
-                        logger.info("이미 존재하는 노래: " + video.getSnippet().getTitle());
+                        logger.info("이미 존재하는 노래 (건너뜀): " + video.getSnippet().getTitle());
                     }
                 } else {
-                    logger.info("노래와 관련 없는 동영상 필터링: " + video.getSnippet().getTitle());
+                    // No log for filtered videos as per user request
                 }
             }
         } catch (IOException e) {

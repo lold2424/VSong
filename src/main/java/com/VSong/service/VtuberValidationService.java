@@ -105,15 +105,50 @@ public class VtuberValidationService {
         return "한국 버튜버 조건 미충족"; // 모든 조건을 통과하지 못한 경우
     }
 
+    private static final List<String> DESCRIPTION_SONG_KEYWORDS = Arrays.asList(
+            "lyrics", "가사", "prod", "작곡", "편곡", "믹싱", "mastering", "vocal", "inst",
+            "spotify", "melon", "apple music"
+    );
+
     public boolean isSongRelated(Video video) {
-        String lowerTitle = video.getSnippet().getTitle().toLowerCase();
-        boolean keywordMatch = SONG_KEYWORDS.stream().anyMatch(lowerTitle::contains);
-        boolean categoryMatch = "10".equals(video.getSnippet().getCategoryId());
-        String classification = classifyVideo(video);
-        if ("shorts".equals(classification) && !categoryMatch) {
+        String title = video.getSnippet().getTitle();
+        String lowerTitle = title.toLowerCase();
+        String description = video.getSnippet().getDescription();
+        String lowerDescription = description != null ? description.toLowerCase() : "";
+        String videoId = video.getId();
+
+        // 1. 제외 키워드 검사 (제목 또는 설명)
+        boolean titleHasExcludeKeyword = EXCLUDE_TITLE_KEYWORDS.stream().anyMatch(lowerTitle::contains);
+        boolean descriptionHasExcludeKeyword = EXCLUDE_DESCRIPTION_KEYWORDS.stream().anyMatch(lowerDescription::contains);
+        if (titleHasExcludeKeyword || descriptionHasExcludeKeyword) {
+            // 제외되는 경우엔 로그를 남기지 않음 (사용자 요청)
             return false;
         }
-        return keywordMatch || categoryMatch;
+
+        // 2. 긍정 키워드 검사 (제목 또는 설명)
+        String titleMatchedKeyword = SONG_KEYWORDS.stream().filter(lowerTitle::contains).findFirst().orElse(null);
+        boolean titleHasSongKeyword = titleMatchedKeyword != null;
+
+        String descriptionMatchedKeyword = DESCRIPTION_SONG_KEYWORDS.stream().filter(lowerDescription::contains).findFirst().orElse(null);
+        boolean descriptionHasSongKeyword = descriptionMatchedKeyword != null;
+
+        boolean categoryMatch = "10".equals(video.getSnippet().getCategoryId());
+
+        // 3. 최종 결정: 제목 또는 설명에 긍정 키워드가 하나라도 있으면 통과
+        boolean finalDecision = titleHasSongKeyword || descriptionHasSongKeyword;
+
+        // 4. 노래로 판단된 경우에만 로그 출력
+        if (finalDecision) {
+            logger.info("--- Validation Check for Video ID: {} ---", videoId);
+            logger.info("Title: {}", title);
+            logger.info("Category ID: {} (Match for '10': {})", video.getSnippet().getCategoryId(), categoryMatch);
+            logger.info("Title Keyword Match: {} (Keyword: {})", titleHasSongKeyword, titleMatchedKeyword);
+            logger.info("Description Keyword Match: {} (Keyword: {})", descriptionHasSongKeyword, descriptionMatchedKeyword);
+            logger.info("Final Decision: ACCEPTED");
+            logger.info("-------------------------------------------------");
+        }
+
+        return finalDecision;
     }
 
     public boolean isSongAlreadyExists(String videoId) {
