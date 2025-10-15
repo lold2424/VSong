@@ -229,28 +229,31 @@ public class UpdateVtuberSongsService {
     }
 
     private void fetchRecentSongsFromSearch(String channelId, String channelName, Instant publishedAfterInstant) {
-        String combinedQuery = "music|cover|original|official";
-        String pageToken = null;
-        do {
-            try {
-                YouTube.Search.List search = youTube.search().list(List.of("id", "snippet"));
-                search.setChannelId(channelId);
-                search.setQ(combinedQuery);
-                search.setType(List.of("video"));
-                search.setOrder("date");
-                search.setFields("nextPageToken,items(id/videoId)");
-                search.setMaxResults(50L);
-                search.setKey(apiKeys.get(currentKeyIndex));
-                search.setPageToken(pageToken);
-                search.setPublishedAfter(publishedAfterInstant.toString());
+        String rssUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId;
+        logger.info("Fetching recent videos from RSS feed for " + channelName);
 
-                SearchListResponse searchResponse = search.execute();
-                handleSearchResults(searchResponse.getItems(), channelName);
-                pageToken = searchResponse.getNextPageToken();
-            } catch (IOException e) {
-                handleApiException(e, channelName, channelId);
+        try {
+            org.jsoup.nodes.Document doc = org.jsoup.Jsoup.connect(rssUrl).timeout(10000).get();
+            org.jsoup.select.Elements entries = doc.select("entry");
+
+            if (entries.isEmpty()) {
+                logger.info("No video entries found in RSS feed for " + channelName);
+                return;
             }
-        } while (pageToken != null);
+
+            List<String> videoIds = new ArrayList<>();
+            for (org.jsoup.nodes.Element entry : entries) {
+                String videoId = entry.select("yt|videoId").first().text();
+                videoIds.add(videoId);
+            }
+
+            if (!videoIds.isEmpty()) {
+                logger.info("Found " + videoIds.size() + " recent videos from RSS for " + channelName + ". Processing...");
+                fetchAndProcessVideos(videoIds, channelName);
+            }
+        } catch (Exception e) {
+            logger.severe("Failed to fetch or parse RSS feed for " + channelName + ": " + e.getMessage());
+        }
     }
 
     private long fetchViewCount(String videoId) {
