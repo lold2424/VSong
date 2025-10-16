@@ -14,7 +14,6 @@ public class VtuberEntity {
     @Column(unique = true)
     private String channelId;
     private String name;
-    private String title;
     @Column(length = 255)
     private String description;
     private BigInteger subscribers;
@@ -50,14 +49,6 @@ public class VtuberEntity {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public String getDescription() {
