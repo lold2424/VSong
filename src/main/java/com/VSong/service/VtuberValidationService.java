@@ -3,16 +3,20 @@ package com.VSong.service;
 import com.VSong.repository.ExceptVtuberRepository;
 import com.VSong.repository.VtuberRepository;
 import com.VSong.repository.VtuberSongsRepository;
+import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.Channel;
+import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.Video;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class VtuberValidationService {
@@ -42,20 +46,50 @@ public class VtuberValidationService {
             "버츄얼 유튜버", "버튜버", "V-Youtuber", "버츄얼 유튜버"
     );
 
+    // Keywords from RelatedChannelService
+    private final List<String> avatarKeywords = Arrays.asList(
+            "아바타", "캐릭터", "모델", "Live2D", "3D", "MMD",
+            "가상", "버츄얼", "virtual", "avatar", "character",
+            "리깅", "rigging", "모션캡처", "motion capture", "VRM"
+    );
+
+    private final List<String> activityKeywords = Arrays.asList(
+            "데뷔", "debut", "첫방송", "방송시작", "신인",
+            "소속", "기획사", "컴퍼니", "엔터", "프로덕션",
+            "잡담", "방송", "노래", "singing", "stream",
+            "첫방", "데뷔방", "콜라보", "collaboration"
+    );
+
+    private final List<String> vtuberCompanies = Arrays.asList(
+            "이세계아이돌", "V-LUP", "RE:REVOLUTION", "VRECORD", "V&U", "일루전 라이브",
+            "버츄얼 헤르츠", "V-llage", "레븐", "스타게이저", "싸이코드", "PLAVE", "러브다이아",
+            "미츄", "스텔라이브", "뻐스시간", "스타데이즈", "블루점프", "팔레트", "AkaiV Studio",
+            "리스텔라", "에스더", "포더모어", "스코시즘", "큐버스", "라이브루리", "플레이 바이 스쿨",
+            "VLYZ.", "Artisons.", "HONEYZ", "PROJECT Serenity", "위싱 라이브", "브이아이",
+            "몽상컴퍼니", "스테이터스", "아쿠아벨", "Plan.B Music", "멜로데이즈", "Re:AcT KR",
+            "GRIM PRODUCTION.", "PJX.", "D-ESTER", "방과후버튜버", "베리타", "스타드림컴퍼니",
+            "HANAVI", "UR:L", "Priz", "브이퍼리", "크로아", "하데스", "ACAXIA."
+    );
+
     private final VtuberRepository vtuberRepository;
     private final ExceptVtuberRepository exceptVtuberRepository;
     private final VtuberSongsRepository vtuberSongsRepository;
+    private final YouTube youTube;
+    private final List<String> apiKeys;
+    private int currentKeyIndex = 0;
 
-    public VtuberValidationService(VtuberRepository vtuberRepository, ExceptVtuberRepository exceptVtuberRepository, VtuberSongsRepository vtuberSongsRepository) {
+    public VtuberValidationService(VtuberRepository vtuberRepository,
+                                     ExceptVtuberRepository exceptVtuberRepository,
+                                     VtuberSongsRepository vtuberSongsRepository,
+                                     YouTube youTube,
+                                     @Value("${youtube.api.keys}") String apiKeys) {
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.vtuberSongsRepository = vtuberSongsRepository;
+        this.youTube = youTube;
+        this.apiKeys = Arrays.asList(apiKeys.split(","));
     }
 
-    /**
-     * 채널이 처리 가능한 상태인지 검증하고, 실패 시 이유를 반환합니다.
-     * @return null if processable, otherwise returns a reason string.
-     */
     public String getChannelProcessableReason(String channelId) {
         if (exceptVtuberRepository.existsByChannelId(channelId)) {
             return "제외 목록에 포함된 채널";
@@ -66,11 +100,8 @@ public class VtuberValidationService {
         return null; // 검증 통과
     }
 
-    /**
-     * 채널이 한국 버튜버인지 검증하고, 실패 시 이유를 반환합니다.
-     * @return null if valid, otherwise returns a reason string.
-     */
     public String getKoreanVtuberReason(Channel channel) {
+        String channelId = channel.getId();
         String title = channel.getSnippet().getTitle();
         String description = channel.getSnippet().getDescription();
 
@@ -78,33 +109,115 @@ public class VtuberValidationService {
             return "구독자 수 미달 (" + channel.getStatistics().getSubscriberCount() + ")";
         }
 
-        boolean containsPriorityKeyword = PRIORITY_KEYWORDS.stream().anyMatch(keyword ->
-                title.contains(keyword) || (description != null && description.contains(keyword))
-        );
-        if (containsPriorityKeyword) {
-            return null; // 우선순위 키워드가 있으면 다른 조건 안 보고 통과
-        }
-
-        boolean containsExcludeKeywordsInTitle = EXCLUDE_TITLE_KEYWORDS.stream().anyMatch(title::contains);
-        if (containsExcludeKeywordsInTitle) {
-            return "제목에 제외 키워드 포함";
-        }
-
-        boolean containsExcludeKeywordsInDescription = description != null && EXCLUDE_DESCRIPTION_KEYWORDS.stream().anyMatch(description::contains);
-        if (containsExcludeKeywordsInDescription) {
-            return "설명에 제외 키워드 포함";
-        }
-
         boolean containsKoreanInTitle = title.matches(".*[ㄱ-ㅎㅏ-ㅣ가-힣]+.*");
         boolean containsKoreanInDescription = description != null && description.matches(".*[ㄱ-ㅎㅏ-ㅣ가-힣]+.*");
 
-        if (containsKoreanInTitle || containsKoreanInDescription) {
-            return null; // 한글이 포함되어 있으면 통과
+        if (!containsKoreanInTitle && !containsKoreanInDescription) {
+            return "한국어 없음";
         }
 
-        return "한국 버튜버 조건 미충족"; // 모든 조건을 통과하지 못한 경우
+        boolean containsPriorityKeyword = PRIORITY_KEYWORDS.stream().anyMatch(keyword ->
+                title.contains(keyword) || (description != null && description.contains(keyword))
+        );
+
+        boolean containsExcludeKeywordsInTitle = EXCLUDE_TITLE_KEYWORDS.stream().anyMatch(title::contains);
+        boolean containsExcludeKeywordsInDescription = description != null &&
+                EXCLUDE_DESCRIPTION_KEYWORDS.stream().anyMatch(description::contains);
+
+        if ((containsExcludeKeywordsInTitle || containsExcludeKeywordsInDescription) && !containsPriorityKeyword) {
+            String matchedKeyword = containsExcludeKeywordsInTitle ?
+                    EXCLUDE_TITLE_KEYWORDS.stream().filter(title::contains).findFirst().orElse("?") :
+                    EXCLUDE_DESCRIPTION_KEYWORDS.stream().filter(description::contains).findFirst().orElse("?");
+            return "제외 키워드 포함: " + matchedKeyword;
+        }
+
+        boolean hasVtuberKeyword = hasDirectVtuberKeyword(title, description);
+        boolean hasVisualCharacteristics = hasVtuberVisualCharacteristics(title, description);
+        boolean belongsToCompany = belongsToVtuberCompany(description);
+        boolean hasContentPattern = hasVtuberContentPattern(channelId);
+
+        boolean isVtuber = hasVtuberKeyword || hasVisualCharacteristics || belongsToCompany || hasContentPattern || containsPriorityKeyword;
+
+        if (isVtuber) {
+            return null; // It's a VTuber, validation passed.
+        } else {
+            return "버튜버 특징 미발견";
+        }
     }
 
+    private boolean hasDirectVtuberKeyword(String title, String description) {
+        boolean containsVtuberInTitle = title.contains("버튜버") || title.contains("Vtuber") || title.contains("VTuber");
+        boolean containsVtuberInDescription = description != null &&
+                (description.contains("버튜버") || description.contains("Vtuber") || description.contains("VTuber"));
+        return containsVtuberInTitle || containsVtuberInDescription;
+    }
+
+    private boolean hasVtuberVisualCharacteristics(String title, String description) {
+        boolean hasAvatarKeyword = avatarKeywords.stream().anyMatch(keyword ->
+                title.toLowerCase().contains(keyword.toLowerCase()) ||
+                        (description != null && description.toLowerCase().contains(keyword.toLowerCase()))
+        );
+        boolean hasActivityKeyword = activityKeywords.stream().anyMatch(keyword ->
+                title.toLowerCase().contains(keyword.toLowerCase()) ||
+                        (description != null && description.toLowerCase().contains(keyword.toLowerCase()))
+        );
+        return hasAvatarKeyword || hasActivityKeyword;
+    }
+
+    private boolean belongsToVtuberCompany(String description) {
+        if (description == null) return false;
+        return vtuberCompanies.stream()
+                .anyMatch(company -> description.toLowerCase().contains(company.toLowerCase()));
+    }
+
+    private boolean hasVtuberContentPattern(String channelId) {
+        try {
+            YouTube.Search.List search = youTube.search().list(List.of("snippet"));
+            search.setChannelId(channelId);
+            search.setOrder("date");
+            search.setMaxResults(10L);
+            search.setType(List.of("video"));
+            search.setKey(getCurrentApiKey());
+
+            SearchListResponse response = search.execute();
+            if (response.getItems() == null || response.getItems().isEmpty()) {
+                return false;
+            }
+
+            List<String> videoTitles = response.getItems().stream()
+                    .map(item -> item.getSnippet().getTitle())
+                    .collect(Collectors.toList());
+
+            List<String> vtuberPatterns = Arrays.asList(
+                    "잡담", "방송", "게임", "노래", "singing", "stream",
+                    "첫방", "데뷔방", "콜라보", "collaboration", "잡담방",
+                    "방송시작", "live", "라이브", "스트림"
+            );
+
+            long patternMatches = videoTitles.stream()
+                    .mapToLong(videoTitle -> vtuberPatterns.stream()
+                            .filter(pattern -> videoTitle.toLowerCase().contains(pattern.toLowerCase()))
+                            .count())
+                    .sum();
+
+            return patternMatches >= 3;
+        } catch (Exception e) {
+            logger.warn("채널 {} 콘텐츠 패턴 분석 실패: {}", channelId, e.getMessage());
+            rotateApiKey();
+            return false;
+        }
+    }
+
+    private String getCurrentApiKey() {
+        return apiKeys.get(currentKeyIndex);
+    }
+
+    private synchronized void rotateApiKey() {
+        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
+        logger.warn("API 키를 다음 키로 전환했습니다.");
+    }
+
+    // Methods for song validation (isSongRelated, etc.) remain unchanged
     private static final List<String> DESCRIPTION_SONG_KEYWORDS = Arrays.asList(
             "lyrics", "가사", "prod", "작곡", "편곡", "믹싱", "mastering", "vocal", "inst",
             "spotify", "melon", "apple music"
@@ -117,35 +230,22 @@ public class VtuberValidationService {
         String lowerDescription = description != null ? description.toLowerCase() : "";
         String videoId = video.getId();
 
-        // 1. 제외 키워드 검사 (제목 또는 설명)
         boolean titleHasExcludeKeyword = EXCLUDE_TITLE_KEYWORDS.stream().anyMatch(lowerTitle::contains);
         boolean descriptionHasExcludeKeyword = EXCLUDE_DESCRIPTION_KEYWORDS.stream().anyMatch(lowerDescription::contains);
         if (titleHasExcludeKeyword || descriptionHasExcludeKeyword) {
-            // 제외되는 경우엔 로그를 남기지 않음 (사용자 요청)
             return false;
         }
 
-        // 2. 긍정 키워드 검사 (제목 또는 설명)
         String titleMatchedKeyword = SONG_KEYWORDS.stream().filter(lowerTitle::contains).findFirst().orElse(null);
         boolean titleHasSongKeyword = titleMatchedKeyword != null;
 
         String descriptionMatchedKeyword = DESCRIPTION_SONG_KEYWORDS.stream().filter(lowerDescription::contains).findFirst().orElse(null);
         boolean descriptionHasSongKeyword = descriptionMatchedKeyword != null;
 
-        boolean categoryMatch = "10".equals(video.getSnippet().getCategoryId());
-
-        // 3. 최종 결정: 제목 또는 설명에 긍정 키워드가 하나라도 있으면 통과
         boolean finalDecision = titleHasSongKeyword || descriptionHasSongKeyword;
 
-        // 4. 노래로 판단된 경우에만 로그 출력
         if (finalDecision) {
-            logger.info("--- Validation Check for Video ID: {} ---", videoId);
-            logger.info("Title: {}", title);
-            logger.info("Category ID: {} (Match for '10': {})", video.getSnippet().getCategoryId(), categoryMatch);
-            logger.info("Title Keyword Match: {} (Keyword: {})", titleHasSongKeyword, titleMatchedKeyword);
-            logger.info("Description Keyword Match: {} (Keyword: {})", descriptionHasSongKeyword, descriptionMatchedKeyword);
-            logger.info("Final Decision: ACCEPTED");
-            logger.info("-------------------------------------------------");
+            logger.info("Validation Check for Video ID: {} -> ACCEPTED", videoId);
         }
 
         return finalDecision;
