@@ -42,6 +42,10 @@ jobs:
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_DRIVER_CLASS_NAME: ${{ secrets.DB_DRIVER_CLASS_NAME }}
+          YOUTUBE_API_KEYS: ${{ secrets.YOUTUBE_API_KEYS }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          BASE_URL: ${{ secrets.BASE_URL }}
         run: |
           echo "Starting deployment..."
 
@@ -53,13 +57,27 @@ jobs:
           sudo rm -rf /var/www/v-song/*
           sudo cp -R ./src/front/build/* /var/www/v-song/
 
-          # 3. GitHub Secrets를 사용하여 application.properties 파일 생성
+          # 3. GitHub Secrets와 기타 설정으로 application.properties 파일 생성
           PROPERTIES_FILE="/home/ubuntu/app/application.properties"
           echo "Creating $PROPERTIES_FILE..."
+          # --- Database Configuration ---
           echo "spring.datasource.url=$DB_URL" > $PROPERTIES_FILE
           echo "spring.datasource.username=$DB_USERNAME" >> $PROPERTIES_FILE
           echo "spring.datasource.password=$DB_PASSWORD" >> $PROPERTIES_FILE
           echo "spring.datasource.driver-class-name=$DB_DRIVER_CLASS_NAME" >> $PROPERTIES_FILE
+          # --- YouTube API Keys ---
+          echo "youtube.api.keys=$YOUTUBE_API_KEYS" >> $PROPERTIES_FILE
+          # --- Google OAuth2 Configuration ---
+          echo "spring.security.oauth2.client.registration.google.client-id=$GOOGLE_CLIENT_ID" >> $PROPERTIES_FILE
+          echo "spring.security.oauth2.client.registration.google.client-secret=$GOOGLE_CLIENT_SECRET" >> $PROPERTIES_FILE
+          echo "baseUrl=$BASE_URL" >> $PROPERTIES_FILE
+          echo "spring.security.oauth2.client.registration.google.scope=profile,email,https://www.googleapis.com/auth/youtube.readonly" >> $PROPERTIES_FILE
+          echo "spring.security.oauth2.client.registration.google.redirect-uri=\${baseUrl}/login/oauth2/code/google" >> $PROPERTIES_FILE
+          # --- Other Configurations ---
+          echo "server.port=8080" >> $PROPERTIES_FILE
+          echo "spring.jpa.hibernate.ddl-auto=update" >> $PROPERTIES_FILE
+          echo "spring.jackson.time-zone=Asia/Seoul" >> $PROPERTIES_FILE
+          echo "spring.task.scheduling.enabled=true" >> $PROPERTIES_FILE
 
           # 4. 백엔드 .jar 파일 배포
           JAR_FILE=$(find ./build/libs/ -name "*.jar" ! -name "*-plain.jar")
