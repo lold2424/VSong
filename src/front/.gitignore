@@ -15,10 +15,7 @@
 .DS_Store
 
 # 환경 설정 파일
-.env
-.env.local
 .env.development
-.env.development.local
 .env.production
 .env.production.local
 .env.test.local
