@@ -73,6 +73,11 @@ jobs:
           echo "baseUrl=$BASE_URL" >> $PROPERTIES_FILE
           echo "spring.security.oauth2.client.registration.google.scope=profile,email,https://www.googleapis.com/auth/youtube.readonly" >> $PROPERTIES_FILE
           echo "spring.security.oauth2.client.registration.google.redirect-uri=\${baseUrl}/login/oauth2/code/google" >> $PROPERTIES_FILE
+          echo "spring.security.oauth2.client.registration.google.client-name=Google" >> $PROPERTIES_FILE
+          echo "spring.security.oauth2.client.provider.google.authorization-uri=https://accounts.google.com/o/oauth2/v2/auth" >> $PROPERTIES_FILE
+          echo "spring.security.oauth2.client.provider.google.token-uri=https://oauth2.googleapis.com/token" >> $PROPERTIES_FILE
+          echo "spring.security.oauth2.client.provider.google.user-info-uri=https://www.googleapis.com/oauth2/v3/userinfo" >> $PROPERTIES_FILE
+          echo "spring.security.oauth2.client.provider.google.user-name-attribute=sub" >> $PROPERTIES_FILE
           # --- Other Configurations ---
           echo "server.port=8080" >> $PROPERTIES_FILE
           echo "spring.jpa.hibernate.ddl-auto=update" >> $PROPERTIES_FILE
@@ -89,4 +94,3 @@ jobs:
           nohup java -jar app.jar > app.log 2>&1 &
 
           echo "Deployment finished."
-
