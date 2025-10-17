@@ -24,10 +24,6 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Create .env file for Frontend
-        run: |
-          echo "REACT_APP_API_URL=168.107.5.12" > ./src/front/.env
-
       - name: Build Frontend
         working-directory: ./src/front
         run: |
@@ -41,15 +37,38 @@ jobs:
         run: ./gradlew build
 
       - name: Deploy Application
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DRIVER_CLASS_NAME: ${{ secrets.DB_DRIVER_CLASS_NAME }}
         run: |
           echo "Starting deployment..."
+
+          # 1. 기존 백엔드 프로세스 종료
           pkill -f 'VSong' || true
           sleep 5
+
+          # 2. 프론트엔드 파일 배포
           sudo rm -rf /var/www/v-song/*
           sudo cp -R ./src/front/build/* /var/www/v-song/
+
+          # 3. GitHub Secrets를 사용하여 application.properties 파일 생성
+          PROPERTIES_FILE="/home/ubuntu/app/application.properties"
+          echo "Creating $PROPERTIES_FILE..."
+          echo "spring.datasource.url=$DB_URL" > $PROPERTIES_FILE
+          echo "spring.datasource.username=$DB_USERNAME" >> $PROPERTIES_FILE
+          echo "spring.datasource.password=$DB_PASSWORD" >> $PROPERTIES_FILE
+          echo "spring.datasource.driver-class-name=$DB_DRIVER_CLASS_NAME" >> $PROPERTIES_FILE
+
+          # 4. 백엔드 .jar 파일 배포
           JAR_FILE=$(find ./build/libs/ -name "*.jar" ! -name "*-plain.jar")
-          echo "Found executable JAR: $JAR_FILE"
+          echo "Deploying $JAR_FILE..."
           cp $JAR_FILE /home/ubuntu/app/app.jar
+
+          # 5. 새 애플리케이션 실행
           cd /home/ubuntu/app
           nohup java -jar app.jar > app.log 2>&1 &
+
           echo "Deployment finished."
+
