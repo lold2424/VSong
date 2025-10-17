@@ -47,8 +47,9 @@ jobs:
           sleep 5
           sudo rm -rf /var/www/v-song/*
           sudo cp -R ./src/front/build/* /var/www/v-song/
-          cp ./build/libs/*.jar /home/ubuntu/app/app.jar
+          JAR_FILE=$(find ./build/libs/ -name "*.jar" ! -name "*-plain.jar")
+          echo "Found executable JAR: $JAR_FILE"
+          cp $JAR_FILE /home/ubuntu/app/app.jar
           cd /home/ubuntu/app
           nohup java -jar app.jar > app.log 2>&1 &
           echo "Deployment finished."
-
