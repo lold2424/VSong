@@ -9,8 +9,6 @@ import axios from 'axios';
 import { GenderProvider } from './page/components/GenderContext';
 import VtuberDetailPage from "./page/VtuberDetailPage";
 
-const apiUrl = process.env.REACT_APP_API_URL;
-
 const App: React.FC = () => {
     const [top10WeeklySongs, setTop10WeeklySongs] = useState<any[]>([]);
     const [top10DailySongs, setTop10DailySongs] = useState<any[]>([]);
@@ -26,7 +24,7 @@ const App: React.FC = () => {
     }
 
     useEffect(() => {
-        axios.get<MainApiResponse>(`${apiUrl}/main`)
+        axios.get<MainApiResponse>('/api/main')
             .then((response) => {
                 setTop10WeeklySongs(response.data.top10WeeklySongs || []);
                 setTop10DailySongs(response.data.top10DailySongs || []);

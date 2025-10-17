@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "./Header.css";
 import { GenderContext } from "./GenderContext";
 
-const apiUrl = process.env.REACT_APP_API_URL;
-
 const saveUserInfoToLocalStorage = (userInfo: { name: string; picture: string }) => {
     localStorage.setItem("userInfo", JSON.stringify(userInfo));
 };
@@ -32,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
     const fetchUserInfo = async () => {
         try {
             console.log("Fetching user info...");
-            const response = await fetch(`${apiUrl}/login/userinfo`, {
+            const response = await  fetch('/api/login/userinfo', {
                 method: "GET",
                 credentials: "include",
             });
@@ -79,13 +77,13 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
 
     const handleLogin = () => {
         console.log("Redirecting to Google OAuth...");
-        window.location.href = `${apiUrl}/oauth2/authorization/google`;
+        window.location.href = '/oauth2/authorization/google';
     };
 
     const handleLogout = async () => {
         console.log("Attempting to log out...");
         try {
-            const response = await fetch(`${apiUrl}/logout`, {
+            const response = await fetch('/api/logout', {
                 method: "GET",
                 credentials: "include",
             });
