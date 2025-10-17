@@ -2,7 +2,6 @@ HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -39,6 +38,7 @@ out/
 
 # Ignore all .properties files
 *.properties
+!gradle/wrapper/gradle-wrapper.properties
 
 ### front directory ###
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
