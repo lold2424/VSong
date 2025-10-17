@@ -4,8 +4,6 @@ import './MainPage.css';
 import VideoCard from './components/VideoCard';
 import { GenderContext } from './components/GenderContext';
 
-const apiUrl = process.env.REACT_APP_API_URL;
-
 const MainPage: React.FC = () => {
     const [data, setData] = useState<any>({
         randomSongs: [],
@@ -30,7 +28,7 @@ const MainPage: React.FC = () => {
     const fetchMainPageData = (gender: string) => {
         console.log('Fetching main page data with gender:', gender);
         setIsLoading(true);
-        axios.get<MainPageApiResponse>(`${apiUrl}/main`, {
+        axios.get<MainPageApiResponse>('/api/main', {
             params: { gender },
         })
             .then((response) => {
