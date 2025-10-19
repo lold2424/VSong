@@ -70,16 +70,12 @@ jobs:
         run: |
           echo "Starting deployment..."
 
-          # 1. Kill existing backend process
-          pkill -f 'VSong' || true
-          sleep 5
-
-          # 2. Deploy frontend files
+          # 1. Deploy frontend files
           sudo rm -rf /var/www/v-song/*
           sudo cp -R ./v-song-build/frontend/* /var/www/v-song/
 
-          # 3. Create application.properties from GitHub Secrets
-          PROPERTIES_FILE="/home/ubuntu/app/application.properties"
+          # 2. Create application.properties for the service
+          PROPERTIES_FILE="/home/opc/vsong/application.properties"
           echo "Creating $PROPERTIES_FILE..."
           # --- Database Configuration ---
           echo "spring.datasource.url=$DB_URL" > $PROPERTIES_FILE
@@ -105,13 +101,14 @@ jobs:
           echo "spring.jackson.time-zone=Asia/Seoul" >> $PROPERTIES_FILE
           echo "spring.task.scheduling.enabled=true" >> $PROPERTIES_FILE
 
-          # 4. Deploy backend .jar file
-          JAR_FILE=$(find ./v-song-build/backend/ -name "*.jar")
-          echo "Deploying $JAR_FILE..."
-          cp $JAR_FILE /home/ubuntu/app/app.jar
+          # 3. Deploy backend .jar file
+          JAR_SOURCE_FILE=$(find ./v-song-build/backend/ -name "*.jar")
+          JAR_DEST_PATH="/home/opc/vsong/VSong.jar"
+          echo "Deploying $JAR_SOURCE_FILE to $JAR_DEST_PATH..."
+          cp $JAR_SOURCE_FILE $JAR_DEST_PATH
 
-          # 5. Start new application
-          cd /home/ubuntu/app
-          nohup java -jar app.jar > app.log 2>&1 &
+          # 4. Restart the service
+          echo "Restarting VSong service..."
+          sudo systemctl restart vsong
 
           echo "Deployment finished."
