@@ -23,7 +23,6 @@ public class VtuberValidationService {
 
     private static final Logger logger = LoggerFactory.getLogger(VtuberValidationService.class);
 
-    // Constants for Validation
     private static final int MIN_SUBSCRIBERS = 3000;
     private static final List<String> SONG_KEYWORDS = List.of("music", "song", "cover", "original", "official", "mv", "뮤직", "노래", "커버");
     private static final List<String> EXCLUDE_TITLE_KEYWORDS = Arrays.asList(
@@ -46,7 +45,6 @@ public class VtuberValidationService {
             "버츄얼 유튜버", "버튜버", "V-Youtuber", "버츄얼 유튜버"
     );
 
-    // Keywords from RelatedChannelService
     private final List<String> avatarKeywords = Arrays.asList(
             "아바타", "캐릭터", "모델", "Live2D", "3D", "MMD",
             "가상", "버츄얼", "virtual", "avatar", "character",
@@ -97,7 +95,7 @@ public class VtuberValidationService {
         if (vtuberRepository.existsByChannelId(channelId)) {
             return "이미 DB에 존재하는 채널";
         }
-        return null; // 검증 통과
+        return null;
     }
 
     public String getKoreanVtuberReason(Channel channel) {
@@ -139,7 +137,7 @@ public class VtuberValidationService {
         boolean isVtuber = hasVtuberKeyword || hasVisualCharacteristics || belongsToCompany || hasContentPattern || containsPriorityKeyword;
 
         if (isVtuber) {
-            return null; // It's a VTuber, validation passed.
+            return null;
         } else {
             return "버튜버 특징 미발견";
         }
@@ -217,9 +215,8 @@ public class VtuberValidationService {
         logger.warn("API 키를 다음 키로 전환했습니다.");
     }
 
-    // Methods for song validation (isSongRelated, etc.) remain unchanged
     private static final List<String> DESCRIPTION_SONG_KEYWORDS = Arrays.asList(
-            "lyrics", "가사", "prod", "작곡", "편곡", "믹싱", "mastering", "vocal", "inst",
+            "lyrics", "가사", "prod", "작곡", "편곡", "믹싱", "mastering", "vocal",
             "spotify", "melon", "apple music"
     );
 
@@ -229,6 +226,7 @@ public class VtuberValidationService {
         String description = video.getSnippet().getDescription();
         String lowerDescription = description != null ? description.toLowerCase() : "";
         String videoId = video.getId();
+        String categoryId = video.getSnippet().getCategoryId();
 
         boolean titleHasExcludeKeyword = EXCLUDE_TITLE_KEYWORDS.stream().anyMatch(lowerTitle::contains);
         boolean descriptionHasExcludeKeyword = EXCLUDE_DESCRIPTION_KEYWORDS.stream().anyMatch(lowerDescription::contains);
@@ -236,16 +234,29 @@ public class VtuberValidationService {
             return false;
         }
 
+        java.util.List<String> reasons = new java.util.ArrayList<>();
+
         String titleMatchedKeyword = SONG_KEYWORDS.stream().filter(lowerTitle::contains).findFirst().orElse(null);
-        boolean titleHasSongKeyword = titleMatchedKeyword != null;
+        if (titleMatchedKeyword != null) {
+            reasons.add("Title keyword: '" + titleMatchedKeyword + "'");
+        }
 
         String descriptionMatchedKeyword = DESCRIPTION_SONG_KEYWORDS.stream().filter(lowerDescription::contains).findFirst().orElse(null);
-        boolean descriptionHasSongKeyword = descriptionMatchedKeyword != null;
+        if (descriptionMatchedKeyword != null) {
+            reasons.add("Description keyword: '" + descriptionMatchedKeyword + "'");
+        }
 
-        boolean finalDecision = titleHasSongKeyword || descriptionHasSongKeyword;
+        boolean isMusicCategory = "10".equals(categoryId);
+        if (isMusicCategory) {
+            reasons.add("Category: 'Music'");
+        }
+
+        boolean hasSongKeyword = titleMatchedKeyword != null || descriptionMatchedKeyword != null;
+
+        boolean finalDecision = isMusicCategory && hasSongKeyword;
 
         if (finalDecision) {
-            logger.info("Validation Check for Video ID: {} -> ACCEPTED", videoId);
+            logger.info("Validation Check for Video ID: {} -> ACCEPTED. Reasons: {}", videoId, String.join(", ", reasons));
         }
 
         return finalDecision;
