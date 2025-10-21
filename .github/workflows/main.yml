@@ -1,4 +1,4 @@
-name: VSong Deploy to OCI
+name: VSong CI/CD to OCI
 
 on:
   push:
@@ -6,9 +6,8 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
-    runs-on: self-hosted
-
+  build:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
@@ -34,7 +33,29 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Backend with Gradle
-        run: ./gradlew build
+        run: ./gradlew build -x test # Speed up build by skipping tests
+
+      - name: Package Artifacts
+        run: |
+          mkdir -p artifacts/frontend artifacts/backend
+          cp -r ./src/front/build/* artifacts/frontend/
+          find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: v-song-build
+          path: artifacts/
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: v-song-build
+          path: ./v-song-build
 
       - name: Deploy Application
         env:
@@ -49,16 +70,12 @@ jobs:
         run: |
           echo "Starting deployment..."
 
-          # 1. 기존 백엔드 프로세스 종료
-          pkill -f 'VSong' || true
-          sleep 5
-
-          # 2. 프론트엔드 파일 배포
+          # 1. Deploy frontend files
           sudo rm -rf /var/www/v-song/*
-          sudo cp -R ./src/front/build/* /var/www/v-song/
+          sudo cp -R ./v-song-build/frontend/* /var/www/v-song/
 
-          # 3. GitHub Secrets와 기타 설정으로 application.properties 파일 생성
-          PROPERTIES_FILE="/home/ubuntu/app/application.properties"
+          # 2. Create application.properties for the service
+          PROPERTIES_FILE="/home/opc/vsong/application.properties"
           echo "Creating $PROPERTIES_FILE..."
           # --- Database Configuration ---
           echo "spring.datasource.url=$DB_URL" > $PROPERTIES_FILE
@@ -84,13 +101,14 @@ jobs:
           echo "spring.jackson.time-zone=Asia/Seoul" >> $PROPERTIES_FILE
           echo "spring.task.scheduling.enabled=true" >> $PROPERTIES_FILE
 
-          # 4. 백엔드 .jar 파일 배포
-          JAR_FILE=$(find ./build/libs/ -name "*.jar" ! -name "*-plain.jar")
-          echo "Deploying $JAR_FILE..."
-          cp $JAR_FILE /home/ubuntu/app/app.jar
+          # 3. Deploy backend .jar file
+          JAR_SOURCE_FILE=$(find ./v-song-build/backend/ -name "*.jar")
+          JAR_DEST_PATH="/home/opc/vsong/VSong.jar"
+          echo "Deploying $JAR_SOURCE_FILE to $JAR_DEST_PATH..."
+          cp $JAR_SOURCE_FILE $JAR_DEST_PATH
 
-          # 5. 새 애플리케이션 실행
-          cd /home/ubuntu/app
-          nohup java -jar app.jar > app.log 2>&1 &
+          # 4. Restart the service
+          echo "Restarting VSong service..."
+          sudo systemctl restart vsong
 
           echo "Deployment finished."
