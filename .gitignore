@@ -69,3 +69,6 @@ yarn-error.log*
 src/front/node_modules/*
 logs/*
 src/front/package-lock.json
+
+# Ignore manual http client files
+manual-add-vtuber.http
