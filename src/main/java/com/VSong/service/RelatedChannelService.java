@@ -223,7 +223,7 @@ public class RelatedChannelService {
     private WebDriver createOptimizedChromeDriver() {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu");
+        options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--remote-allow-origins=*", "--mute-audio");
         // ... (other options can be kept for performance)
         return new ChromeDriver(options);
     }
