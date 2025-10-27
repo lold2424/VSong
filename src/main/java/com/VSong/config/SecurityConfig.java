@@ -3,6 +3,7 @@ package com.VSong.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.CorsConfiguration;
@@ -33,7 +34,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login/**", "/oauth2/**", "/main/**", "/api/**").permitAll()
+                        .requestMatchers("/", "/login/**", "/oauth2/**", "/main/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/**").permitAll() // Allow GET requests to /api/**
+                        .requestMatchers("/api/**").authenticated() // All other /api requests require authentication
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
