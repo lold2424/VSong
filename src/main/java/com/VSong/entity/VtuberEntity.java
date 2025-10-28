@@ -1,6 +1,6 @@
 package com.VSong.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
