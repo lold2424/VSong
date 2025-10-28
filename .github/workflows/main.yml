@@ -69,10 +69,18 @@ jobs:
           BASE_URL: ${{ secrets.BASE_URL }}
         run: |
           echo "Starting deployment..."
-
+          
+          # 1. 디렉토리 생성 및 권한 설정 (안정성을 위해 유지)
+          sudo mkdir -p /home/opc/vsong/
+          sudo chown -R opc:opc /home/opc/vsong/
+          sudo chmod o+x /home/opc
+          sudo chmod o+x /home/opc/vsong/
+          
+          # 2. Deploy frontend files
           sudo rm -rf /var/www/v-song/*
           sudo cp -R ./v-song-build/frontend/* /var/www/v-song/
 
+          # 3. Create application.properties for the service
           PROPERTIES_FILE="/home/opc/vsong/application.properties"
           echo "Creating $PROPERTIES_FILE..."
           
@@ -96,11 +104,13 @@ jobs:
           echo "spring.jackson.time-zone=Asia/Seoul" | sudo tee -a $PROPERTIES_FILE
           echo "spring.task.scheduling.enabled=true" | sudo tee -a $PROPERTIES_FILE
 
+          # 4. Deploy backend .jar file
           JAR_SOURCE_FILE=$(find ./v-song-build/backend/ -name "*.jar")
           JAR_DEST_PATH="/home/opc/vsong/VSong.jar"
           echo "Deploying $JAR_SOURCE_FILE to $JAR_DEST_PATH..."
           sudo cp $JAR_SOURCE_FILE $JAR_DEST_PATH
 
+          # 5. Restart the service
           echo "Restarting VSong service..."
           sudo systemctl restart vsong
 
