@@ -13,10 +13,19 @@ import org.springframework.web.filter.CorsFilter;
 import jakarta.annotation.PostConstruct;
 import java.util.List;
 
+import org.springframework.http.MediaType;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.DefaultRedirectStrategy;
+
+
 @Configuration
 public class SecurityConfig {
 
-    @Value("${REDIRECT_BASE_URL:http://localhost:3000}")
+    @Value("${REDIRECT_BASE_URL:http://localhost:5173}")
     private String redirectBaseUrl;
 
     @PostConstruct
@@ -34,19 +43,27 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/main", "/api/v1/vtubers/search").permitAll()
                         .requestMatchers("/", "/login/**", "/oauth2/**", "/main/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/**").permitAll() // Allow GET requests to /api/**
-                        .requestMatchers("/api/**").authenticated() // All other /api requests require authentication
+                        .requestMatchers("/api/login/userinfo").authenticated()
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(e -> {
+                    e.defaultAuthenticationEntryPointFor(
+                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED), 
+                        new MediaTypeRequestMatcher(MediaType.APPLICATION_JSON)
+                    );
+                    e.defaultAuthenticationEntryPointFor(
+                        new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/google"), 
+                        new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+                    );
+                })
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
-                            String redirectUrl = getRedirectBaseUrl() + "?login=success";
-                            response.sendRedirect(redirectUrl);
+                            new DefaultRedirectStrategy().sendRedirect(request, response, getRedirectBaseUrl() + "?login=success");
                         })
                         .failureHandler((request, response, exception) -> {
-                            String redirectUrl = getRedirectBaseUrl() + "?login=failure";
-                            response.sendRedirect(redirectUrl);
+                            new DefaultRedirectStrategy().sendRedirect(request, response, getRedirectBaseUrl() + "?login=failure");
                         })
                 );
 
@@ -61,7 +78,7 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://vsong.art", "https://www.vsong.art"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.art", "https://www.vsong.art"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -73,7 +90,7 @@ public class SecurityConfig {
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://vsong.art", "https://www.vsong.art"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.art", "https://www.vsong.art"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
