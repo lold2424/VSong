@@ -1,3 +1,5 @@
+import VSongLogo from '../../images/V-song.png';
+import SearchBarIcon from '../../images/SearchBar.png';
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Header.css";
@@ -51,7 +53,10 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
                     setUserInfo(null);
                 }
             } else {
-                console.warn(`Failed to fetch user info. Status: ${response.status}`);
+                if (response.status === 401) {
+                } else {
+                    console.warn(`Failed to fetch user info. Status: ${response.status}`);
+                }
                 removeUserInfoFromLocalStorage();
                 setIsLoggedIn(false);
                 setUserInfo(null);
@@ -121,13 +126,12 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
     return (
         <header className="header">
             <div style={{ display: "flex", alignItems: "center" }}>
-                <img
-                    src="/images/V-Song.png"
-                    alt="V-Song Logo"
-                    className="logo"
-                    onClick={() => navigate("/")}
-                />
-                {isLoggedIn ? (
+                                    <img
+                                    src={VSongLogo}
+                                    alt="V-Song Logo"
+                                    className="logo"
+                                    onClick={() => navigate("/")}
+                                />                {isLoggedIn ? (
                     <div className="user-info">
                         <img src={userInfo?.picture} alt="User" className="user-avatar" />
                         <span>{userInfo?.name}</span>
@@ -150,7 +154,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
                     onKeyPress={handleKeyPress}
                 />
                 <button className="search-btn" onClick={handleSearch}>
-                    <img src="/images/SearchBar.png" alt="Search" />
+                    <img src={SearchBarIcon} alt="Search" />
                 </button>
             </div>
             <div className="gender-filters">

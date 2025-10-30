@@ -204,6 +204,7 @@ public class UpdateVtuberSongsService {
                 PlaylistItemListResponse playlistItemResult = executeRequestWithRetry(() -> playlistItemsRequest.execute());
                 List<PlaylistItem> playlistItems = playlistItemResult.getItems();
 
+
                 List<String> videoIds = new ArrayList<>();
                 for (PlaylistItem item : playlistItems) {
                     videoIds.add(item.getContentDetails().getVideoId());

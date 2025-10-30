@@ -216,7 +216,7 @@ public class VtuberValidationService {
     }
 
     private static final List<String> DESCRIPTION_SONG_KEYWORDS = Arrays.asList(
-            "lyrics", "가사", "prod", "작곡", "편곡", "믹싱", "mastering", "vocal",
+            "lyrics", "가사", "작곡", "편곡", "믹싱", "mastering", "vocal",
             "spotify", "melon", "apple music"
     );
 
@@ -253,7 +253,7 @@ public class VtuberValidationService {
 
         boolean hasSongKeyword = titleMatchedKeyword != null || descriptionMatchedKeyword != null;
 
-        boolean finalDecision = isMusicCategory && hasSongKeyword;
+        boolean finalDecision = isMusicCategory || hasSongKeyword;
 
         if (finalDecision) {
             logger.info("Validation Check for Video ID: {} -> ACCEPTED. Reasons: {}", videoId, String.join(", ", reasons));

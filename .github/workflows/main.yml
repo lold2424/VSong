@@ -39,7 +39,7 @@ jobs:
       - name: Package Artifacts
         run: |
           mkdir -p artifacts/frontend artifacts/backend
-          cp -r ./src/front/build/* artifacts/frontend/
+          cp -r ./src/front/dist/* artifacts/frontend/
           find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
 
       - name: Upload Build Artifact
