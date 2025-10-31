@@ -25,7 +25,7 @@ import org.springframework.security.web.DefaultRedirectStrategy;
 @Configuration
 public class SecurityConfig {
 
-    @Value("${REDIRECT_BASE_URL:http://localhost:5173}")
+    @Value("${baseUrl:http://localhost:5173}")
     private String redirectBaseUrl;
 
     @PostConstruct
@@ -43,9 +43,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/main", "/api/v1/vtubers/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/main/**", "/api/v1/vtubers/search").permitAll()
                         .requestMatchers("/", "/login/**", "/oauth2/**", "/main/**").permitAll()
-                        .requestMatchers("/api/login/userinfo").authenticated()
+                        .requestMatchers("/api/login/userinfo").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(e -> {
@@ -78,7 +78,7 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.art", "https://www.vsong.art"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.site","https://www.vsong.site"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -90,7 +90,7 @@ public class SecurityConfig {
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.art", "https://www.vsong.art"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.site", "https://www.vsong.site"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
