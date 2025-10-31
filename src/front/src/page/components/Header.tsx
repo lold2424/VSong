@@ -1,7 +1,7 @@
 import VSongLogo from '../../images/V-song.png';
 import SearchBarIcon from '../../images/SearchBar.png';
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./Header.css";
 import { GenderContext } from "./GenderContext";
 
@@ -26,8 +26,20 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const { genderFilter, setGenderFilter } = useContext(GenderContext);
     const navigate = useNavigate();
+    const location = useLocation();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userInfo, setUserInfo] = useState<{ name: string; picture: string } | null>(null);
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const queryFromUrl = queryParams.get('query');
+
+        if (location.pathname === '/search' && queryFromUrl) {
+            setSearchTerm(queryFromUrl);
+        } else {
+            setSearchTerm("");
+        }
+    }, [location]);
 
     const fetchUserInfo = async () => {
         try {
