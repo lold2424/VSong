@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.DefaultRedirectStrategy;
@@ -50,12 +51,12 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(e -> {
                     e.defaultAuthenticationEntryPointFor(
-                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED), 
-                        new MediaTypeRequestMatcher(MediaType.APPLICATION_JSON)
+                            new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                            new MediaTypeRequestMatcher(MediaType.APPLICATION_JSON)
                     );
                     e.defaultAuthenticationEntryPointFor(
-                        new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/google"), 
-                        new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+                            new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/google"),
+                            new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                     );
                 })
                 .oauth2Login(oauth2 -> oauth2
@@ -65,6 +66,12 @@ public class SecurityConfig {
                         .failureHandler((request, response, exception) -> {
                             new DefaultRedirectStrategy().sendRedirect(request, response, getRedirectBaseUrl() + "?login=failure");
                         })
+                )
+                .logout(logout -> logout
+                        .logoutRequestMatcher(new AntPathRequestMatcher("/api/logout", "GET"))
+                        .logoutSuccessUrl(getRedirectBaseUrl() + "?logout=success")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
                 );
 
         return http.build();
@@ -78,7 +85,7 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.site","https://www.vsong.site"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.art", "https://www.vsong.art", "https://www.vsong.site"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

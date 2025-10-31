@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/main")
+@RequestMapping("/api/main")
 public class MainController {
 
     private final SongService songService;

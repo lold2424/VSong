@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpSession;
 @RestController
 public class LogoutController {
 
-    @GetMapping("/logout")
+    @GetMapping("/api/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) throws Exception {
         // 세션 무효화
         HttpSession session = request.getSession(false);
