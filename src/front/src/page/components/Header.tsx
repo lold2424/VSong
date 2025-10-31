@@ -1,5 +1,7 @@
+import VSongLogo from '../../images/V-song.png';
+import SearchBarIcon from '../../images/SearchBar.png';
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./Header.css";
 import { GenderContext } from "./GenderContext";
 
@@ -24,8 +26,20 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const { genderFilter, setGenderFilter } = useContext(GenderContext);
     const navigate = useNavigate();
+    const location = useLocation();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userInfo, setUserInfo] = useState<{ name: string; picture: string } | null>(null);
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const queryFromUrl = queryParams.get('query');
+
+        if (location.pathname === '/search' && queryFromUrl) {
+            setSearchTerm(queryFromUrl);
+        } else {
+            setSearchTerm("");
+        }
+    }, [location]);
 
     const fetchUserInfo = async () => {
         try {
@@ -51,7 +65,10 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
                     setUserInfo(null);
                 }
             } else {
-                console.warn(`Failed to fetch user info. Status: ${response.status}`);
+                if (response.status === 401) {
+                } else {
+                    console.warn(`Failed to fetch user info. Status: ${response.status}`);
+                }
                 removeUserInfoFromLocalStorage();
                 setIsLoggedIn(false);
                 setUserInfo(null);
@@ -77,7 +94,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
 
     const handleLogin = () => {
         console.log("Redirecting to Google OAuth...");
-        window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+        window.location.href = '/oauth2/authorization/google';
     };
 
     const handleLogout = async () => {
@@ -121,13 +138,12 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
     return (
         <header className="header">
             <div style={{ display: "flex", alignItems: "center" }}>
-                <img
-                    src="/images/V-Song.png"
-                    alt="V-Song Logo"
-                    className="logo"
-                    onClick={() => navigate("/")}
-                />
-                {isLoggedIn ? (
+                                    <img
+                                    src={VSongLogo}
+                                    alt="V-Song Logo"
+                                    className="logo"
+                                    onClick={() => navigate("/")}
+                                />                {isLoggedIn ? (
                     <div className="user-info">
                         <img src={userInfo?.picture} alt="User" className="user-avatar" />
                         <span>{userInfo?.name}</span>
@@ -150,7 +166,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
                     onKeyPress={handleKeyPress}
                 />
                 <button className="search-btn" onClick={handleSearch}>
-                    <img src="/images/SearchBar.png" alt="Search" />
+                    <img src={SearchBarIcon} alt="Search" />
                 </button>
             </div>
             <div className="gender-filters">

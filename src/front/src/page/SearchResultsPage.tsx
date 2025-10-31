@@ -4,7 +4,7 @@ import './SearchResultsPage.css';
 import { useLocation, useNavigate } from 'react-router-dom';
 import VideoCard from './components/VideoCard';
 
-const apiUrl = process.env.REACT_APP_API_URL;
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const SearchResultsPage: React.FC = () => {
     const [searchResults, setSearchResults] = useState<{ songs: any[], vtubers: any[] } | null>(null);
@@ -36,7 +36,11 @@ const SearchResultsPage: React.FC = () => {
             })
                 .then((response) => {
                     setSearchResults(response.data);
-                    setVisibleSongs(response.data.songs.slice(0, 10));
+                    if (response.data && response.data.songs) {
+                        setVisibleSongs(response.data.songs.slice(0, 10));
+                    } else {
+                        setVisibleSongs([]);
+                    }
                 })
                 .catch((error) => {
                     console.error('검색 중 오류 발생:', error);
