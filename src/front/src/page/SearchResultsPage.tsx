@@ -36,7 +36,11 @@ const SearchResultsPage: React.FC = () => {
             })
                 .then((response) => {
                     setSearchResults(response.data);
-                    setVisibleSongs(response.data.songs.slice(0, 10));
+                    if (response.data && response.data.songs) {
+                        setVisibleSongs(response.data.songs.slice(0, 10));
+                    } else {
+                        setVisibleSongs([]);
+                    }
                 })
                 .catch((error) => {
                     console.error('검색 중 오류 발생:', error);
