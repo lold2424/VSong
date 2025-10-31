@@ -8,6 +8,7 @@ import WeeklyChart from './page/components/WeeklyChart';
 import axios from 'axios';
 import { GenderProvider } from './page/components/GenderContext';
 import VtuberDetailPage from "./page/VtuberDetailPage";
+import PrivacyPolicyPage from './page/PrivacyPolicyPage';
 
 const App: React.FC = () => {
     const [top10WeeklySongs, setTop10WeeklySongs] = useState<any[]>([]);
@@ -49,6 +50,7 @@ const App: React.FC = () => {
                                 <Route path="/" element={<MainPage />} />
                                 <Route path="/search" element={<SearchResultsPage />} />
                                 <Route path="/vtuber/:channelId" element={<VtuberDetailPage />} />
+                                <Route path="/privacy" element={<PrivacyPolicyPage />} />
                                 <Route path="/login/success" element={<h1>로그인 성공</h1>} />
                                 <Route path="/login/failure" element={<h1>로그인 실패</h1>} />
                                 <Route path="*" element={<h1>페이지를 찾을 수 없습니다</h1>} />
