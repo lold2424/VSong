@@ -2,7 +2,7 @@
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh; /* 최소 높이를 뷰포트 높이로 설정하여 내용이 적을 때도 전체 화면을 채우도록 함 */
   overflow-x: hidden; /* 가로 스크롤 방지 */
 }
 
@@ -12,6 +12,7 @@
   overflow-x: hidden; /* 가로 스크롤 방지 */
   width: 100%; /* 레이아웃의 너비를 100%로 설정 */
   box-sizing: border-box; /* 패딩과 보더를 너비 계산에 포함 */
+  min-height: calc(100vh - 140px); /* 헤더(약 60px)와 푸터(약 80px) 높이를 제외한 최소 높이 */
 }
 
 /* 왼쪽 8 부분 - 페이지 콘텐츠 */
@@ -65,4 +66,25 @@
   background-color: #00ADB5;
   color: #fff;
   border-color: #00ADB5;
+}
+
+/* Footer styles */
+.footer {
+  background-color: #333;
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+}
+
+.footer p {
+  margin: 5px 0;
+}
+
+.footer a {
+  color: #00ADB5;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
 }

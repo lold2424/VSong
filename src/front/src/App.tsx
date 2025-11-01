@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Header from './page/components/Header';
 import MainPage from './page/MainPage';
 import SearchResultsPage from './page/SearchResultsPage';
@@ -97,6 +97,14 @@ const App: React.FC = () => {
                             )}
                         </div>
                     </div>
+                    <footer className="footer">
+                        <div>
+                            <p>© 2025 VSong. All rights reserved.</p>
+                            <p>
+                                <a href="https://github.com/lold2424/vsong" target="_blank" rel="noopener noreferrer">GitHub</a> | <Link to="/privacy">개인정보처리방침</Link>
+                            </p>
+                        </div>
+                    </footer>
                 </div>
             </GenderProvider>
         </Router>
