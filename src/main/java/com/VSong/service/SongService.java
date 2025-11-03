@@ -56,10 +56,11 @@ public class SongService {
             return vtuberRepository.findAllChannelIds();
         } else if (gender.equalsIgnoreCase("male") || gender.equalsIgnoreCase("female")) {
             return vtuberRepository.findChannelIdsByGender(gender.toLowerCase());
-        } else if (gender.equalsIgnoreCase("mixed")) { // null 값의 경우 'mixed'로 간주
+        } else if (gender.equalsIgnoreCase("mixed")) {
             return vtuberRepository.findChannelIdsWithNullGender();
         } else {
-            throw new IllegalArgumentException("Invalid gender parameter: " + gender);
+            // 유효하지 않은 gender 값은 'all'로 처리
+            return vtuberRepository.findAllChannelIds();
         }
     }
 }
