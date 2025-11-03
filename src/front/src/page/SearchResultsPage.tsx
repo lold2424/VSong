@@ -35,9 +35,12 @@ const SearchResultsPage: React.FC = () => {
                 params: { query: queryValue, channelId },
             })
                 .then((response) => {
+                    console.log("API Response Data:", response.data);
                     setSearchResults(response.data);
                     if (response.data && response.data.songs) {
+                        console.log("Songs from API:", response.data.songs);
                         setVisibleSongs(response.data.songs.slice(0, 10));
+                        console.log("Visible Songs after slice:", response.data.songs.slice(0, 10));
                     } else {
                         setVisibleSongs([]);
                     }
