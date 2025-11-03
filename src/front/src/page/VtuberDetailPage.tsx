@@ -31,8 +31,9 @@ const VtuberDetailPage: React.FC = () => {
 
     useEffect(() => {
         if (channelId) {
+            console.log("Fetching vtuber details with credentials...");
             axios
-                .get<VtuberDetail>(`/api/v1/vtubers/${channelId}/details`)
+                .get<VtuberDetail>(`/api/v1/vtubers/${channelId}/details`, { withCredentials: true })
                 .then((response) => {
                     setVtuberDetail(response.data);
                 })
@@ -40,6 +41,7 @@ const VtuberDetailPage: React.FC = () => {
                     console.error('버튜버 상세 정보를 가져오는 중 오류 발생:', error);
                 });
 
+            console.log("Fetching vtuber songs with credentials...");
             axios
                 .get<Song[]>(`/api/v1/vtubers/${channelId}/songs`, { withCredentials: true })
                 .then((response) => {

@@ -43,7 +43,6 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
 
     const fetchUserInfo = async () => {
         try {
-            console.log("Fetching user info...");
             const response = await  fetch('/api/login/userinfo', {
                 method: "GET",
                 credentials: "include",
@@ -52,7 +51,6 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
             if (response.ok) {
                 const text = await response.text();
                 const data = text ? JSON.parse(text) : null;
-                console.log("User info fetched successfully:", data);
 
                 if (data) {
                     saveUserInfoToLocalStorage(data);

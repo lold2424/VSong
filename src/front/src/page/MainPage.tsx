@@ -26,7 +26,6 @@ const MainPage: React.FC = () => {
     }
 
     const fetchMainPageData = (gender: string) => {
-        console.log('Fetching main page data with gender:', gender);
         setIsLoading(true);
         axios.get<MainPageApiResponse>('/api/main', {
             params: { gender },
