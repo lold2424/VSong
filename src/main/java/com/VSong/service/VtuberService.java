@@ -24,8 +24,8 @@ public class VtuberService {
 
     public VtuberEntity createVtuber(String description, String gender) {
         VtuberEntity vtuberEntity = new VtuberEntity();
-        vtuberEntity.setDescription(description);
-        vtuberEntity.setGender(gender);
+        vtuberEntity.setDescription(org.apache.commons.text.StringEscapeUtils.escapeHtml4(description));
+        vtuberEntity.setGender(org.apache.commons.text.StringEscapeUtils.escapeHtml4(gender));
         return vtuberRepository.save(vtuberEntity);
     }
 
