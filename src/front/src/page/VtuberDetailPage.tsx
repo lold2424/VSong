@@ -32,7 +32,7 @@ const VtuberDetailPage: React.FC = () => {
     useEffect(() => {
         if (channelId) {
             axios
-                .get<VtuberDetail>(`${apiUrl}/api/v1/vtubers/${channelId}/details`)
+                .get<VtuberDetail>(`${apiUrl}/api/v1/vtubers/${channelId}/details`, { withCredentials: true })
                 .then((response) => {
                     setVtuberDetail(response.data);
                 })
@@ -41,7 +41,7 @@ const VtuberDetailPage: React.FC = () => {
                 });
 
             axios
-                .get<Song[]>(`${apiUrl}/api/v1/vtubers/${channelId}/songs`)
+                .get<Song[]>(`${apiUrl}/api/v1/vtubers/${channelId}/songs`, { withCredentials: true })
                 .then((response) => {
                     setSongs(response.data);
                 })
