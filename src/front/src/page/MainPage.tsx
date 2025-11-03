@@ -30,6 +30,7 @@ const MainPage: React.FC = () => {
         setIsLoading(true);
         axios.get<MainPageApiResponse>('/api/main', {
             params: { gender },
+            withCredentials: true,
         })
             .then((response) => {
                 setData({

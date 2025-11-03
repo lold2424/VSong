@@ -37,6 +37,18 @@ public class VtuberController {
             return ResponseEntity.badRequest().build();
         }
 
+        // query 파라미터 검증
+        if (query != null && !query.trim().isEmpty()) {
+            // 길이 제한 (예: 최대 100자)
+            if (query.length() > 100) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Query parameter exceeds maximum length of 100 characters."));
+            }
+            // 특수문자 필터링 (알파벳, 숫자, 한글만 허용)
+            if (!query.matches("^[a-zA-Z0-9가-힣\s]*$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Query parameter contains invalid characters. Only alphanumeric and Korean characters are allowed."));
+            }
+        }
+
         Map<String, Object> searchResults = vtuberService.searchVtubersAndSongs(query, channelId);
         return ResponseEntity.ok(searchResults);
     }
