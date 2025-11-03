@@ -66,6 +66,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
                 }
             } else {
                 if (response.status === 401) {
+                    // User is not logged in, this is an expected case.
                 } else {
                     console.warn(`Failed to fetch user info. Status: ${response.status}`);
                 }
@@ -82,14 +83,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
     };
 
     useEffect(() => {
-        const storedUserInfo = getUserInfoFromLocalStorage();
-        if (storedUserInfo) {
-            console.log("Found user info in localStorage:", storedUserInfo);
-            setUserInfo(storedUserInfo);
-            setIsLoggedIn(true);
-        } else {
-            fetchUserInfo();
-        }
+        fetchUserInfo();
     }, []);
 
     const handleLogin = () => {

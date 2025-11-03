@@ -33,6 +33,7 @@ const SearchResultsPage: React.FC = () => {
         if (query || channelId) {
             axios.get<SearchResultsApiResponse>(`${apiUrl}/api/v1/vtubers/search`, {
                 params: { query: queryValue, channelId },
+                withCredentials: true,
             })
                 .then((response) => {
                     setSearchResults(response.data);
