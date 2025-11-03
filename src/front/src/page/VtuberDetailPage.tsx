@@ -4,7 +4,7 @@ import axios from 'axios';
 import './VtuberDetailPage.css';
 import VideoModal from './components/VideoModal';
 
-const apiUrl = import.meta.env.VITE_API_URL;
+
 
 interface VtuberDetail {
     name: string;
@@ -32,7 +32,7 @@ const VtuberDetailPage: React.FC = () => {
     useEffect(() => {
         if (channelId) {
             axios
-                .get<VtuberDetail>(`${apiUrl}/api/v1/vtubers/${channelId}/details`, { withCredentials: true })
+                .get<VtuberDetail>(`/api/v1/vtubers/${channelId}/details`)
                 .then((response) => {
                     setVtuberDetail(response.data);
                 })
@@ -41,7 +41,7 @@ const VtuberDetailPage: React.FC = () => {
                 });
 
             axios
-                .get<Song[]>(`${apiUrl}/api/v1/vtubers/${channelId}/songs`, { withCredentials: true })
+                .get<Song[]>(`/api/v1/vtubers/${channelId}/songs`, { withCredentials: true })
                 .then((response) => {
                     setSongs(response.data);
                 })

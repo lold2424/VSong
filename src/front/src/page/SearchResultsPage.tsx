@@ -4,7 +4,7 @@ import './SearchResultsPage.css';
 import { useLocation, useNavigate } from 'react-router-dom';
 import VideoCard from './components/VideoCard';
 
-const apiUrl = import.meta.env.VITE_API_URL;
+
 
 const SearchResultsPage: React.FC = () => {
     const [searchResults, setSearchResults] = useState<{ songs: any[], vtubers: any[] } | null>(null);
@@ -31,17 +31,14 @@ const SearchResultsPage: React.FC = () => {
 
     useEffect(() => {
         if (query || channelId) {
-            axios.get<SearchResultsApiResponse>(`${apiUrl}/api/v1/vtubers/search`, {
+            axios.get<SearchResultsApiResponse>('/api/v1/vtubers/search', {
                 params: { query: queryValue, channelId },
                 withCredentials: true,
             })
                 .then((response) => {
-                    console.log("API Response Data:", response.data);
                     setSearchResults(response.data);
                     if (response.data && response.data.songs) {
-                        console.log("Songs from API:", response.data.songs);
                         setVisibleSongs(response.data.songs.slice(0, 10));
-                        console.log("Visible Songs after slice:", response.data.songs.slice(0, 10));
                     } else {
                         setVisibleSongs([]);
                     }

@@ -47,11 +47,9 @@ public class VtuberService {
                 result.put("songs", Collections.emptyList());
             }
         } else if (query != null && !query.isEmpty()) {
-            logger.info("Searching for query: {}", query);
             // 제목에 검색어가 포함된 노래 목록을 조회수 순으로 정렬하여 가져옴
             List<VtuberSongsEntity> songs = vtuberSongsRepository.findAllByTitleContainingAndClassificationOrderByViewCountDesc(query, "videos");
             List<VtuberEntity> vtubers = vtuberRepository.findAllByNameContaining(query);
-            logger.info("Found {} songs and {} vtubers for query: {}", songs.size(), vtubers.size(), query);
             result.put("songs", songs);
             result.put("vtubers", vtubers);
         } else {
