@@ -18,57 +18,38 @@ public class SortSongsService {
         this.vtuberRepository = vtuberRepository;
     }
 
-    public List<VtuberSongsEntity> getTop10SongsByViewsIncreaseWeek(String gender) {
-        System.out.println("getTop10SongsByViewsIncreaseWeek called with gender: " + gender);
-        List<String> channelIds = getChannelIdsByGender(gender);
-        System.out.println("channelIds: " + channelIds);
+    public List<VtuberSongsEntity> getTop10SongsByViewsIncreaseWeek(List<String> channelIds, String classification) {
         if (channelIds.isEmpty()) {
             return List.of();
         }
-        return vtuberSongsRepository.findTop10ByViewsIncreaseWeekDescAndChannelIdsAndClassification(channelIds, "videos");
+        return vtuberSongsRepository.findTop10ByViewsIncreaseWeekDescAndChannelIdsAndClassification(channelIds, classification);
     }
 
-    public List<VtuberSongsEntity> getTop10SongsByViewsIncreaseDay(String gender) {
-        List<String> channelIds = getChannelIdsByGender(gender);
+    public List<VtuberSongsEntity> getTop10SongsByViewsIncreaseDay(List<String> channelIds) {
         if (channelIds.isEmpty()) {
             return List.of();
         }
         return vtuberSongsRepository.findTop10ByViewsIncreaseDayDescAndChannelIds(channelIds);
     }
 
-    public List<VtuberSongsEntity> getTop9SongsByPublishedAt(String gender) {
-        List<String> channelIds = getChannelIdsByGender(gender);
+    public List<VtuberSongsEntity> getTop9SongsByPublishedAt(List<String> channelIds, String classification) {
         if (channelIds.isEmpty()) {
             return List.of();
         }
-        return vtuberSongsRepository.findTop9ByPublishedAtDescAndChannelIdsAndClassification(channelIds, "videos");
+        return vtuberSongsRepository.findTop9ByPublishedAtDescAndChannelIdsAndClassification(channelIds, classification);
     }
 
-    public List<VtuberSongsEntity> getTop10ShortsByViewsIncreaseWeek(String gender) {
-        List<String> channelIds = getChannelIdsByGender(gender);
+    public List<VtuberSongsEntity> getTop10ShortsByViewsIncreaseWeek(List<String> channelIds, String classification) {
         if (channelIds.isEmpty()) {
             return List.of();
         }
-        return vtuberSongsRepository.findTop10ByViewsIncreaseWeekDescAndChannelIdsAndClassification(channelIds, "shorts");
+        return vtuberSongsRepository.findTop10ByViewsIncreaseWeekDescAndChannelIdsAndClassification(channelIds, classification);
     }
 
-    public List<VtuberSongsEntity> getTop9ShortsByPublishedAt(String gender) {
-        List<String> channelIds = getChannelIdsByGender(gender);
+    public List<VtuberSongsEntity> getTop9ShortsByPublishedAt(List<String> channelIds, String classification) {
         if (channelIds.isEmpty()) {
             return List.of();
         }
-        return vtuberSongsRepository.findTop9ByPublishedAtDescAndChannelIdsAndClassification(channelIds, "shorts");
-    }
-
-    private List<String> getChannelIdsByGender(String gender) {
-        if (gender == null || gender.equalsIgnoreCase("all")) {
-            return vtuberRepository.findAllChannelIds();
-        } else if (gender.equalsIgnoreCase("male") || gender.equalsIgnoreCase("female")) {
-            return vtuberRepository.findChannelIdsByGender(gender.toLowerCase());
-        } else if (gender.equalsIgnoreCase("mixed")) { // null 값의 경우 'mixed'로 간주
-            return vtuberRepository.findChannelIdsWithNullGender();
-        } else {
-            throw new IllegalArgumentException("Invalid gender parameter: " + gender);
-        }
+        return vtuberSongsRepository.findTop9ByPublishedAtDescAndChannelIdsAndClassification(channelIds, classification);
     }
 }

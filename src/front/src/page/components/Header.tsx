@@ -57,7 +57,6 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
                     setIsLoggedIn(true);
                     setUserInfo(data);
                 } else {
-                    console.warn("User is not logged in.");
                     removeUserInfoFromLocalStorage();
                     setIsLoggedIn(false);
                     setUserInfo(null);
@@ -66,14 +65,14 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
                 if (response.status === 401) {
                     // User is not logged in, this is an expected case.
                 } else {
-                    console.warn(`Failed to fetch user info. Status: ${response.status}`);
+
                 }
                 removeUserInfoFromLocalStorage();
                 setIsLoggedIn(false);
                 setUserInfo(null);
             }
         } catch (error) {
-            console.error("Error fetching user info:", error);
+
             removeUserInfoFromLocalStorage();
             setIsLoggedIn(false);
             setUserInfo(null);
@@ -85,29 +84,29 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
     }, []);
 
     const handleLogin = () => {
-        console.log("Redirecting to Google OAuth...");
+
         window.location.href = '/oauth2/authorization/google';
     };
 
     const handleLogout = async () => {
-        console.log("Attempting to log out...");
+
         try {
             const response = await fetch('/api/logout', {
                 method: "GET",
                 credentials: "include",
             });
             if (response.ok) {
-                console.log("Logout successful.");
+
                 removeUserInfoFromLocalStorage();
                 setUserInfo(null);
                 setIsLoggedIn(false);
                 alert("로그아웃되었습니다.");
                 navigate("/");
             } else {
-                console.warn("Failed to log out. Response status:", response.status);
+
             }
         } catch (error) {
-            console.error("Error during logout:", error);
+
         }
     };
 
@@ -117,7 +116,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
             alert("검색어는 두 글자 이상이 필요합니다.");
             return;
         }
-        console.log("Initiating search with term:", trimmedSearchTerm);
+
         navigate(`/search?query=${encodeURIComponent(trimmedSearchTerm)}&gender=${genderFilter}`);
     };
 
