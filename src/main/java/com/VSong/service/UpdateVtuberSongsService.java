@@ -82,13 +82,13 @@ public class UpdateVtuberSongsService {
         List<VtuberSongsEntity> songs = vtuberSongsRepository.findAll();
         logger.info("조회수 업데이트를 위해 " + songs.size() + "개의 노래를 찾았습니다.");
         if (songs.isEmpty()) {
-            return; // No songs to update
+            return;
         }
 
         Map<String, VtuberSongsEntity> songMap = songs.stream()
                 .collect(Collectors.toMap(VtuberSongsEntity::getVideoId, song -> song, (existing, replacement) -> {
                     logger.warning("Duplicate videoId found: " + existing.getVideoId() + ". Discarding one of the entries.");
-                    return existing; // Keep the existing one
+                    return existing;
                 }));
         List<String> videoIds = new ArrayList<>(songMap.keySet());
 
@@ -148,7 +148,6 @@ public class UpdateVtuberSongsService {
                     }
                 }
 
-                // Find and delete songs that were not in the response
                 List<String> batchCopy = new ArrayList<>(batch);
                 batchCopy.removeAll(foundVideoIds);
                 for (String deletedVideoId : batchCopy) {
@@ -242,7 +241,7 @@ public class UpdateVtuberSongsService {
         song.setViewCount(statistics.getViewCount().longValue());
         song.setViewsIncreaseDay(0L);
         song.setViewsIncreaseWeek(0L);
-        song.setLastWeekViewCount(0L);
+        song.setLastWeekViewCount(statistics.getViewCount().longValue());
         song.setStatus("new");
         song.setClassification(classification);
 
