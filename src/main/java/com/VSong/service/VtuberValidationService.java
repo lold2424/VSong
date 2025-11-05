@@ -9,9 +9,9 @@ import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.Video;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.Arrays;
@@ -73,19 +73,18 @@ public class VtuberValidationService {
     private final ExceptVtuberRepository exceptVtuberRepository;
     private final VtuberSongsRepository vtuberSongsRepository;
     private final YouTube youTube;
-    private final List<String> apiKeys;
-    private int currentKeyIndex = 0;
+    private final YouTubeApiService youTubeApiService;
 
     public VtuberValidationService(VtuberRepository vtuberRepository,
                                      ExceptVtuberRepository exceptVtuberRepository,
                                      VtuberSongsRepository vtuberSongsRepository,
                                      YouTube youTube,
-                                     @Value("${youtube.api.keys}") String apiKeys) {
+                                     YouTubeApiService youTubeApiService) {
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.vtuberSongsRepository = vtuberSongsRepository;
         this.youTube = youTube;
-        this.apiKeys = Arrays.asList(apiKeys.split(","));
+        this.youTubeApiService = youTubeApiService;
     }
 
     public String getChannelProcessableReason(String channelId) {
@@ -175,9 +174,8 @@ public class VtuberValidationService {
             search.setOrder("date");
             search.setMaxResults(10L);
             search.setType(List.of("video"));
-            search.setKey(getCurrentApiKey());
 
-            SearchListResponse response = search.execute();
+            SearchListResponse response = youTubeApiService.executeRequest(search);
             if (response.getItems() == null || response.getItems().isEmpty()) {
                 return false;
             }
@@ -201,18 +199,8 @@ public class VtuberValidationService {
             return patternMatches >= 3;
         } catch (Exception e) {
             logger.warn("채널 {} 콘텐츠 패턴 분석 실패: {}", channelId, e.getMessage());
-            rotateApiKey();
             return false;
         }
-    }
-
-    private String getCurrentApiKey() {
-        return apiKeys.get(currentKeyIndex);
-    }
-
-    private synchronized void rotateApiKey() {
-        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
-        logger.warn("API 키를 다음 키로 전환했습니다.");
     }
 
     private static final List<String> DESCRIPTION_SONG_KEYWORDS = Arrays.asList(
