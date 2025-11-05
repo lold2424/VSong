@@ -82,19 +82,21 @@ public class UpdateVtuberSongsService {
         List<VtuberSongsEntity> songs = vtuberSongsRepository.findAll();
         logger.info("조회수 업데이트를 위해 " + songs.size() + "개의 노래를 찾았습니다.");
         if (songs.isEmpty()) {
-            return;
+            return; // No songs to update
         }
 
         Map<String, VtuberSongsEntity> songMap = songs.stream()
                 .collect(Collectors.toMap(VtuberSongsEntity::getVideoId, song -> song, (existing, replacement) -> {
-                    logger.warning("중복된 videoId: " + existing.getVideoId() + ". Discarding one of the entries.");
-                    return existing;
+                    logger.warning("Duplicate videoId found: " + existing.getVideoId() + ". Discarding one of the entries.");
+                    return existing; // Keep the existing one
                 }));
         List<String> videoIds = new ArrayList<>(songMap.keySet());
 
         int updatedCount = 0;
         int deletedCount = 0;
         int failedCount = 0;
+        int weeklyUpdatedCount = 0;
+        int weeklyFailedCount = 0;
 
         int batchSize = 50;
         for (int i = 0; i < videoIds.size(); i += batchSize) {
@@ -118,10 +120,16 @@ public class UpdateVtuberSongsService {
                                 song.setUpdateDayTime(LocalDateTime.now());
 
                                 if (LocalDateTime.now().getDayOfWeek() == DayOfWeek.MONDAY) {
-                                    long viewIncreaseWeek = newViewCount - song.getLastWeekViewCount();
-                                    song.setViewsIncreaseWeek(viewIncreaseWeek);
-                                    song.setLastWeekViewCount(newViewCount);
-                                    song.setUpdateWeekTime(LocalDateTime.now());
+                                    try {
+                                        long viewIncreaseWeek = newViewCount - song.getLastWeekViewCount();
+                                        song.setViewsIncreaseWeek(viewIncreaseWeek);
+                                        song.setLastWeekViewCount(newViewCount);
+                                        song.setUpdateWeekTime(LocalDateTime.now());
+                                        weeklyUpdatedCount++;
+                                    } catch (Exception e) {
+                                        weeklyFailedCount++;
+                                        logger.log(Level.SEVERE, "주간 조회수 업데이트 실패 (videoId: " + song.getVideoId() + ")", e);
+                                    }
                                 }
                                 vtuberSongsRepository.save(song);
                                 updatedCount++;
@@ -140,6 +148,7 @@ public class UpdateVtuberSongsService {
                     }
                 }
 
+                // Find and delete songs that were not in the response
                 List<String> batchCopy = new ArrayList<>(batch);
                 batchCopy.removeAll(foundVideoIds);
                 for (String deletedVideoId : batchCopy) {
@@ -155,7 +164,10 @@ public class UpdateVtuberSongsService {
                 logger.log(Level.SEVERE, "조회수 업데이트 배치 실패. 다음 동영상 ID들이 영향을 받았습니다: " + String.join(", ", batch), e);
             }
         }
-        logger.info("조회수 업데이트 완료. 업데이트: " + updatedCount + "개, 삭제: " + deletedCount + "개, 실패: " + failedCount + "개");
+        logger.info("일일 조회수 업데이트 완료. 업데이트: " + updatedCount + "개, 삭제: " + deletedCount + "개, 실패: " + failedCount + "개");
+        if (LocalDateTime.now().getDayOfWeek() == DayOfWeek.MONDAY) {
+            logger.info("주간 조회수 업데이트 요약. 성공: " + weeklyUpdatedCount + "개, 실패: " + weeklyFailedCount + "개");
+        }
     }
 
     private void fetchAndProcessVideos(List<String> videoIds, String channelName) {
