@@ -12,7 +12,10 @@ import java.io.IOException;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 public class UpdateVtuberSongsService {
@@ -68,7 +71,7 @@ public class UpdateVtuberSongsService {
 
         newSongs.forEach(song -> {
             song.setStatus("existing");
-            song.setUpdateDayTime(LocalDateTime.now()); // 상태 변경 시간을 기록
+            song.setUpdateDayTime(LocalDateTime.now());
             vtuberSongsRepository.save(song);
         });
 
@@ -77,50 +80,90 @@ public class UpdateVtuberSongsService {
 
     public void updateViewCounts() {
         List<VtuberSongsEntity> songs = vtuberSongsRepository.findAll();
-        List<String> videoIds = songs.stream().map(VtuberSongsEntity::getVideoId).toList();
+        logger.info("조회수 업데이트를 위해 " + songs.size() + "개의 노래를 찾았습니다.");
+        if (songs.isEmpty()) {
+            return;
+        }
+
+        Map<String, VtuberSongsEntity> songMap = songs.stream()
+                .collect(Collectors.toMap(VtuberSongsEntity::getVideoId, song -> song, (existing, replacement) -> {
+                    logger.warning("중복된 videoId: " + existing.getVideoId() + ". Discarding one of the entries.");
+                    return existing;
+                }));
+        List<String> videoIds = new ArrayList<>(songMap.keySet());
+
+        int updatedCount = 0;
+        int deletedCount = 0;
+        int failedCount = 0;
 
         int batchSize = 50;
         for (int i = 0; i < videoIds.size(); i += batchSize) {
             List<String> batch = videoIds.subList(i, Math.min(i + batchSize, videoIds.size()));
             try {
-                YouTube.Videos.List request = youTube.videos().list(List.of("statistics"));
+                YouTube.Videos.List request = youTube.videos().list(List.of("id", "statistics"));
                 request.setId(batch);
                 VideoListResponse response = youTubeApiService.executeRequest(request);
 
+                List<String> foundVideoIds = new ArrayList<>();
                 if (response != null) {
                     for (Video video : response.getItems()) {
-                        VtuberSongsEntity song = songs.stream().filter(s -> s.getVideoId().equals(video.getId())).findFirst().orElse(null);
-                        if (song != null) {
-                            long newViewCount = video.getStatistics().getViewCount().longValue();
-                            long viewIncreaseDay = newViewCount - song.getViewCount();
-                            song.setViewCount(newViewCount);
-                            song.setViewsIncreaseDay(viewIncreaseDay);
-                            song.setUpdateDayTime(LocalDateTime.now());
+                        foundVideoIds.add(video.getId());
+                        try {
+                            VtuberSongsEntity song = songMap.get(video.getId());
+                            if (song != null && video.getStatistics() != null) {
+                                long newViewCount = video.getStatistics().getViewCount().longValue();
+                                long viewIncreaseDay = newViewCount - song.getViewCount();
+                                song.setViewCount(newViewCount);
+                                song.setViewsIncreaseDay(viewIncreaseDay);
+                                song.setUpdateDayTime(LocalDateTime.now());
 
-                            if (LocalDateTime.now().getDayOfWeek() == DayOfWeek.MONDAY) {
-                                long viewIncreaseWeek = newViewCount - song.getLastWeekViewCount();
-                                song.setViewsIncreaseWeek(viewIncreaseWeek);
-                                song.setLastWeekViewCount(newViewCount);
-                                song.setUpdateWeekTime(LocalDateTime.now());
+                                if (LocalDateTime.now().getDayOfWeek() == DayOfWeek.MONDAY) {
+                                    long viewIncreaseWeek = newViewCount - song.getLastWeekViewCount();
+                                    song.setViewsIncreaseWeek(viewIncreaseWeek);
+                                    song.setLastWeekViewCount(newViewCount);
+                                    song.setUpdateWeekTime(LocalDateTime.now());
+                                }
+                                vtuberSongsRepository.save(song);
+                                updatedCount++;
+                            } else {
+                                failedCount++;
+                                if (song == null) {
+                                    logger.warning("조회수 업데이트 실패 (videoId: " + video.getId() + "): DB에서 해당 노래를 찾을 수 없습니다.");
+                                } else {
+                                    logger.warning("조회수 업데이트 실패 (videoId: " + video.getId() + "): YouTube API에서 통계 정보를 반환하지 않았습니다.");
+                                }
                             }
-                            vtuberSongsRepository.save(song);
+                        } catch (Exception e) {
+                            failedCount++;
+                            logger.log(Level.SEVERE, "조회수 업데이트 중 예외 발생 (videoId: " + video.getId() + ")", e);
                         }
                     }
                 }
+
+                List<String> batchCopy = new ArrayList<>(batch);
+                batchCopy.removeAll(foundVideoIds);
+                for (String deletedVideoId : batchCopy) {
+                    VtuberSongsEntity songToDelete = songMap.get(deletedVideoId);
+                    if (songToDelete != null) {
+                        vtuberSongsRepository.delete(songToDelete);
+                        deletedCount++;
+                    }
+                }
+
             } catch (IOException e) {
-                logger.severe("Failed to fetch view counts for batch: " + e.getMessage());
+                failedCount += batch.size();
+                logger.log(Level.SEVERE, "조회수 업데이트 배치 실패. 다음 동영상 ID들이 영향을 받았습니다: " + String.join(", ", batch), e);
             }
         }
-        logger.info("조회수 업데이트 및 삭제된 동영상 제거 완료");
+        logger.info("조회수 업데이트 완료. 업데이트: " + updatedCount + "개, 삭제: " + deletedCount + "개, 실패: " + failedCount + "개");
     }
 
     private void fetchAndProcessVideos(List<String> videoIds, String channelName) {
         if (videoIds == null || videoIds.isEmpty()) return;
 
-        int newSongsAddedCount = 0; // Counter for newly added songs
+        int newSongsAddedCount = 0;
 
         try {
-            // 1. Fetch snippet and contentDetails for initial validation
             YouTube.Videos.List initialRequest = youTube.videos().list(List.of("id", "snippet", "contentDetails"));
             initialRequest.setId(videoIds);
             VideoListResponse initialResponse = youTubeApiService.executeRequest(initialRequest);
@@ -130,7 +173,6 @@ public class UpdateVtuberSongsService {
                 if (validationService.isSongRelated(video)) {
                     String classification = validationService.classifyVideo(video);
                     if (!"ignore".equals(classification) && !validationService.isSongAlreadyExists(video.getId())) {
-                        // This video is a song and not in the DB, so we'll need its stats.
                         videosToSave.add(video);
                     }
                 }
@@ -141,7 +183,6 @@ public class UpdateVtuberSongsService {
                 return;
             }
 
-            // 2. Fetch statistics only for the validated songs
             List<String> videoIdsToFetchStats = videosToSave.stream().map(Video::getId).toList();
             YouTube.Videos.List statsRequest = youTube.videos().list(List.of("statistics"));
             statsRequest.setId(videoIdsToFetchStats);
@@ -152,13 +193,13 @@ public class UpdateVtuberSongsService {
                 if (originalVideo != null) {
                     String classification = validationService.classifyVideo(originalVideo);
                     saveNewSong(originalVideo, statsVideo.getStatistics(), channelName, classification);
-                    newSongsAddedCount++; // Increment counter
+                    newSongsAddedCount++;
                 }
             }
             logger.info("채널 [" + channelName + "]에 " + newSongsAddedCount + "개의 새로운 노래가 추가되었습니다.");
 
         } catch (IOException e) {
-            logger.severe("IOException while fetching video details for " + channelName + ": " + e.getMessage());
+            logger.log(Level.SEVERE, "비디오 정보를 가져오는 동안 IOException 발생 " + channelName, e);
         }
     }
 
@@ -173,7 +214,7 @@ public class UpdateVtuberSongsService {
         }
         if (videoIds.isEmpty()) return;
 
-        fetchAndProcessVideos(videoIds, channelName); // 로직 재사용
+        fetchAndProcessVideos(videoIds, channelName);
     }
 
     private void saveNewSong(Video video, VideoStatistics statistics, String channelName, String classification) {
@@ -202,7 +243,7 @@ public class UpdateVtuberSongsService {
         try {
             String uploadsPlaylistId = getUploadsPlaylistId(channelId);
             if (uploadsPlaylistId == null) {
-                logger.severe("Uploads playlist not found for channel ID: " + channelId);
+                logger.severe("channel ID에 대한 업로드 재생목록 찾을 수 없음: " + channelId);
                 return;
             }
             String pageToken = null;
@@ -224,7 +265,7 @@ public class UpdateVtuberSongsService {
                 pageToken = playlistItemResult.getNextPageToken();
             } while (pageToken != null);
         } catch (Exception e) {
-            logger.severe("API 호출 중 오류 발생 - 채널명: " + channelName + ", 채널 ID: " + channelId + " - 오류 메시지: " + e.getMessage());
+            logger.log(Level.SEVERE, "API 호출 중 오류 발생 - 채널명: " + channelName + ", 채널 ID: " + channelId, e);
         }
     }
 
@@ -247,7 +288,7 @@ public class UpdateVtuberSongsService {
             org.jsoup.select.Elements entries = doc.select("entry");
 
             if (entries.isEmpty()) {
-                logger.info("No video entries found in RSS feed for " + channelName);
+                logger.info("RSS 피드에 비디오 항목 탐색 불가 " + channelName);
                 return;
             }
 
@@ -258,11 +299,10 @@ public class UpdateVtuberSongsService {
             }
 
             if (!videoIds.isEmpty()) {
-                logger.info("Found " + videoIds.size() + " recent videos from RSS for " + channelName + ". Processing...");
-                fetchAndProcessVideos(videoIds, channelName);
+                logger.info("Found " + videoIds.size() + " RSS 최신 비디오 " + channelName + ". Processing...");
             }
         } catch (Exception e) {
-            logger.severe("Failed to fetch or parse RSS feed for " + channelName + ": " + e.getMessage());
+            logger.log(Level.SEVERE, "RSS 피드를 가져오거나 구문 분석하는 데 실패 " + channelName, e);
         }
     }
 
@@ -275,7 +315,7 @@ public class UpdateVtuberSongsService {
                 return response.getItems().get(0).getStatistics().getViewCount().longValue();
             }
         } catch (IOException e) {
-            logger.severe("Failed to fetch view counts: " + e.getMessage());
+            logger.log(Level.SEVERE, "조회수 가져오는데 실패: ", e);
         }
         return 0;
     }
