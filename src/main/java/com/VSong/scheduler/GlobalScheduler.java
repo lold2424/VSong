@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Component
 @EnableScheduling
@@ -40,7 +41,7 @@ public class GlobalScheduler {
         this.relatedChannelService = relatedChannelService;
     }
 
-        // FirstUploadService - 최초 1회만 실행 후 off
+    // FirstUploadService - 최초 1회만 실행 후 off
     /** @Scheduled(cron = "0 52 14 * * ?", zone = "Asia/Seoul")
     public void scheduleDailyFirstUpload() {
         logger.info("Executing scheduled task: dailyFirstUpload");
@@ -69,6 +70,7 @@ public class GlobalScheduler {
     }
 
     // UpdateVtuberSongsService - 노래 조회수 관리
+    @CacheEvict(value = "mainPage", allEntries = true)
     @Scheduled(cron = "0 1 0 * * ?", zone = "Asia/Seoul")
     public void scheduleUpdateViewCounts() {
         logger.info("Executing scheduled task: updateViewCounts");
