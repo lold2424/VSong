@@ -24,6 +24,7 @@ public class GlobalScheduler {
     private final ApiChannelIdService apiChannelIdService;
     private final ThreadPoolExecutor vtuberSyncExecutor;
     private final RelatedChannelService relatedChannelService;
+    private final MainPageService mainPageService; // Added MainPageService
 
     public GlobalScheduler(FirstUploadService firstUploadService,
                            UpdateVtuberSongsService updateVtuberSongsService,
@@ -31,7 +32,8 @@ public class GlobalScheduler {
                            UpdateVtuberService updateVtuberService,
                            ApiChannelIdService apiChannelIdService,
                            ThreadPoolExecutor vtuberSyncExecutor,
-                           RelatedChannelService relatedChannelService) {
+                           RelatedChannelService relatedChannelService,
+                           MainPageService mainPageService) { // Added MainPageService to constructor
         this.firstUploadService = firstUploadService;
         this.updateVtuberSongsService = updateVtuberSongsService;
         this.uploadVtuberService = uploadVtuberService;
@@ -39,6 +41,7 @@ public class GlobalScheduler {
         this.apiChannelIdService = apiChannelIdService;
         this.vtuberSyncExecutor = vtuberSyncExecutor;
         this.relatedChannelService = relatedChannelService;
+        this.mainPageService = mainPageService;
     }
 
     // FirstUploadService - 최초 1회만 실행 후 off
@@ -75,6 +78,9 @@ public class GlobalScheduler {
     public void scheduleUpdateViewCounts() {
         logger.info("Executing scheduled task: updateViewCounts");
         updateVtuberSongsService.updateViewCounts();
+        // Re-populate the cache for "all" gender after eviction
+        logger.info("Re-populating main page cache for 'all' gender after eviction.");
+        mainPageService.getCacheableMainPageData("all");
     }
 
     // UploadVtuberService - 버튜버 신규 채널 업로드
