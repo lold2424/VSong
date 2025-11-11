@@ -1,0 +1,54 @@
+.video-card {
+    background-color: #222831;
+    border: 1px solid #393E46;
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    height: 250px;
+    transition: transform 0.2s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-card:hover {
+    transform: scale(1.05);
+}
+
+.thumbnail-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #393E46;
+    transition: opacity 0.3s ease-in-out;
+    color: #EEEEEE;
+}
+
+.hover-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #00ADB5;
+    color: #222831;
+    padding: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.video-card:hover .thumbnail-content {
+    opacity: 0;
+}
+
+.video-card:hover .hover-content {
+    opacity: 1;
+}

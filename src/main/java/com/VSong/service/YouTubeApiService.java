@@ -1,6 +1,7 @@
 package com.VSong.service;
 
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.services.youtube.YouTubeRequest;
 import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -68,13 +68,14 @@ public class YouTubeApiService {
         logger.info("Daily API usage has been reset.");
     }
 
-    public <T> T executeRequest(Callable<T> apiCall) throws IOException {
+    public <T> T executeRequest(YouTubeRequest<T> request) throws IOException {
         rateLimiter.acquire();
         int attempts = 0;
         while (attempts < apiKeys.size()) {
             try {
+                request.setKey(getCurrentApiKey());
                 incrementApiUsage();
-                return apiCall.call();
+                return request.execute();
             } catch (GoogleJsonResponseException e) {
                 if (e.getDetails() != null && "quotaExceeded".equals(e.getDetails().getErrors().get(0).getReason())) {
                     logger.warn("API quota exceeded for key. Switching to the next key and retrying.");
