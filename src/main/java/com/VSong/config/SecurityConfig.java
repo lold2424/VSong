@@ -26,7 +26,7 @@ import org.springframework.security.web.DefaultRedirectStrategy;
 @Configuration
 public class SecurityConfig {
 
-    @Value("${baseUrl:http://localhost:5173}")
+    @Value("${baseUrl:http://localhost:3000}") // 5173 -> 3000 변경
     private String redirectBaseUrl;
 
     @PostConstruct
@@ -85,7 +85,7 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.art", "https://www.vsong.art", "https://www.vsong.site"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://vsong.site", "https://www.vsong.site")); // 5173 -> 3000 변경
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -97,7 +97,7 @@ public class SecurityConfig {
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.site", "https://www.vsong.site"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://vsong.site", "https://www.vsong.site")); // 5173 -> 3000 변경
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

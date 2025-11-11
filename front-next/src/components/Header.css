@@ -1,0 +1,135 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #222831;
+    color: #EEEEEE;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+    height: 40px;
+    cursor: pointer;
+    margin-right: 20px;
+}
+
+.login-btn {
+    padding: 5px 10px;
+    background: none;
+    color: #EEEEEE;
+    border: 1px solid #EEEEEE;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    margin-right: 15px;
+}
+
+.login-btn:hover {
+    background-color: #00ADB5;
+    color: #222831;
+    border-color: #00ADB5;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.user-info img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #EEEEEE;
+}
+
+.user-info .user-name {
+    color: #EEEEEE;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.user-info .logout-btn {
+    padding: 5px 10px;
+    background: none;
+    color: #EEEEEE;
+    border: 1px solid #EEEEEE;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: #393E46;
+    border-radius: 8px;
+    padding: 5px 10px;
+}
+
+.search-bar input {
+    border: none;
+    background: none;
+    outline: none;
+    color: #EEEEEE;
+    font-size: 14px;
+    padding: 5px;
+    width: 200px;
+}
+
+.search-bar input::placeholder {
+    color: #EEEEEE;
+    opacity: 0.7;
+}
+
+.search-bar .clear-btn {
+    background: none;
+    border: none;
+    color: #EEEEEE;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 5px;
+}
+
+.search-bar .search-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.search-bar .search-btn img {
+    height: 20px;
+    filter: brightness(0) invert(1);
+}
+
+.gender-filters {
+    display: flex;
+    gap: 10px;
+}
+
+.gender-btn {
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    background-color: #393E46;
+    color: #EEEEEE;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.gender-btn.active {
+    background-color: #00ADB5;
+    color: #222831;
+}
+
+.gender-btn:hover {
+    background-color: #00ADB5;
+    color: #222831;
+}
