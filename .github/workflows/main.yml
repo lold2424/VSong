@@ -125,8 +125,8 @@ jobs:
           echo "Restarting VSong frontend service with pm2..."
           cd $FRONTEND_APP_PATH/standalone && \
           PORT=${{ env.PORT }} HOSTNAME=${{ env.HOSTNAME }} \
-          pm2 restart "node server.js" --name vsong-frontend --update-env || \
+          pm2 restart vsong-frontend --update-env || \
           PORT=${{ env.PORT }} HOSTNAME=${{ env.HOSTNAME }} \
-          pm2 start "node server.js" --name vsong-frontend
+          pm2 start server.js --name vsong-frontend
 
           echo "Deployment finished."
