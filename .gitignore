@@ -44,14 +44,7 @@ out/
 # General node_modules
 /node_modules
 
-### Frontend specific ignores ###
-# Old React App in src/front
-/src/front/node_modules
-/src/front/build
-/src/front/.env*
-!/src/front/.env.example
-
-# New Next.js App in front-next
+### Next.js (front-next) ###
 /front-next/node_modules
 /front-next/.next
 /front-next/.env.local

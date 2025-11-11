@@ -44,6 +44,7 @@ jobs:
           mkdir -p artifacts/frontend
           cp -r ./front-next/.next/standalone artifacts/frontend/
           cp -r ./front-next/.next/static artifacts/frontend/.next/
+          cp ./front-next/ecosystem.config.js artifacts/frontend/standalone/
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -78,7 +79,7 @@ jobs:
         run: |
           echo "Starting deployment..."
           
-          # Backend Deployment
+          # Backend
           sudo mkdir -p /home/opc/vsong/backend
           sudo chown -R opc:opc /home/opc/vsong/
           
@@ -114,7 +115,7 @@ jobs:
           echo "Restarting VSong backend service..."
           sudo systemctl restart vsong
 
-          # Frontend Deployment
+          # Frontend
           FRONTEND_APP_PATH="/home/opc/vsong/frontend"
           echo "Deploying Frontend to $FRONTEND_APP_PATH..."
           
@@ -123,10 +124,8 @@ jobs:
           sudo chown -R opc:opc $FRONTEND_APP_PATH
 
           echo "Restarting VSong frontend service with pm2..."
-          cd $FRONTEND_APP_PATH/standalone && \
-          PORT=${{ env.PORT }} HOSTNAME=${{ env.HOSTNAME }} \
-          pm2 restart "node server.js" --name vsong-frontend --update-env || \
-          PORT=${{ env.PORT }} HOSTNAME=${{ env.HOSTNAME }} \
-          pm2 start "node server.js" --name vsong-frontend
+          cd $FRONTEND_APP_PATH/standalone
+          
+          pm2 startOrRestart ecosystem.config.js
 
           echo "Deployment finished."
