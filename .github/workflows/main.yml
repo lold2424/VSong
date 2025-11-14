@@ -41,28 +41,25 @@ jobs:
           mkdir -p artifacts/backend
           find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
           
-          # --- Create the final frontend deployment structure ---
-          # This will be the directory that gets deployed.
-          # Let's call it 'deploy_root' for clarity.
-          mkdir -p deploy_root
-
-          # Copy the standalone server and its node_modules
-          cp -r ./front-next/.next/standalone/. deploy_root/
-
-          # Copy the static build output INTO the deploy_root
-          cp -r ./front-next/.next/static deploy_root/.next/
-
-          # Copy the public folder INTO the deploy_root
-          cp -r ./front-next/public deploy_root/
-          
-          # Copy the ecosystem config INTO the deploy_root
-          cp ./front-next/ecosystem.config.js deploy_root/
-
-          # Now, 'deploy_root' has the correct structure.
-          # We package this directory as our artifact.
+          # --- Create a clean frontend artifact ---
           mkdir -p artifacts/frontend
-          cp -r deploy_root/. artifacts/frontend/
-          # --- 프론트엔드 아티팩트 생성 종료 ---
+          
+          # Copy the standalone server files
+          cp -r ./front-next/.next/standalone/. artifacts/frontend/
+          
+          # Copy the static assets
+          cp -r ./front-next/.next/static artifacts/frontend/.next/
+          
+          # Copy the public folder
+          cp -r ./front-next/public artifacts/frontend/
+          
+          # Copy the ecosystem config
+          cp ./front-next/ecosystem.config.js artifacts/frontend/
+
+      - name: Verify Frontend Artifact
+        run: |
+          echo "--- Verifying contents of artifacts/frontend ---"
+          ls -lR artifacts/frontend
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
