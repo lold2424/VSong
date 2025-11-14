@@ -42,23 +42,42 @@ jobs:
           find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
           
           # --- Create a clean frontend artifact ---
+          echo "--- Preparing to package frontend artifact ---"
+          
+          echo "Checking for source directories..."
+          if [ ! -d "./front-next/.next/standalone" ]; then
+            echo "Error: Source directory ./front-next/.next/standalone not found!"
+            exit 1
+          fi
+          if [ ! -d "./front-next/.next/static" ]; then
+            echo "Error: Source directory ./front-next/.next/static not found!"
+            exit 1
+          fi
+          if [ ! -d "./front-next/public" ]; then
+            echo "Error: Source directory ./front-next/public not found!"
+            exit 1
+          fi
+          echo "All source directories found."
+
           # 1. Force-delete any pre-existing artifact directory to ensure a clean slate
+          echo "Cleaning up old artifacts..."
           rm -rf artifacts/frontend
           
           # 2. Create a new, empty directory for the artifact
+          echo "Creating new artifact directory..."
           mkdir -p artifacts/frontend
-          
+
           # 3. Copy ONLY the necessary files from the Next.js build output
-          # Copy the standalone server files
+          echo "Copying standalone server files..."
           cp -r ./front-next/.next/standalone/. artifacts/frontend/
           
-          # Copy the static assets
+          echo "Copying static assets..."
           cp -r ./front-next/.next/static artifacts/frontend/.next/
           
-          # Copy the public folder
+          echo "Copying public folder..."
           cp -r ./front-next/public artifacts/frontend/
           
-          # Copy the ecosystem config
+          echo "Copying ecosystem config..."
           cp ./front-next/ecosystem.config.js artifacts/frontend/
 
       - name: Verify Frontend Artifact
