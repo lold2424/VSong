@@ -52,13 +52,13 @@ const VideoCard: React.FC<VideoCardProps> = ({ song }) => {
   return (
     <>
       <div
-        className="video-card"
+        className="group bg-[#222831] border border-[#393E46] rounded-lg overflow-hidden text-center cursor-pointer relative h-64 transition-transform duration-200 flex justify-center items-center hover:scale-105"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleCardClick} // 카드 클릭 시 모달 열기
       >
         {!hovered ? (
-          <div className="thumbnail-content">
+          <div className="absolute inset-0 w-full h-full flex flex-col justify-center items-center bg-[#393E46] transition-opacity duration-300 text-[#EEEEEE] group-hover:opacity-0">
             <Image
               src={thumbnailUrl}
               alt={song.title}
@@ -69,7 +69,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ song }) => {
             <h3 style={{ cursor: "pointer" }}>{song.title}</h3>
           </div>
         ) : (
-          <div className="hover-content">
+          <div className="absolute inset-0 w-full h-full bg-[#00ADB5] text-[#222831] p-2.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             <h3 style={{ cursor: "pointer" }}>{song.title}</h3>
             <p
               style={{ color: "blue", cursor: "pointer" }}
