@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/v1/vtubers").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/main/**", "/api/v1/vtubers/search", "/api/v1/vtubers/**").permitAll()
                         .requestMatchers("/", "/login/**", "/oauth2/**", "/main/**").permitAll()
                         .requestMatchers("/api/login/userinfo").permitAll()
