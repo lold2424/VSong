@@ -42,8 +42,13 @@ jobs:
           find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
           
           # --- Create a clean frontend artifact ---
+          # 1. Force-delete any pre-existing artifact directory to ensure a clean slate
+          rm -rf artifacts/frontend
+          
+          # 2. Create a new, empty directory for the artifact
           mkdir -p artifacts/frontend
           
+          # 3. Copy ONLY the necessary files from the Next.js build output
           # Copy the standalone server files
           cp -r ./front-next/.next/standalone/. artifacts/frontend/
           
