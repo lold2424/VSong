@@ -41,23 +41,25 @@ jobs:
           mkdir -p artifacts/backend
           find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
           
-          # --- 프론트엔드 아티팩트 생성 시작 ---
-          # 1. 최종 배포될 폴더(deploy_root) 생성
+          # --- Create the final frontend deployment structure ---
+          # This will be the directory that gets deployed.
+          # Let's call it 'deploy_root' for clarity.
           mkdir -p deploy_root
 
-          # 2. standalone 서버 파일들을 deploy_root에 복사
+          # Copy the standalone server and its node_modules
           cp -r ./front-next/.next/standalone/. deploy_root/
 
-          # 3. 빌드 결과물(.next/static)을 deploy_root 안의 .next 폴더로 복사
+          # Copy the static build output INTO the deploy_root
           cp -r ./front-next/.next/static deploy_root/.next/
 
-          # 4. public 폴더를 deploy_root 안으로 복사
+          # Copy the public folder INTO the deploy_root
           cp -r ./front-next/public deploy_root/
           
-          # 5. ecosystem.config.js 파일을 deploy_root 로 복사
+          # Copy the ecosystem config INTO the deploy_root
           cp ./front-next/ecosystem.config.js deploy_root/
 
-          # 6. 완성된 deploy_root를 최종 아티팩트로 패키징
+          # Now, 'deploy_root' has the correct structure.
+          # We package this directory as our artifact.
           mkdir -p artifacts/frontend
           cp -r deploy_root/. artifacts/frontend/
           # --- 프론트엔드 아티팩트 생성 종료 ---
@@ -93,14 +95,18 @@ jobs:
           PORT: 3000
           HOSTNAME: '0.0.0.0'
         run: |
-          echo "Starting deployment..."
+          set -e # 한 명령어라도 실패하면 즉시 중단
+
+          echo "--- 배포 시작 ---"
+          echo "현재 사용자: $(whoami)"
+          echo "현재 디렉터리: $(pwd)"
           
           # Backend
           sudo mkdir -p /home/opc/vsong/backend
           sudo chown -R opc:opc /home/opc/vsong/
           
           PROPERTIES_FILE="/home/opc/vsong/backend/application.properties"
-          echo "Creating $PROPERTIES_FILE..."
+          echo "application.properties 파일 생성 중..."
           echo "spring.datasource.url=$DB_URL" | sudo tee $PROPERTIES_FILE
           echo "spring.datasource.username=$DB_USERNAME" | sudo tee -a $PROPERTIES_FILE
           echo "spring.datasource.password=$DB_PASSWORD" | sudo tee -a $PROPERTIES_FILE
@@ -125,27 +131,45 @@ jobs:
 
           JAR_SOURCE_FILE=$(find ./v-song-build/backend/ -name "*.jar")
           JAR_DEST_PATH="/home/opc/vsong/backend/VSong.jar"
-          echo "Deploying Backend JAR to $JAR_DEST_PATH..."
+          echo "백엔드 JAR 파일 배포 중..."
           sudo cp $JAR_SOURCE_FILE $JAR_DEST_PATH
 
-          echo "Restarting VSong backend service..."
+          echo "백엔드 서비스 재시작 중..."
           sudo systemctl restart vsong
 
           # Frontend
           FRONTEND_APP_PATH="/home/opc/vsong/frontend"
-          echo "Deploying Frontend to $FRONTEND_APP_PATH..."
+          echo "프론트엔드 배포 중: $FRONTEND_APP_PATH"
           
+          echo "1단계: 이전 디렉터리 삭제"
           sudo rm -rf $FRONTEND_APP_PATH
+          
+          echo "2단계: 새 디렉터리 생성"
           sudo mkdir -p $FRONTEND_APP_PATH
           
+          echo "3단계: 디렉터리 생성 확인"
+          if [ ! -d "$FRONTEND_APP_PATH" ]; then
+            echo "오류: $FRONTEND_APP_PATH 디렉터리가 생성되지 않았습니다."
+            exit 1
+          fi
+          
+          echo "4단계: 새 파일 복사"
           sudo cp -r ./v-song-build/frontend/. $FRONTEND_APP_PATH
+          
+          echo "5단계: 파일 복사 확인"
+          if [ ! -f "$FRONTEND_APP_PATH/server.js" ]; then
+            echo "오류: server.js 파일이 복사되지 않았습니다. 파일 복사에 실패했습니다."
+            echo "--- 소스 파일 목록 ---"
+            ls -lR ./v-song-build/frontend/
+            exit 1
+          fi
+          
+          echo "6단계: 소유권 설정"
           sudo chown -R opc:opc $FRONTEND_APP_PATH
 
-          echo "Restarting VSong frontend service with pm2..."
-          # 앱의 루트 디렉터리로 이동
+          echo "7단계: 프론트엔드 서비스 재시작"
           cd $FRONTEND_APP_PATH
           
-          # opc 사용자로 pm2 실행
           sudo -u opc pm2 startOrRestart ecosystem.config.js
 
-          echo "Deployment finished."
+          echo "--- 배포 성공적으로 완료 ---"
