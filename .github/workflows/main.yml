@@ -30,6 +30,12 @@ jobs:
           npm install
           NEXT_PUBLIC_API_URL=${{ secrets.BASE_URL }} npm run build
 
+      - name: Verify Frontend Build
+        working-directory: ./front-next
+        run: |
+          echo "--- Verifying contents of front-next directory after build ---"
+          ls -lR
+
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
@@ -174,11 +180,10 @@ jobs:
             exit 1
           fi
           
-          echo "4단계: 새 파일 복사"
-          # 디버깅을 위해 복사 전후 파일 목록 출력
-          echo "--- 복사 전 v-song-build/frontend/ 내용 ---"
-          ls -lR ./v-song-build/frontend/
-          sudo cp -r ./v-song-build/frontend/. $FRONTEND_APP_PATH
+          echo "4단계: 새 파일 복사 (rsync 사용)"
+          # cp 대신 rsync 사용. 소스 디렉터리 끝의 '/'가 중요.
+          sudo rsync -a --delete ./v-song-build/frontend/ $FRONTEND_APP_PATH/
+          
           echo "--- 복사 후 $FRONTEND_APP_PATH 내용 ---"
           ls -lR $FRONTEND_APP_PATH
           
