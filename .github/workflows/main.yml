@@ -42,20 +42,24 @@ jobs:
           find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
           
           # --- 프론트엔드 아티팩트 생성 시작 ---
-          # 1. 배포될 프론트엔드 폴더 생성
+          # 1. 최종 배포될 폴더(deploy_root) 생성
+          mkdir -p deploy_root
+
+          # 2. standalone 서버 파일들을 deploy_root에 복사
+          cp -r ./front-next/.next/standalone/. deploy_root/
+
+          # 3. 빌드 결과물(.next/static)을 deploy_root 안의 .next 폴더로 복사
+          cp -r ./front-next/.next/static deploy_root/.next/
+
+          # 4. public 폴더를 deploy_root 안으로 복사
+          cp -r ./front-next/public deploy_root/
+          
+          # 5. ecosystem.config.js 파일을 deploy_root 로 복사
+          cp ./front-next/ecosystem.config.js deploy_root/
+
+          # 6. 완성된 deploy_root를 최종 아티팩트로 패키징
           mkdir -p artifacts/frontend
-
-          # 2. standalone 서버 파일들을 배포 폴더 루트에 복사
-          cp -r ./front-next/.next/standalone/. artifacts/frontend/
-
-          # 3. 빌드 결과물(.next/static)을 배포 폴더 안의 .next 폴더로 복사
-          cp -r ./front-next/.next/static artifacts/frontend/.next/
-
-          # 4. public 폴더 복사 (favicon 등)
-          cp -r ./front-next/public/. artifacts/frontend/public/
-
-          # 5. ecosystem.config.js 파일을 배포 폴더 루트에 복사
-          cp ./front-next/ecosystem.config.js artifacts/frontend/
+          cp -r deploy_root/. artifacts/frontend/
           # --- 프론트엔드 아티팩트 생성 종료 ---
 
       - name: Upload Build Artifact
