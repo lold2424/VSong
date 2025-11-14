@@ -8,7 +8,7 @@ interface Vtuber {
 const URL = 'https://vsong.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes = [
+  const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: URL,
       lastModified: new Date(),
@@ -33,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const response = await axios.get<Vtuber[]>(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vtubers`);
     const vtubers = response.data;
 
-    const vtuberRoutes = vtubers.map((vtuber) => ({
+    const vtuberRoutes: MetadataRoute.Sitemap = vtubers.map((vtuber) => ({
       url: `${URL}/vtuber/${vtuber.channelId}`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
