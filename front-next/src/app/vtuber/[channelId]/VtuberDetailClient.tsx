@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import axios from "axios";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import VideoModal from "@/components/VideoModal";
-import "./VtuberDetailPage.css";
 import Image from "next/image";
 
 interface VtuberDetail {
@@ -23,46 +21,19 @@ interface Song {
   viewCount: number;
 }
 
-const VtuberDetailPage: React.FC = () => {
-  const params = useParams();
+interface VtuberDetailClientProps {
+  vtuberDetail: VtuberDetail;
+  songs: Song[];
+  channelId: string;
+}
+
+const VtuberDetailClient: React.FC<VtuberDetailClientProps> = ({
+  vtuberDetail,
+  songs,
+  channelId,
+}) => {
   const router = useRouter();
-  const channelId = params.channelId as string;
-
-  const [vtuberDetail, setVtuberDetail] = useState<VtuberDetail | null>(null);
-  const [songs, setSongs] = useState<Song[]>([]);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (channelId) {
-      axios
-        .get<VtuberDetail>(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/vtubers/${channelId}/details`,
-          { withCredentials: true }
-        )
-        .then((response) => {
-          setVtuberDetail(response.data);
-        })
-        .catch((error) => {
-          console.error("버튜버 상세 정보를 가져오는 중 오류 발생:", error);
-        });
-
-      axios
-        .get<Song[]>(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/vtubers/${channelId}/songs`,
-          { withCredentials: true }
-        )
-        .then((response) => {
-          setSongs(response.data);
-        })
-        .catch((error) => {
-          console.error("노래 목록을 가져오는 중 오류 발생:", error);
-        });
-    }
-  }, [channelId]);
-
-  if (!vtuberDetail) {
-    return <p>로딩 중...</p>;
-  }
 
   const handleOpenModal = (videoId: string) => {
     setSelectedVideoId(videoId);
@@ -80,24 +51,24 @@ const VtuberDetailPage: React.FC = () => {
       : "혼성";
 
   return (
-    <div className="vtuber-detail-page">
-      <div className="detail-container">
-        <div className="profile-section">
+    <div className="flex flex-col justify-center items-center m-5 bg-[#272822] text-[#F8F8F2]">
+      <div className="flex flex-row items-center bg-[#3E3D32] text-[#F8F8F2] rounded-lg shadow-xl p-5 max-w-2xl w-full mb-7.5">
+        <div className="flex-shrink-0 mr-5">
           <Image
             src={vtuberDetail.channelImg}
             alt={vtuberDetail.name}
-            className="profile-image"
+            className="w-25 h-25 rounded-full object-cover border-2 border-[#66D9EF]"
             width={100}
             height={100}
           />
         </div>
-        <div className="info-section">
-          <h1 className="vtuber-name">{vtuberDetail.name}</h1>
-          <p className="vtuber-info">
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold mb-2.5">{vtuberDetail.name}</h1>
+          <p className="text-base mb-2">
             구독자 수: {vtuberDetail.subscribers.toLocaleString()}
           </p>
-          <p className="vtuber-info">성별: {genderText}</p>
-          <p className="vtuber-info">
+          <p className="text-base mb-2">성별: {genderText}</p>
+          <p className="text-base mb-2">
             등록된 노래 수: {vtuberDetail.songCount}
           </p>
           <button
@@ -107,40 +78,45 @@ const VtuberDetailPage: React.FC = () => {
                 "_blank"
               )
             }
-            className="action-button youtube-button"
+            className="mt-2.5 px-3.5 py-2.5 text-sm border-none rounded cursor-pointer text-white bg-red-600 mr-3.5 transition-colors duration-200 hover:bg-red-700"
           >
             유튜브로 이동
           </button>
           <button
             onClick={() => router.back()}
-            className="action-button back-button"
+            className="mt-2.5 px-3.5 py-2.5 text-sm border-none rounded cursor-pointer text-[#F8F8F2] bg-[#272822] transition-colors duration-200 hover:bg-[#3E3D32]"
           >
             뒤로 가기
           </button>
         </div>
       </div>
-      <div className="songs-section">
-        <h2>등록된 노래</h2>
+      <div className="w-full max-w-2xl p-5 bg-[#3E3D32] rounded-lg shadow-lg text-[#F8F8F2]">
+        <h2 className="text-xl mb-5 text-[#A6E22E]">등록된 노래</h2>
         {songs.length > 0 ? (
-          <ul className="songs-list">
+          <ul className="list-none p-0 m-0">
             {songs.map((song) => (
-              <li key={song.id} className="song-item">
+              <li
+                key={song.id}
+                className="flex items-center mb-5 p-2.5 bg-[#272822] border border-[#3E3D32] rounded-lg shadow-md"
+              >
                 <Image
                   src={`https://img.youtube.com/vi/${song.videoId}/0.jpg`}
                   alt={song.title}
-                  className="song-thumbnail"
+                  className="w-30 h-22.5 object-cover mr-5 rounded"
                   width={120}
                   height={90}
                 />
-                <div className="song-info">
-                  <h3 className="song-title">{song.title}</h3>
+                <div className="flex-1">
+                  <h3 className="m-0 text-base font-bold text-[#F8F8F2]">
+                    {song.title}
+                  </h3>
                   <p>조회수: {song.viewCount.toLocaleString()}</p>
                   <p>
                     게시일: {new Date(song.publishedAt).toLocaleDateString()}
                   </p>
                   <button
                     onClick={() => handleOpenModal(song.videoId)}
-                    className="action-button song-watch-button"
+                    className="bg-[#A6E22E] text-[#272822] border-none rounded px-2.5 py-1 cursor-pointer hover:bg-[#F8F8F2] hover:text-[#272822]"
                   >
                     노래 보기
                   </button>
@@ -159,4 +135,4 @@ const VtuberDetailPage: React.FC = () => {
   );
 };
 
-export default VtuberDetailPage;
+export default VtuberDetailClient;

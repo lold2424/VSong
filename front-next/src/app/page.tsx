@@ -1,109 +1,81 @@
-"use client";
-
-import React, { useEffect, useState, useContext } from 'react';
+import React from 'react';
 import axios from 'axios';
-import { GenderContext } from '@/components/GenderContext';
+
 import VideoCard from '@/components/VideoCard';
-import '@/components/MainPage.css'; // MainPage.css import
 
-const MainPage: React.FC = () => {
-    const [data, setData] = useState<any>({
-        randomSongs: [],
-        top10RecentSongs: [],
-        top10DailySongs: [],
-        top10WeeklySongs: [],
-        randomShorts: [],
-        top9RecentShorts: [],
-    });
-    const [isLoading, setIsLoading] = useState(true);
-    const { genderFilter } = useContext(GenderContext);
+interface MainPageApiResponse {
+    randomSongs: any[];
+    top10RecentSongs: any[];
+    top10DailySongs: any[];
+    top10WeeklySongs: any[];
+    randomShorts: any[];
+    top9RecentShorts: any[];
+}
 
-    interface MainPageApiResponse {
-        randomSongs: any[];
-        top10RecentSongs: any[];
-        top10DailySongs: any[];
-        top10WeeklySongs: any[];
-        randomShorts: any[];
-        top9RecentShorts: any[];
-    }
-
-    const fetchMainPageData = (gender: string) => {
-        setIsLoading(true);
-        axios.get<MainPageApiResponse>(`${process.env.NEXT_PUBLIC_API_URL}/api/main`, {
+async function fetchMainPageData(gender: string) {
+    try {
+        const response = await axios.get<MainPageApiResponse>(`${process.env.NEXT_PUBLIC_API_URL}/api/main`, {
             params: { gender },
-            withCredentials: true,
-        })
-            .then((response) => {
-                setData({
-                    randomSongs: response.data.randomSongs || [],
-                    top10RecentSongs: response.data.top10RecentSongs || [],
-                    top10DailySongs: response.data.top10DailySongs || [],
-                    top10WeeklySongs: response.data.top10WeeklySongs || [],
-                    randomShorts: response.data.randomShorts || [],
-                    top9RecentShorts: response.data.top9RecentShorts || [],
-                });
-                setIsLoading(false);
-            })
-            .catch((error) => {
-                console.error('백엔드에서 데이터 가져오기 오류:', error);
-                setIsLoading(false);
-            });
-    };
-
-    useEffect(() => {
-        fetchMainPageData(genderFilter);
-    }, [genderFilter]);
-
-    if (isLoading) {
-        return <p>로딩 중...</p>;
+        });
+        return response.data;
+    } catch (error) {
+        console.error('백엔드에서 데이터 가져오기 오류:', error);
+        return {
+            randomSongs: [],
+            top10RecentSongs: [],
+            top10DailySongs: [],
+            top10WeeklySongs: [],
+            randomShorts: [],
+            top9RecentShorts: [],
+        };
     }
+}
+
+export default async function Page({ searchParams }: { searchParams: { [key: string]: string | undefined } }) {
+    const gender = searchParams.gender || 'all';
+    const data = await fetchMainPageData(gender);
 
     return (
-        <div className="main-layout">
-            <div className="content">
+        <>
+            <section>
+                <h2 className="text-2xl mb-5 text-[#A6E22E]">최신 노래</h2>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
+                    {data.top10RecentSongs?.map((song: any) => (
+                        <VideoCard key={song.id} song={song} />
+                    ))}
+                </div>
+            </section>
 
-                <section>
-                    <h2>최신 노래</h2>
-                    <div className="video-grid">
-                        {data.top10RecentSongs?.map((song: any) => (
-                            <VideoCard key={song.id} song={song} />
-                        ))}
-                    </div>
-                </section>
+            <section>
+                <h2 className="text-2xl mb-5 mt-10 text-[#A6E22E]">이 노래 어떠신가요?</h2>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
+                    {data.randomSongs?.map((song: any) => (
+                        <VideoCard key={song.id} song={song} />
+                    ))}
+                </div>
+            </section>
 
-                <section>
-                    <h2>이 노래 어떠신가요?</h2>
-                    <div className="video-grid">
-                        {data.randomSongs?.map((song: any) => (
-                            <VideoCard key={song.id} song={song} />
-                        ))}
-                    </div>
-                </section>
-
-                <section>
-                    <h2>최신 쇼츠</h2>
-                    <div className="video-grid">
-                        {data.top9RecentShorts && data.top9RecentShorts.length > 0 ? (
-                            data.top9RecentShorts.slice(0, 10).map((short: any) => (
-                                <VideoCard key={short.id} song={short} />
-                            ))
-                        ) : (
-                            <p>최신 쇼츠가 없습니다.</p>
-                        )}
-                    </div>
-                </section>
-
-                <section>
-                    <h2>이 쇼츠 어떠신가요</h2>
-                    <div className="video-grid">
-                        {data.randomShorts.slice(0, 9).map((short: any) => (
+            <section>
+                <h2 className="text-2xl mb-5 mt-10 text-[#A6E22E]">최신 쇼츠</h2>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
+                    {data.top9RecentShorts && data.top9RecentShorts.length > 0 ? (
+                        data.top9RecentShorts.slice(0, 10).map((short: any) => (
                             <VideoCard key={short.id} song={short} />
-                        ))}
-                    </div>
-                </section>
-            </div>
-        </div>
-    );
-};
+                        ))
+                    ) : (
+                        <p>최신 쇼츠가 없습니다.</p>
+                    )}
+                </div>
+            </section>
 
-export default MainPage;
+            <section>
+                <h2 className="text-2xl mb-5 mt-10 text-[#A6E22E]">이 쇼츠 어떠신가요</h2>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
+                    {data.randomShorts.slice(0, 9).map((short: any) => (
+                        <VideoCard key={short.id} song={short} />
+                    ))}
+                </div>
+            </section>
+        </>
+    );
+}

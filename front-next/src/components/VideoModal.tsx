@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import './VideoModal.css';
+
 
 interface VideoModalProps {
     videoId: string;
@@ -30,8 +30,8 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
     }, []);
 
     return (
-        <div className="video-modal" onClick={handleBackgroundClick}>
-            <div className="video-modal-content">
+        <div className="fixed inset-0 w-full h-full bg-black bg-opacity-80 flex justify-center items-center z-[1000]" onClick={handleBackgroundClick}>
+            <div className="relative w-4/5 max-w-2xl h-3/5 bg-black rounded-lg overflow-hidden">
                 <iframe
                     width="100%"
                     height="100%"

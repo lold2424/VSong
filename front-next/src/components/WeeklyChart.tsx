@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import VideoModal from "./VideoModal"; // 모달 컴포넌트 임포트
-import "./WeeklyChart.css"; // 스타일 파일
+
 
 interface Song {
   id: string;
@@ -52,48 +52,48 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
 
   return (
     <>
-      <div className="button-group">
+      <div className="flex justify-center gap-2.5 mb-2.5">
         <button
           onClick={() => setChartType("weekly")}
-          className={chartType === "weekly" ? "active" : ""}
+          className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${chartType === "weekly" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
         >
           주간
         </button>
         <button
           onClick={() => setChartType("daily")}
-          className={chartType === "daily" ? "active" : ""}
+          className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${chartType === "daily" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
         >
           일간
         </button>
         <button
           onClick={() => setChartType("shorts")}
-          className={chartType === "shorts" ? "active" : ""}
+          className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${chartType === "shorts" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
         >
           쇼츠
         </button>
       </div>
-      <div className="weekly-chart">
-        <h3>{title}</h3>
-        <ul className="chart-list">
+      <div className="bg-[#272822] text-[#F8F8F2] rounded-lg p-5 shadow-lg">
+        <h3 className="text-[#A6E22E] text-xl mb-3.5">{title}</h3>
+        <ul className="list-none p-0 m-0">
           {data.length > 0 ? (
             data.map((song, index) => (
               <li
                 key={song.id}
-                className="chart-item"
+                className="flex justify-between items-center mb-2.5 p-2.5 bg-[#3E3D32] rounded-lg text-[#F8F8F2] transition-colors duration-200 hover:bg-[#A6E22E] hover:text-[#272822]"
                 onClick={() => handleSongClick(song.videoId)} // 클릭 시 모달 열기
                 style={{ cursor: "pointer" }}
               >
-                <h4>
+                <h4 className="m-0 text-base font-bold text-[#F8F8F2]">
                   {index + 1}. {song.title}
                 </h4>
-                <span>{song.artist}</span>
+                <span className="text-sm text-[#F8F8F2]">{song.artist}</span>
               </li>
             ))
           ) : (
             <p>차트가 없습니다.</p>
           )}
         </ul>
-        <div className="chart-footer">월요일 00시 기준</div>
+        <div className="mt-2.5 text-xs text-[#F8F8F2] opacity-80">월요일 00시 기준</div>
 
         {selectedVideoId && (
           <VideoModal videoId={selectedVideoId} onClose={handleCloseModal} />
