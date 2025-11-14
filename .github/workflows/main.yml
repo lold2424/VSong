@@ -154,13 +154,20 @@ jobs:
           fi
           
           echo "4단계: 새 파일 복사"
+          # 디버깅을 위해 복사 전후 파일 목록 출력
+          echo "--- 복사 전 v-song-build/frontend/ 내용 ---"
+          ls -lR ./v-song-build/frontend/
           sudo cp -r ./v-song-build/frontend/. $FRONTEND_APP_PATH
+          echo "--- 복사 후 $FRONTEND_APP_PATH 내용 ---"
+          ls -lR $FRONTEND_APP_PATH
           
           echo "5단계: 파일 복사 확인"
           if [ ! -f "$FRONTEND_APP_PATH/server.js" ]; then
             echo "오류: server.js 파일이 복사되지 않았습니다. 파일 복사에 실패했습니다."
-            echo "--- 소스 파일 목록 ---"
-            ls -lR ./v-song-build/frontend/
+            exit 1
+          fi
+          if [ ! -d "$FRONTEND_APP_PATH/.next" ]; then
+            echo "오류: .next 디렉터리가 복사되지 않았습니다. 파일 복사에 실패했습니다."
             exit 1
           fi
           
