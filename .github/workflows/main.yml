@@ -41,10 +41,22 @@ jobs:
           mkdir -p artifacts/backend
           find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
           
+          # --- 프론트엔드 아티팩트 생성 시작 ---
+          # 1. 배포될 프론트엔드 폴더 생성
           mkdir -p artifacts/frontend
-          cp -r ./front-next/.next/standalone artifacts/frontend/
+
+          # 2. standalone 서버 파일들을 배포 폴더 루트에 복사
+          cp -r ./front-next/.next/standalone/. artifacts/frontend/
+
+          # 3. 빌드 결과물(.next/static)을 배포 폴더 안의 .next 폴더로 복사
           cp -r ./front-next/.next/static artifacts/frontend/.next/
-          cp ./front-next/ecosystem.config.js artifacts/frontend/standalone/
+
+          # 4. public 폴더 복사 (favicon 등)
+          cp -r ./front-next/public/. artifacts/frontend/public/
+
+          # 5. ecosystem.config.js 파일을 배포 폴더 루트에 복사
+          cp ./front-next/ecosystem.config.js artifacts/frontend/
+          # --- 프론트엔드 아티팩트 생성 종료 ---
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -120,12 +132,16 @@ jobs:
           echo "Deploying Frontend to $FRONTEND_APP_PATH..."
           
           sudo rm -rf $FRONTEND_APP_PATH
-          sudo cp -r ./v-song-build/frontend $FRONTEND_APP_PATH
+          sudo mkdir -p $FRONTEND_APP_PATH
+          
+          sudo cp -r ./v-song-build/frontend/. $FRONTEND_APP_PATH
           sudo chown -R opc:opc $FRONTEND_APP_PATH
 
           echo "Restarting VSong frontend service with pm2..."
-          cd $FRONTEND_APP_PATH/standalone
+          # 앱의 루트 디렉터리로 이동
+          cd $FRONTEND_APP_PATH
           
-          pm2 startOrRestart ecosystem.config.js
+          # opc 사용자로 pm2 실행
+          sudo -u opc pm2 startOrRestart ecosystem.config.js
 
           echo "Deployment finished."
