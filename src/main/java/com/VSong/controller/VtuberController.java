@@ -21,6 +21,11 @@ public class VtuberController {
         this.vtuberService = vtuberService;
     }
 
+    @GetMapping
+    public ResponseEntity<List<VtuberEntity>> getAllVtubers() {
+        List<VtuberEntity> vtubers = vtuberService.getAllVtubers();
+        return ResponseEntity.ok(vtubers);
+    }
 
     @PostMapping
     public ResponseEntity<VtuberEntity> createVtuber(@RequestBody VtuberRequest vtuberRequest) {

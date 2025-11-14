@@ -85,6 +85,10 @@ public class VtuberService {
         return vtuberSongsRepository.findByChannelId(channelId);
     }
 
+    public List<VtuberEntity> getAllVtubers() {
+        return vtuberRepository.findAll();
+    }
+
     @Transactional
     public void deleteVtuberAndRelatedSongs(String channelId) {
         vtuberSongsRepository.deleteByChannelId(channelId);

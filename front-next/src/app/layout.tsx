@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-
+import { Suspense } from "react";
 import "./globals.css";
 import Header from "@/components/Header";
 import WeeklyChartContainer from "@/components/WeeklyChartContainer";
@@ -22,7 +22,9 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         <div className="flex flex-col min-h-screen overflow-x-hidden bg-[#272822]">
-          <Header />
+          <Suspense fallback={<div>Loading...</div>}>
+            <Header />
+          </Suspense>
           <div className="flex flex-grow overflow-x-hidden w-full box-border min-h-[calc(100vh-140px)] pt-5">
             <div className="flex-[8] p-5 bg-[#272822] overflow-y-auto box-border">
               {children}
