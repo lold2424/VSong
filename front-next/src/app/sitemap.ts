@@ -29,19 +29,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // In a CI environment, the API call might fail due to auth issues.
-  // Skip dynamic routes in CI to ensure the build succeeds.
-  if (process.env.CI === 'true') {
-    console.log('CI environment detected. Skipping dynamic sitemap routes.');
-    return staticRoutes;
-  }
-
   try {
+    // The API_KEY can be a comma-separated list. Take the first key.
+    const apiKey = process.env.API_KEY ? process.env.API_KEY.split(',')[0] : '';
+
     const response = await axios.get<Vtuber[]>(
       `${process.env.NEXT_PUBLIC_API_URL}/api/v1/vtubers`,
       {
         headers: {
-          'X-API-Key': process.env.API_KEY,
+          'X-API-Key': apiKey,
         },
       },
     );
