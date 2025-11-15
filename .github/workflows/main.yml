@@ -112,6 +112,11 @@ jobs:
           name: v-song-build
           path: ./v-song-build
 
+      - name: Verify Downloaded Artifact
+        run: |
+          echo "--- Verifying contents of downloaded artifact ./v-song-build/frontend ---"
+          ls -lR ./v-song-build/frontend
+          
       - name: Deploy Application
         env:
           DB_URL: ${{ secrets.DB_URL }}
