@@ -37,8 +37,8 @@ jobs:
       - name: Verify Frontend Build
         working-directory: ./front-next
         run: |
-          echo "--- Verifying contents of front-next directory after build ---"
-          ls -lR .next
+          echo "--- Verifying structure of .next directory after build ---"
+          find .next -maxdepth 3
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -77,8 +77,8 @@ jobs:
           
       - name: Verify Frontend Artifact
         run: |
-          echo "--- Verifying contents of artifacts/frontend ---"
-          ls -lR artifacts/frontend
+          echo "--- Verifying structure of artifacts/frontend ---"
+          find artifacts/frontend -maxdepth 3
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
