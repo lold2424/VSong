@@ -25,17 +25,13 @@ jobs:
           node-version: '20'
 
       - name: Clean and Build Frontend
+        env:
+          API_KEY: ${{ secrets.YOUTUBE_API_KEYS }}
         working-directory: ./front-next
         run: |
-          echo "--- Contents of front-next before cleanup ---"
-          ls -la
-
           echo "Aggressively cleaning up previous build artifacts..."
           rm -rf .next node_modules build dist assets static standalone
           
-          echo "--- Contents of front-next after cleanup ---"
-          ls -la
-
           echo "Installing dependencies and building..."
           npm install
           NEXT_PUBLIC_API_URL=${{ secrets.BASE_URL }} npm run build

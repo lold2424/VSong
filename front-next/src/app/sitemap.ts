@@ -30,7 +30,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const response = await axios.get<Vtuber[]>(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/vtubers`);
+    const response = await axios.get<Vtuber[]>(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/vtubers`,
+      {
+        headers: {
+          'X-API-Key': process.env.API_KEY,
+        },
+      },
+    );
     const vtubers = response.data;
 
     const vtuberRoutes: MetadataRoute.Sitemap = vtubers.map((vtuber) => ({
