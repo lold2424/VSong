@@ -73,16 +73,16 @@ jobs:
           echo "Creating new artifact directory..."
           mkdir -p artifacts/frontend
 
-          # 3. Copy ONLY the necessary files from the Next.js build output
+          # 3. Copy the standalone output, which forms the base of the artifact
           echo "Copying standalone server files..."
           cp -r ./front-next/.next/standalone/. artifacts/frontend/
           
-          echo "Copying static assets..."
+          # 4. Copy the public and static assets into the artifact
+          echo "Copying public and static assets..."
+          cp -r ./front-next/public artifacts/frontend/
           cp -r ./front-next/.next/static artifacts/frontend/.next/
           
-          echo "Copying public folder..."
-          cp -r ./front-next/public artifacts/frontend/
-          
+          # 5. Copy the ecosystem config
           echo "Copying ecosystem config..."
           cp ./front-next/ecosystem.config.js artifacts/frontend/
 
