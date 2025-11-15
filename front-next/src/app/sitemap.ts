@@ -29,6 +29,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // In a CI environment, the API call might fail due to auth issues.
+  // Skip dynamic routes in CI to ensure the build succeeds.
+  if (process.env.CI === 'true') {
+    console.log('CI environment detected. Skipping dynamic sitemap routes.');
+    return staticRoutes;
+  }
+
   try {
     const response = await axios.get<Vtuber[]>(
       `${process.env.NEXT_PUBLIC_API_URL}/api/v1/vtubers`,
