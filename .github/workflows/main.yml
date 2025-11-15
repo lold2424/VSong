@@ -75,6 +75,9 @@ jobs:
           echo "Copying ecosystem config..."
           cp $SRC_DIR/ecosystem.config.js $DEST_DIR/
           
+          echo "Renaming .next to next-build to avoid artifact issues..."
+          mv $DEST_DIR/.next $DEST_DIR/next-build
+          
       - name: Verify Frontend Artifact
         run: |
           echo "--- Verifying structure of artifacts/frontend ---"
@@ -179,6 +182,9 @@ jobs:
           echo "--- 복사 후 $FRONTEND_APP_PATH 내용 ---"
           ls -lR $FRONTEND_APP_PATH
           
+          echo "Renaming next-build back to .next..."
+          sudo mv $FRONTEND_APP_PATH/next-build $FRONTEND_APP_PATH/.next
+
           echo "5단계: 파일 복사 확인"
           if [ ! -f "$FRONTEND_APP_PATH/server.js" ]; then
             echo "오류: server.js 파일이 복사되지 않았습니다. 파일 복사에 실패했습니다."
