@@ -27,8 +27,10 @@ jobs:
       - name: Clean and Build Frontend
         working-directory: ./front-next
         run: |
-          echo "Cleaning previous build artifacts..."
-          rm -rf .next
+          echo "Aggressively cleaning up previous build artifacts..."
+          rm -rf .next node_modules build dist assets static standalone
+          
+          echo "Installing dependencies and building..."
           npm install
           NEXT_PUBLIC_API_URL=${{ secrets.BASE_URL }} npm run build
 
@@ -36,7 +38,7 @@ jobs:
         working-directory: ./front-next
         run: |
           echo "--- Verifying contents of front-next directory after build ---"
-          ls -lR
+          ls -lR .next
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
