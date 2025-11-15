@@ -44,6 +44,8 @@ jobs:
 
       - name: Package Artifacts
         run: |
+          set -e # Exit immediately if a command exits with a non-zero status.
+
           mkdir -p artifacts/backend
           find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
           
@@ -80,6 +82,9 @@ jobs:
           # 4. Copy the public and static assets into the artifact
           echo "Copying public and static assets..."
           cp -r ./front-next/public artifacts/frontend/
+          
+          # Ensure the .next directory exists before copying static assets into it.
+          mkdir -p artifacts/frontend/.next
           cp -r ./front-next/.next/static artifacts/frontend/.next/
           
           # 5. Copy the ecosystem config
