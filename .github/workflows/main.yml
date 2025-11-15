@@ -24,9 +24,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build Frontend
+      - name: Clean and Build Frontend
         working-directory: ./front-next
         run: |
+          echo "Cleaning previous build artifacts..."
+          rm -rf .next
           npm install
           NEXT_PUBLIC_API_URL=${{ secrets.BASE_URL }} npm run build
 
@@ -44,53 +46,33 @@ jobs:
 
       - name: Package Artifacts
         run: |
-          set -e # Exit immediately if a command exits with a non-zero status.
-
+          set -e
           mkdir -p artifacts/backend
           find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
           
-          # --- Create a clean frontend artifact ---
-          echo "--- Preparing to package frontend artifact ---"
-          
-          echo "Checking for source directories..."
-          if [ ! -d "./front-next/.next/standalone" ]; then
-            echo "Error: Source directory ./front-next/.next/standalone not found!"
-            exit 1
-          fi
-          if [ ! -d "./front-next/.next/static" ]; then
-            echo "Error: Source directory ./front-next/.next/static not found!"
-            exit 1
-          fi
-          if [ ! -d "./front-next/public" ]; then
-            echo "Error: Source directory ./front-next/public not found!"
-            exit 1
-          fi
-          echo "All source directories found."
+          echo "--- Preparing frontend artifact ---"
+          SRC_DIR="./front-next"
+          DEST_DIR="./artifacts/frontend"
 
-          # 1. Force-delete any pre-existing artifact directory to ensure a clean slate
-          echo "Cleaning up old artifacts..."
-          rm -rf artifacts/frontend
-          
-          # 2. Create a new, empty directory for the artifact
-          echo "Creating new artifact directory..."
-          mkdir -p artifacts/frontend
+          rm -rf $DEST_DIR
+          mkdir -p $DEST_DIR
 
-          # 3. Copy the standalone output, which forms the base of the artifact
-          echo "Copying standalone server files..."
-          cp -r ./front-next/.next/standalone/. artifacts/frontend/
+          echo "Copying standalone files (server.js, node_modules, .next/server)..."
+          rsync -a $SRC_DIR/.next/standalone/ $DEST_DIR/
           
-          # 4. Copy the public and static assets into the artifact
-          echo "Copying public and static assets..."
-          cp -r ./front-next/public artifacts/frontend/
+          echo "Copying public assets..."
+          # Ensure public dir exists in case source doesn't have one
+          mkdir -p $DEST_DIR/public
+          rsync -a $SRC_DIR/public/ $DEST_DIR/public/
           
-          # Ensure the .next directory exists before copying static assets into it.
-          mkdir -p artifacts/frontend/.next
-          cp -r ./front-next/.next/static artifacts/frontend/.next/
+          echo "Copying static assets..."
+          # This is the critical step. Ensure .next/static is created.
+          mkdir -p $DEST_DIR/.next/static
+          rsync -a $SRC_DIR/.next/static/ $DEST_DIR/.next/static/
           
-          # 5. Copy the ecosystem config
           echo "Copying ecosystem config..."
-          cp ./front-next/ecosystem.config.js artifacts/frontend/
-
+          cp $SRC_DIR/ecosystem.config.js $DEST_DIR/
+          
       - name: Verify Frontend Artifact
         run: |
           echo "--- Verifying contents of artifacts/frontend ---"
