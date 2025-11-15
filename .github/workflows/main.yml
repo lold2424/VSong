@@ -119,8 +119,6 @@ jobs:
           BASE_URL: ${{ secrets.BASE_URL }}
           MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: ${{ secrets.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}
           MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: ${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}
-          PORT: 3000
-          HOSTNAME: '0.0.0.0'
         run: |
           set -e # 한 명령어라도 실패하면 즉시 중단
 
