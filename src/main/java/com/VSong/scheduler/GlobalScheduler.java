@@ -52,14 +52,14 @@ public class GlobalScheduler {
     } **/
 
     // RelatedChannelService - 관련 채널 기반 버튜버 탐색
-    @Scheduled(cron = "0 45 23 * * ?", zone = "Asia/Seoul")
+    /** @Scheduled(cron = "0 45 23 * * ?", zone = "Asia/Seoul")
     public void scheduleDiscoverAndSaveFromRelatedChannels() {
         logger.info("Executing scheduled task: discoverAndSaveFromRelatedChannels");
         relatedChannelService.discoverAndSaveFromRelatedChannels();
-    }
+    } **/
 
     // UpdateVtuberSongsService - 최신 노래 수집
-    @Scheduled(cron = "0 55 23 * * ?", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 45 23 * * ?", zone = "Asia/Seoul")
     public void scheduleFetchVtuberSongs() {
         logger.info("Executing scheduled task: fetchVtuberSongs");
         updateVtuberSongsService.fetchVtuberSongs();
