@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     template: "%s | VSong",
   },
   description: "버튜버 노래 검색 및 추천 서비스",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

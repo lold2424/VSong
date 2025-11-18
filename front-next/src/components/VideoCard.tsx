@@ -14,9 +14,10 @@ interface VideoCardProps {
     viewCount: number;
     channelId: string;
   };
+  isPriority?: boolean;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({ song }) => {
+const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false); // 모달 상태 추가
@@ -65,6 +66,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ song }) => {
               className="thumbnail"
               width={200}
               height={150}
+              priority={isPriority}
             />
             <h3 style={{ cursor: "pointer" }}>{song.title}</h3>
           </div>

@@ -40,8 +40,8 @@ export default async function Page({ searchParams }: { searchParams: { [key: str
             <section>
                 <h2 className="text-2xl mb-5 text-[#A6E22E]">최신 노래</h2>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
-                    {data.top10RecentSongs?.map((song: any) => (
-                        <VideoCard key={song.id} song={song} />
+                    {data.top10RecentSongs?.map((song: any, index: number) => (
+                        <VideoCard key={song.id} song={song} isPriority={index < 4} />
                     ))}
                 </div>
             </section>
