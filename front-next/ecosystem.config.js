@@ -3,6 +3,7 @@ module.exports = {
     {
       name: 'vsong-frontend',
       script: 'server.js',
+      cwd: '/home/opc/vsong/frontend',
       instances: 1,
       autorestart: true,
       watch: false,
