@@ -33,7 +33,17 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String refreshToken = userRequest.getAccessToken().getTokenValue();
 
         User user = userRepository.findByEmail(email)
-                .orElseGet(() -> new User());
+                .map(entity -> {
+                    // 이미 존재하는 사용자
+                    return entity;
+                })
+                .orElseGet(() -> {
+                    // 새로운 사용자
+                    User newUser = new User();
+                    newUser.setRole(com.VSong.entity.Role.USER); // 기본 역할 부여
+                    return newUser;
+                });
+
         user.setEmail(email);
         user.setName(name);
         user.setPicture(picture);

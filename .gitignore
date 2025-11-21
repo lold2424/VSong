@@ -40,35 +40,22 @@ out/
 *.properties
 !gradle/wrapper/gradle-wrapper.properties
 
-### front directory ###
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+### Node.js Dependencies ###
+# General node_modules
 /node_modules
-/.pnp
-.pnp.js
 
-# testing
-/coverage
+### Next.js (front-next) ###
+/front-next/node_modules
+/front-next/.next
+/front-next/.env.local
+/front-next/out/
+/front-next/coverage
 
-# production
-/build
-
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
+# Log files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# Ignore node_modules in src directory
-src/front/node_modules/*
 logs/*
-src/front/package-lock.json
 
 # Ignore manual http client files
 manual-add-vtuber.http

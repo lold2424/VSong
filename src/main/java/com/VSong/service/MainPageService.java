@@ -66,9 +66,12 @@ public class MainPageService {
 
         CompletableFuture.allOf(randomVideoSongsFuture, randomShortsFuture).join();
 
+        List<VtuberSongsEntity> randomVideos = randomVideoSongsFuture.join();
+        List<VtuberSongsEntity> randomShorts = randomShortsFuture.join();
+
         return new MainPageRandomResponse(
-                randomVideoSongsFuture.join(),
-                randomShortsFuture.join()
+                randomVideos != null ? randomVideos : List.of(),
+                randomShorts != null ? randomShorts : List.of()
         );
     }
 }
