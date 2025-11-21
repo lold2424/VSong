@@ -154,7 +154,7 @@ jobs:
           echo "cors.allowed-origins=$CORS_ALLOWED_ORIGINS" | sudo tee -a $PROPERTIES_FILE
           echo "oauth2.success.redirect-url=$BASE_URL" | sudo tee -a $PROPERTIES_FILE
           JAR_SOURCE_FILE=$(find ./v-song-build/backend/ -name "*.jar")
-          JAR_DEST_PATH="/home/opc/vsong/backend/VSong.jar"
+          JAR_DEST_PATH="/home/opc/vsong/VSong.jar"
           echo "백엔드 JAR 파일 배포 중..."
           sudo cp $JAR_SOURCE_FILE $JAR_DEST_PATH
           echo "백엔드 서비스 재시작 중..."
