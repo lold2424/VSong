@@ -22,7 +22,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        // 상속받은 로직 대신, 직접 리다이렉션을 수행합니다.
+        if (response.isCommitted()) {
+            return;
+        }
         redirectStrategy.sendRedirect(request, response, successRedirectUrl);
     }
 }
