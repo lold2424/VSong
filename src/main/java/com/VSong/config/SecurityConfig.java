@@ -27,8 +27,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자 경로는 ADMIN 역할 필요
-                        .anyRequest().permitAll() // 그 외 모든 요청은 누구나 접근 가능
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .anyRequest().permitAll()
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
@@ -37,8 +37,8 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
                         )
-                        .failureUrl("/") // 로그인 실패 시 홈으로 리다이렉션
-                        .successHandler(oAuth2LoginSuccessHandler) // 커스텀 핸들러 사용
+                        .failureUrl("/")
+                        .successHandler(oAuth2LoginSuccessHandler)
                 );
 
         return http.build();

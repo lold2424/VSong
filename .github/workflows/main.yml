@@ -120,20 +120,14 @@ jobs:
           MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: ${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}
           CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
         run: |
-                            set -e # 한 명령어라도 실패하면 즉시 중단
-          
-                            echo "--- 배포 시작 ---"
-                            # 로그 디렉토리 생성 및 권한 설정
-                            sudo mkdir -p /home/opc/vsong/logs
-                            sudo chown -R opc:opc /home/opc/vsong/logs
-                      
+          set -e
+          echo "--- 배포 시작 ---"
+          sudo mkdir -p /home/opc/vsong/logs
+          sudo chown -R opc:opc /home/opc/vsong/logs
           echo "현재 사용자: $(whoami)"
           echo "현재 디렉터리: $(pwd)"
-          
-          # Backend
           sudo mkdir -p /home/opc/vsong/backend
           sudo chown -R opc:opc /home/opc/vsong/
-          
           PROPERTIES_FILE="/home/opc/vsong/backend/application.properties"
           echo "application.properties 파일 생성 중..."
           echo "spring.datasource.url=$DB_URL" | sudo tee $PROPERTIES_FILE
@@ -159,41 +153,29 @@ jobs:
           echo "management.endpoint.health.show-details=$MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS" | sudo tee -a $PROPERTIES_FILE
           echo "cors.allowed-origins=$CORS_ALLOWED_ORIGINS" | sudo tee -a $PROPERTIES_FILE
           echo "oauth2.success.redirect-url=$BASE_URL" | sudo tee -a $PROPERTIES_FILE
-
           JAR_SOURCE_FILE=$(find ./v-song-build/backend/ -name "*.jar")
           JAR_DEST_PATH="/home/opc/vsong/backend/VSong.jar"
           echo "백엔드 JAR 파일 배포 중..."
           sudo cp $JAR_SOURCE_FILE $JAR_DEST_PATH
-
           echo "백엔드 서비스 재시작 중..."
           sudo systemctl restart vsong
-
-          # Frontend
           FRONTEND_APP_PATH="/home/opc/vsong/frontend"
           echo "프론트엔드 배포 중: $FRONTEND_APP_PATH"
-          
           echo "1단계: 이전 디렉터리 삭제"
           sudo rm -rf $FRONTEND_APP_PATH
-          
           echo "2단계: 새 디렉터리 생성"
           sudo mkdir -p $FRONTEND_APP_PATH
-          
           echo "3단계: 디렉터리 생성 확인"
           if [ ! -d "$FRONTEND_APP_PATH" ]; then
             echo "오류: $FRONTEND_APP_PATH 디렉터리가 생성되지 않았습니다."
             exit 1
           fi
-          
           echo "4단계: 새 파일 복사 (rsync 사용)"
-          # cp 대신 rsync 사용. 소스 디렉터리 끝의 '/'가 중요.
           sudo rsync -a --delete ./v-song-build/frontend/ $FRONTEND_APP_PATH/
-          
           echo "--- 복사 후 $FRONTEND_APP_PATH 내용 ---"
           ls -lR $FRONTEND_APP_PATH
-          
           echo "Renaming next-build back to .next..."
           sudo mv $FRONTEND_APP_PATH/next-build $FRONTEND_APP_PATH/.next
-
           echo "5단계: 파일 복사 확인"
           if [ ! -f "$FRONTEND_APP_PATH/server.js" ]; then
             echo "오류: server.js 파일이 복사되지 않았습니다. 파일 복사에 실패했습니다."
@@ -203,13 +185,9 @@ jobs:
             echo "오류: .next 디렉터리가 복사되지 않았습니다. 파일 복사에 실패했습니다."
             exit 1
           fi
-          
           echo "6단계: 소유권 설정"
           sudo chown -R ubuntu:ubuntu $FRONTEND_APP_PATH
-
           echo "7단계: 프론트엔드 서비스 재시작"
           cd $FRONTEND_APP_PATH
-          
           pm2 startOrRestart ecosystem.config.js
-
           echo "--- 배포 성공적으로 완료 ---"

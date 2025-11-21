@@ -113,11 +113,9 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
         setUserInfo(null);
       }
     } catch (error) {
-      // 로그인하지 않은 사용자의 경우, 리다이렉션으로 인해 네트워크 오류가 발생하는 것은 자연스러운 현상이므로 콘솔에 에러를 표시하지 않음.
       removeUserInfoFromLocalStorage();
       setIsLoggedIn(false);
       setUserInfo(null);
-      // ESLint/TypeScript가 빈 catch 블록에 대해 경고하지 않도록
       void(error);
     }
   };
