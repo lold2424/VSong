@@ -71,7 +71,7 @@ export default async function Page({ searchParams }: { searchParams: { [key: str
             <section>
                 <h2 className="text-2xl mb-5 mt-10 text-[#A6E22E]">이 쇼츠 어떠신가요</h2>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
-                    {data.randomShorts.slice(0, 9).map((short: any) => (
+                    {(data.randomShorts || []).slice(0, 9).map((short: any) => (
                         <VideoCard key={short.id} song={short} />
                     ))}
                 </div>
