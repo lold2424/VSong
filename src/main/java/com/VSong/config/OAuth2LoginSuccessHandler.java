@@ -5,21 +5,24 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.DefaultRedirectStrategy;
+import org.springframework.security.web.RedirectStrategy;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 @Component
-public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    public OAuth2LoginSuccessHandler(@Value("${oauth2.success.redirect-url}") String defaultTargetUrl) {
-        super.setDefaultTargetUrl(defaultTargetUrl);
-        super.setAlwaysUseDefaultTargetUrl(true);
-    }
+    private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
+
+    @Value("${oauth2.success.redirect-url}")
+    private String successRedirectUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        super.onAuthenticationSuccess(request, response, authentication);
+        // 상속받은 로직 대신, 직접 리다이렉션을 수행합니다.
+        redirectStrategy.sendRedirect(request, response, successRedirectUrl);
     }
 }

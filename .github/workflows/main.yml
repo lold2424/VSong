@@ -128,7 +128,7 @@ jobs:
           echo "현재 디렉터리: $(pwd)"
           sudo mkdir -p /home/opc/vsong/backend
           sudo chown -R opc:opc /home/opc/vsong/
-          PROPERTIES_FILE="/home/opc/vsong/backend/application.properties"
+          PROPERTIES_FILE="/home/opc/vsong/application.properties"
           echo "application.properties 파일 생성 중..."
           echo "spring.datasource.url=$DB_URL" | sudo tee $PROPERTIES_FILE
           echo "spring.datasource.username=$DB_USERNAME" | sudo tee -a $PROPERTIES_FILE

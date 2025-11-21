@@ -31,7 +31,6 @@ public class LoginController {
 
     @GetMapping("/userinfo")
     public ResponseEntity<?> getUserInfo(Authentication authentication) {
-        log.info("[START] Fetching user info...");
 
         if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User)) {
             log.warn("[WARN] User is not authenticated or principal is not OAuth2User.");

@@ -30,15 +30,15 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String name = (String) attributes.get("name");
         String picture = (String) attributes.get("picture");
 
-        String refreshToken = userRequest.getAccessToken().getTokenValue();
+        // Google은 첫 승인 시에만 refresh token을 발급하므로, access token을 대신 저장하거나 null을 허용해야 합니다.
+        // 여기서는 access token을 저장하겠습니다.
+        String accessToken = userRequest.getAccessToken().getTokenValue();
 
         User user = userRepository.findByEmail(email)
                 .map(entity -> {
-                    // 이미 존재하는 사용자
                     return entity;
                 })
                 .orElseGet(() -> {
-                    // 새로운 사용자
                     User newUser = new User();
                     newUser.setRole(com.VSong.entity.Role.USER); // 기본 역할 부여
                     return newUser;
@@ -47,7 +47,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         user.setEmail(email);
         user.setName(name);
         user.setPicture(picture);
-        user.setRefreshToken(refreshToken);
+        user.setRefreshToken(accessToken);
         user.setTokenCreatedAt(LocalDateTime.now());
         user.setLastLoginAt(LocalDateTime.now());
 
