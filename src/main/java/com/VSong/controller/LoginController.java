@@ -31,20 +31,27 @@ public class LoginController {
 
     @GetMapping("/userinfo")
     public ResponseEntity<?> getUserInfo(Authentication authentication) {
-        log.info("[START] Fetching user info...");
 
         if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User)) {
             log.warn("[WARN] User is not authenticated or principal is not OAuth2User.");
             return ResponseEntity.ok(null);
         }
 
-        OAuth2User user = (OAuth2User) authentication.getPrincipal();
-        log.info("[SUCCESS] Authenticated user: {}", user.getAttributes());
+        OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+        log.info("[SUCCESS] Authenticated user: {}", oauth2User.getAttributes());
 
         Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("name", user.getAttribute("name"));
-        userInfo.put("email", user.getAttribute("email"));
-        userInfo.put("picture", user.getAttribute("picture"));
+        userInfo.put("name", oauth2User.getAttribute("name"));
+        userInfo.put("email", oauth2User.getAttribute("email"));
+        userInfo.put("picture", oauth2User.getAttribute("picture"));
+
+        String role = authentication.getAuthorities().stream()
+                .findFirst()
+                .map(authority -> authority.getAuthority())
+                .orElse("ROLE_USER");
+
+        userInfo.put("role", role.replace("ROLE_", ""));
+
 
         return ResponseEntity.ok(userInfo);
     }
