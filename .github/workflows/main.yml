@@ -95,6 +95,9 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
+      - name: Set Timezone to KST
+        run: sudo timedatectl set-timezone Asia/Seoul
+
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
