@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface DailyVisitor {
     id: number;
@@ -43,22 +44,36 @@ const WeeklyStats = () => {
     if (error) return <div className="text-center p-10 text-red-500">{error}</div>;
 
     return (
-        <table className="w-full border-collapse">
-            <thead>
-                <tr>
-                    <th className="border border-gray-600 p-3 bg-gray-700 text-left">날짜</th>
-                    <th className="border border-gray-600 p-3 bg-gray-700 text-left">방문자 수</th>
-                </tr>
-            </thead>
-            <tbody>
-                {data.map((visitor) => (
-                    <tr key={visitor.id} className="hover:bg-gray-700 transition-colors">
-                        <td className="border border-gray-600 p-3 text-center">{visitor.visitDate}</td>
-                        <td className="border border-gray-600 p-3 text-center">{visitor.count}</td>
+        <div>
+            <table className="w-full border-collapse">
+                <thead>
+                    <tr>
+                        <th className="border border-gray-600 p-3 bg-gray-700 text-left">날짜</th>
+                        <th className="border border-gray-600 p-3 bg-gray-700 text-left">방문자 수</th>
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {data.map((visitor) => (
+                        <tr key={visitor.id} className="hover:bg-gray-700 transition-colors">
+                            <td className="border border-gray-600 p-3 text-center">{visitor.visitDate}</td>
+                            <td className="border border-gray-600 p-3 text-center">{visitor.count}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            <div className="mt-8">
+                <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="visitDate" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="count" fill="#8884d8" name="방문자 수" />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
     );
 };
 
@@ -87,23 +102,42 @@ const MonthlyStats = () => {
     if (loading) return <div className="text-center p-10 text-white">로딩 중...</div>;
     if (error) return <div className="text-center p-10 text-red-500">{error}</div>;
 
+    const chartData = data.map(item => ({
+        ...item,
+        monthLabel: `${item.year}년 ${item.month}월`
+    }));
+
     return (
-        <table className="w-full border-collapse">
-            <thead>
-                <tr>
-                    <th className="border border-gray-600 p-3 bg-gray-700 text-left">월</th>
-                    <th className="border border-gray-600 p-3 bg-gray-700 text-left">총 방문자 수</th>
-                </tr>
-            </thead>
-            <tbody>
-                {data.map((visitor) => (
-                    <tr key={`${visitor.year}-${visitor.month}`} className="hover:bg-gray-700 transition-colors">
-                        <td className="border border-gray-600 p-3 text-center">{`${visitor.year}년 ${visitor.month}월`}</td>
-                        <td className="border border-gray-600 p-3 text-center">{visitor.totalCount}</td>
+        <div>
+            <table className="w-full border-collapse">
+                <thead>
+                    <tr>
+                        <th className="border border-gray-600 p-3 bg-gray-700 text-left">월</th>
+                        <th className="border border-gray-600 p-3 bg-gray-700 text-left">총 방문자 수</th>
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {data.map((visitor) => (
+                        <tr key={`${visitor.year}-${visitor.month}`} className="hover:bg-gray-700 transition-colors">
+                            <td className="border border-gray-600 p-3 text-center">{`${visitor.year}년 ${visitor.month}월`}</td>
+                            <td className="border border-gray-600 p-3 text-center">{visitor.totalCount}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            <div className="mt-8">
+                <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="monthLabel" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="totalCount" fill="#82ca9d" name="총 방문자 수" />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
     );
 };
 
