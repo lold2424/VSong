@@ -1,8 +1,10 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import axios from 'axios';
 
-// 사용자 정보 타입 정의
+axios.defaults.withCredentials = true;
+
 interface User {
   name: string;
   email: string;
@@ -10,7 +12,6 @@ interface User {
   role: 'USER' | 'ADMIN';
 }
 
-// Context가 가지게 될 값들의 타입 정의
 interface AuthContextType {
   isLoggedIn: boolean;
   user: User | null;
@@ -19,10 +20,8 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// Context 생성
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// AuthProvider 컴포넌트 생성
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -35,8 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const response = await fetch('/api/login/userinfo', { credentials: 'include' });
 
         if (response.ok) {
-          const data = await response.json().catch(() => null); // JSON 파싱 에러 방지
-          if (data && data.name) { // name 필드가 있는지 확인하여 유효한 사용자 데이터인지 검증
+          const data = await response.json().catch(() => null);
+          if (data && data.name) {
             setUser(data);
             setIsLoggedIn(true);
           } else {
@@ -48,7 +47,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsLoggedIn(false);
         }
       } catch (error) {
-        // 네트워크 오류 시 사용자 상태 초기화
         setUser(null);
         setIsLoggedIn(false);
       } finally {
@@ -59,6 +57,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchUserInfo();
   }, []);
 
+  useEffect(() => {
+    axios.post('/api/track-visit').catch(err => {
+      console.error("Failed to track visit:", err);
+    });
+  }, []);
+
   const login = () => {
     window.location.href = '/oauth2/authorization/google';
   };
@@ -67,7 +71,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await fetch('/api/logout', { credentials: 'include' });
     setUser(null);
     setIsLoggedIn(false);
-    // 페이지를 새로고침하여 상태를 완전히 초기화
     window.location.href = '/';
   };
 
@@ -78,7 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// 커스텀 훅 생성
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

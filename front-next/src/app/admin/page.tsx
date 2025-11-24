@@ -7,12 +7,10 @@ import Link from 'next/link';
 const AdminPage = () => {
   const { user, isLoading } = useAuth();
 
-  // 버튜버 추가 상태
   const [channelId, setChannelId] = useState('');
   const [addVtuberMessage, setAddVtuberMessage] = useState('');
   const [isSubmittingVtuber, setIsSubmittingVtuber] = useState(false);
 
-  // 캐시 새로고침 상태
   const [cacheMessage, setCacheMessage] = useState('');
   const [isRefreshingCache, setIsRefreshingCache] = useState(false);
 
@@ -40,7 +38,7 @@ const AdminPage = () => {
 
       if (response.ok) {
         setAddVtuberMessage(`성공: ${resultText}`);
-        setChannelId(''); // 성공 시 입력 필드 초기화
+        setChannelId('');
       } else {
         setAddVtuberMessage(`오류: ${resultText}`);
       }
@@ -95,6 +93,14 @@ const AdminPage = () => {
     <div className="max-w-2xl mx-auto p-8 bg-gray-800 text-white rounded-lg shadow-lg">
       <h1 className="text-3xl font-bold mb-6 text-center text-[#A6E22E]">관리자 페이지</h1>
       
+      {/* 방문자 통계 섹션 추가 */}
+      <div className="bg-gray-700 p-6 rounded-md mb-8">
+        <h2 className="text-xl font-semibold mb-4">사이트 통계</h2>
+        <Link href="/admin/visitors" className="block w-full bg-blue-500 text-white font-bold py-3 px-4 rounded hover:bg-blue-600 transition text-center">
+          방문자 통계 보기
+        </Link>
+      </div>
+
       {/* 버튜버 추가 섹션 */}
       <div className="bg-gray-700 p-6 rounded-md mb-8">
         <h2 className="text-xl font-semibold mb-4">버튜버 수동 추가</h2>
