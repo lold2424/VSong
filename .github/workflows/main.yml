@@ -27,6 +27,7 @@ jobs:
       - name: Clean and Build Frontend
         env:
           API_KEY: ${{ secrets.YOUTUBE_API_KEYS }}
+          NODE_OPTIONS: '--max-old-space-size=4096'
         working-directory: ./front-next
         run: |
           echo "Aggressively cleaning up previous build artifacts..."
@@ -79,7 +80,7 @@ jobs:
           
           echo "Renaming .next to next-build to avoid artifact issues..."
           mv $DEST_DIR/.next $DEST_DIR/next-build
-          
+
       - name: Verify Frontend Artifact
         run: |
           echo "--- Verifying structure of artifacts/frontend ---"
@@ -108,7 +109,7 @@ jobs:
         run: |
           echo "--- Verifying contents of downloaded artifact ./v-song-build/frontend ---"
           ls -lR ./v-song-build/frontend
-          
+
       - name: Deploy Application
         env:
           DB_URL: ${{ secrets.DB_URL }}
