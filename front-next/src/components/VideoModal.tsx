@@ -29,21 +29,51 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
         };
     }, []);
 
-    return (
-        <div className="fixed inset-0 w-full h-full bg-black bg-opacity-80 flex justify-center items-center z-[1000]" onClick={handleBackgroundClick}>
-            <div className="relative w-4/5 max-w-2xl h-3/5 bg-black rounded-lg overflow-hidden">
-                <iframe
-                    width="100%"
-                    height="100%"
-                    src={`https://www.youtube.com/embed/${videoId}`}
-                    title="YouTube video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                ></iframe>
-            </div>
-        </div>
-    );
+                    return (
+
+                        <div className="video-modal fixed inset-0 w-full h-full bg-black bg-opacity-80 flex justify-center items-center z-[1000]" onClick={handleBackgroundClick}>
+
+                            <div className="relative w-full max-w-6xl p-8"> {/* Wrapper with padding */}
+
+                                <button
+
+                                    onClick={onClose}
+
+                                    className="absolute top-0 right-2 text-white text-4xl font-bold z-10 leading-none hover:text-gray-300 transition-colors"
+
+                                    aria-label="Close"
+
+                                >
+
+                                    &times;
+
+                                </button>
+
+                                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+
+                                    <iframe
+
+                                        className="w-full h-full"
+
+                                        src={`https://www.youtube.com/embed/${videoId}`}
+
+                                        title="YouTube video player"
+
+                                        frameBorder="0"
+
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+
+                                        allowFullScreen
+
+                                    ></iframe>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    );
 };
 
 export default VideoModal;

@@ -6,6 +6,7 @@ import com.VSong.repository.VtuberRepository;
 import com.VSong.repository.VtuberSongsRepository;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -25,6 +27,8 @@ public class UpdateVtuberSongsService {
     private final VtuberSongsRepository vtuberSongsRepository;
     private final VtuberValidationService validationService;
     private final YouTubeApiService youTubeApiService;
+    private final MainPageService mainPageService;
+    private final CacheManager cacheManager;
     private static final Logger logger = Logger.getLogger(UpdateVtuberSongsService.class.getName());
 
     public UpdateVtuberSongsService(
@@ -32,12 +36,16 @@ public class UpdateVtuberSongsService {
             VtuberRepository vtuberRepository,
             VtuberSongsRepository vtuberSongsRepository,
             VtuberValidationService validationService,
-            YouTubeApiService youTubeApiService) {
+            YouTubeApiService youTubeApiService,
+            MainPageService mainPageService,
+            CacheManager cacheManager) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
         this.vtuberSongsRepository = vtuberSongsRepository;
         this.validationService = validationService;
         this.youTubeApiService = youTubeApiService;
+        this.mainPageService = mainPageService;
+        this.cacheManager = cacheManager;
     }
 
     public void fetchVtuberSongs() {
@@ -62,6 +70,10 @@ public class UpdateVtuberSongsService {
             logger.info("기존 Vtuber 최근 노래 검색 시작: " + vtuber.getName());
             fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), threeDaysAgoInstant);
         }
+
+        logger.info("메인 페이지 캐시를 초기화하고 다시 채웁니다.");
+        Objects.requireNonNull(cacheManager.getCache("mainPage")).clear();
+        mainPageService.getCacheableMainPageData("all");
 
         logger.info("=== fetchVtuberSongs 실행 종료 ===");
     }

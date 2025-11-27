@@ -71,16 +71,16 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
             <h3 style={{ cursor: "pointer" }}>{song.title}</h3>
           </div>
         ) : (
-          <div className="absolute inset-0 w-full h-full bg-[#00ADB5] text-[#222831] p-2.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <h3 style={{ cursor: "pointer" }}>{song.title}</h3>
+          <div className="absolute inset-0 w-full h-full flex flex-col justify-center items-center bg-[#00ADB5] text-[#222831] p-2.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <h3 className="cursor-pointer font-bold text-lg mb-1">{song.title}</h3>
             <p
-              style={{ color: "blue", cursor: "pointer" }}
+              className="text-blue-600 cursor-pointer hover:underline"
               onClick={handleVtuberNameClick} // 채널명 클릭 이벤트
             >
               채널명: {song.vtuberName}
             </p>
-            <p>조회수: {song.viewCount.toLocaleString()}</p>
-            <p>게시일: {new Date(song.publishedAt).toLocaleDateString()}</p>
+            <p className="opacity-80">조회수: {song.viewCount.toLocaleString()}</p>
+            <p className="opacity-80">게시일: {new Date(song.publishedAt).toLocaleDateString()}</p>
           </div>
         )}
       </div>

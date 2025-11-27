@@ -29,7 +29,7 @@ public class VtuberValidationService {
             "응원", "통계", "번역", "다시보기", "게임", "저장", "일상", "브이로그", "보관", "잼민",
             "TV", "코인", "주식", "Tj", "tv", "팬계정", "창고", "박스", "팬", "클립", "키리누키",
             "vlog", "유튜버", "youtube", "YOUTUBE", "유튜브", "코딩", "코드", "로블록스", "덕질",
-            "음식", "기도", "교회", "여행", "VOD", "풀영상"
+            "음식", "기도", "교회", "여행", "VOD", "풀영상", "teaser"
     );
     private static final List<String> EXCLUDE_DESCRIPTION_KEYWORDS = Arrays.asList(
             "팬클립", "팬영상", "팬채널", "저장소", "브이로그", "학년", "초등학", "중학", "고등학",
