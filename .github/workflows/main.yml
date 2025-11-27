@@ -34,7 +34,7 @@ jobs:
           rm -rf .next node_modules build dist assets static standalone
           
           echo "Installing dependencies and building..."
-          npm install
+          npm ci
           NEXT_PUBLIC_API_URL=${{ secrets.BASE_URL }} npm run build
 
       - name: Verify Frontend Build
