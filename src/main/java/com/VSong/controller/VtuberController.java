@@ -1,10 +1,8 @@
 package com.VSong.controller;
 
-import com.VSong.dto.VtuberRequest;
 import com.VSong.entity.VtuberEntity;
 import com.VSong.entity.VtuberSongsEntity;
 import com.VSong.service.VtuberService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,12 +23,6 @@ public class VtuberController {
     public ResponseEntity<List<VtuberEntity>> getAllVtubers() {
         List<VtuberEntity> vtubers = vtuberService.getAllVtubers();
         return ResponseEntity.ok(vtubers);
-    }
-
-    @PostMapping
-    public ResponseEntity<VtuberEntity> createVtuber(@RequestBody VtuberRequest vtuberRequest) {
-        VtuberEntity vtuberEntity = vtuberService.createVtuber(vtuberRequest.getDescription(), vtuberRequest.getGender());
-        return new ResponseEntity<>(vtuberEntity, HttpStatus.CREATED);
     }
 
     @GetMapping("/search")
