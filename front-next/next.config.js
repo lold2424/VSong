@@ -20,7 +20,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: img.youtube.com yt3.ggpht.com lh3.googleusercontent.com; object-src 'none'; frame-ancestors 'self';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: img.youtube.com yt3.ggpht.com lh3.googleusercontent.com; object-src 'none'; frame-ancestors 'self'; frame-src https://www.youtube.com;",
           },
         ],
       },
