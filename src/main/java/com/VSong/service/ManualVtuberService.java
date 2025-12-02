@@ -8,14 +8,11 @@ import com.google.api.services.youtube.model.Channel;
 import com.google.api.services.youtube.model.ChannelListResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ManualVtuberService {
@@ -26,23 +23,24 @@ public class ManualVtuberService {
     private final ExceptVtuberRepository exceptVtuberRepository;
     private final VtuberValidationService validationService;
     private final YouTube youTube;
-    private final List<String> apiKeys;
-    private int currentKeyIndex = 0;
+    private final YouTubeApiService youTubeApiService;
 
     public ManualVtuberService(VtuberRepository vtuberRepository,
                                ExceptVtuberRepository exceptVtuberRepository,
                                VtuberValidationService validationService,
                                YouTube youTube,
-                               @Value("${youtube.api.keys}") String apiKeys) {
+                               YouTubeApiService youTubeApiService) {
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.validationService = validationService;
         this.youTube = youTube;
-        this.apiKeys = Arrays.asList(apiKeys.split(","));
+        this.youTubeApiService = youTubeApiService;
     }
 
     public String addVtuberChannel(String channelId) {
-        logger.info("수동 버튜버 채널 추가 요청: {}", channelId);
+        if (logger.isInfoEnabled()) {
+            logger.info("수동 버튜버 채널 추가 요청: {}", channelId);
+        }
 
         // 1. 이미 DB에 존재하는지 확인
         if (vtuberRepository.existsByChannelId(channelId)) {
@@ -53,11 +51,13 @@ public class ManualVtuberService {
             return "제외 목록에 있는 채널입니다: " + channelId;
         }
 
-        Channel youtubeChannel = null;
+        Channel youtubeChannel;
         try {
             youtubeChannel = fetchChannelDetails(channelId);
         } catch (IOException e) {
-            logger.error("YouTube API 호출 중 오류 발생 (채널 ID: {}): {}", channelId, e.getMessage());
+            if (logger.isErrorEnabled()) {
+                logger.error("YouTube API 호출 중 오류 발생 (채널 ID: {}): {}", channelId, e.getMessage());
+            }
             return "YouTube API 호출 중 오류가 발생했습니다: " + e.getMessage();
         }
 
@@ -75,10 +75,14 @@ public class ManualVtuberService {
         // 4. DB에 저장
         try {
             saveNewVtuber(youtubeChannel);
-            logger.info("수동으로 버튜버 채널 저장 완료: {} ({})", channelTitle, channelId);
+            if (logger.isInfoEnabled()) {
+                logger.info("수동으로 버튜버 채널 저장 완료: {} ({})", channelTitle, channelId);
+            }
             return "버튜버 채널이 성공적으로 추가되었습니다: " + channelTitle;
         } catch (Exception e) {
-            logger.error("버튜버 채널 저장 중 오류 발생 (채널 ID: {}): {}", channelId, e.getMessage());
+            if (logger.isErrorEnabled()) {
+                logger.error("버튜버 채널 저장 중 오류 발생 (채널 ID: {}): {}", channelId, e.getMessage());
+            }
             return "버튜버 채널 저장 중 오류가 발생했습니다: " + e.getMessage();
         }
     }
@@ -87,9 +91,8 @@ public class ManualVtuberService {
         YouTube.Channels.List channelRequest = youTube.channels().list(List.of("snippet", "statistics"));
         channelRequest.setId(List.of(channelId));
         channelRequest.setFields("items(id,snippet/title,snippet/description,snippet/thumbnails/default/url,statistics/subscriberCount)");
-        channelRequest.setKey(getCurrentApiKey());
 
-        ChannelListResponse channelResponse = channelRequest.execute();
+        ChannelListResponse channelResponse = youTubeApiService.executeRequest(channelRequest);
         List<Channel> channels = channelResponse.getItems();
 
         if (channels == null || channels.isEmpty()) {
@@ -114,14 +117,5 @@ public class ManualVtuberService {
         }
         vtuber.setStatus("new");
         vtuberRepository.save(vtuber);
-    }
-
-    private String getCurrentApiKey() {
-        return apiKeys.get(currentKeyIndex);
-    }
-
-    private synchronized void rotateApiKey() {
-        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
-        logger.warn("API 키를 다음 키로 전환했습니다.");
     }
 }

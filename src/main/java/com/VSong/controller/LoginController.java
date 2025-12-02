@@ -38,7 +38,9 @@ public class LoginController {
         }
 
         OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-        log.info("[SUCCESS] Authenticated user: {}", oauth2User.getAttributes());
+        if (log.isInfoEnabled()) {
+            log.info("[SUCCESS] Authenticated user: {}", oauth2User.getAttributes());
+        }
 
         Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("name", oauth2User.getAttribute("name"));

@@ -6,15 +6,12 @@ import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.Channel;
 import com.google.api.services.youtube.model.ChannelListResponse;
 import com.google.api.services.youtube.model.SearchListResponse;
-import com.google.api.services.youtube.model.SearchResult;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.util.concurrent.RateLimiter;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -24,7 +21,6 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,8 +29,8 @@ public class UploadVtuberService {
     private final YouTube youTube;
     private final VtuberRepository vtuberRepository;
     private final VtuberValidationService validationService;
-    private final List<String> apiKeys;
-    private int currentKeyIndex = 0;
+    private final YouTubeApiService youTubeApiService;
+
     private final List<String> queries = Arrays.asList(
             "버튜버", "Vtuber", "버츄얼 유튜버", "버츄버",
             "이세계아이돌", "V-LUP", "RE:REVOLUTION", "VRECORD", "V&U", "일루전 라이브",
@@ -48,28 +44,23 @@ public class UploadVtuberService {
     );
     private static final Logger logger = LoggerFactory.getLogger(UploadVtuberService.class);
     private static final int MAX_PAGES_PER_QUERY = 3;
-    private static final int MAX_QUOTA_PER_KEY = 10000;
 
     private final Cache<String, Boolean> processedCache = CacheBuilder.newBuilder()
             .expireAfterWrite(24, TimeUnit.HOURS)
             .build();
 
-    private final List<AtomicInteger> apiKeyUsage;
-    private final RateLimiter rateLimiter = RateLimiter.create(5.0);
     private final Counter searchApiCounter;
     private final Counter channelsApiCounter;
 
     public UploadVtuberService(YouTube youTube,
                                VtuberRepository vtuberRepository,
                                VtuberValidationService validationService,
-                               @Value("${youtube.api.keys}") String apiKeys,
+                               YouTubeApiService youTubeApiService,
                                MeterRegistry meterRegistry) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
         this.validationService = validationService;
-        this.apiKeys = Arrays.stream(apiKeys.split(",")).map(String::trim).collect(Collectors.toList());
-        this.apiKeyUsage = this.apiKeys.stream().map(key -> new AtomicInteger(0)).collect(Collectors.toList());
-        logger.info("API 키 {}개 로드 완료", this.apiKeys.size());
+        this.youTubeApiService = youTubeApiService;
         this.searchApiCounter = meterRegistry.counter("youtube.api.search");
         this.channelsApiCounter = meterRegistry.counter("youtube.api.channels");
     }
@@ -88,17 +79,14 @@ public class UploadVtuberService {
                 }
                 pagesFetched++;
                 try {
-                    rateLimiter.acquire();
                     YouTube.Search.List search = youTube.search().list(List.of("id"));
                     search.setQ(query);
                     search.setType(List.of("channel"));
                     search.setFields("nextPageToken,items(id/channelId)");
                     search.setMaxResults(50L);
-                    search.setKey(getCurrentApiKey());
                     search.setPageToken(pageToken);
-                    incrementApiKeyUsage();
                     searchApiCounter.increment();
-                    SearchListResponse searchResponse = search.execute();
+                    SearchListResponse searchResponse = youTubeApiService.executeRequest(search);
                     List<String> channelIds = searchResponse.getItems().stream()
                             .map(result -> result.getId().getChannelId())
                             .filter(channelId -> processedCache.getIfPresent(channelId) == null)
@@ -115,7 +103,6 @@ public class UploadVtuberService {
                     pageToken = searchResponse.getNextPageToken();
                 } catch (IOException e) {
                     logger.error("API 호출 중 오류 발생: {}", e.getMessage());
-                    rotateApiKey();
                 }
             } while (pageToken != null);
         }
@@ -144,24 +131,20 @@ public class UploadVtuberService {
                 }
                 pagesFetched++;
                 try {
-                    rateLimiter.acquire();
                     YouTube.Search.List search = youTube.search().list(List.of("id"));
                     search.setQ(query);
                     search.setType(List.of("channel"));
                     search.setFields("nextPageToken,items(id/channelId)");
                     search.setMaxResults(50L);
-                    search.setKey(getCurrentApiKey());
                     search.setPageToken(pageToken);
-                    incrementApiKeyUsage();
                     searchApiCounter.increment();
-                    SearchListResponse searchResponse = search.execute();
+                    SearchListResponse searchResponse = youTubeApiService.executeRequest(search);
                     allChannelIds.addAll(searchResponse.getItems().stream()
                             .map(result -> result.getId().getChannelId())
                             .collect(Collectors.toList()));
                     pageToken = searchResponse.getNextPageToken();
                 } catch (IOException e) {
                     logger.error("API 호출 중 오류 발생: {}", e.getMessage());
-                    rotateApiKey();
                 }
             } while (pageToken != null);
         }
@@ -172,14 +155,11 @@ public class UploadVtuberService {
     private void processChannels(List<String> channelIds) {
         logger.debug("processChannels 시작 - 채널 ID 개수: {}", channelIds.size());
         try {
-            rateLimiter.acquire();
             YouTube.Channels.List channelRequest = youTube.channels().list(List.of("snippet", "statistics"));
             channelRequest.setId(channelIds);
             channelRequest.setFields("items(id,snippet/title,snippet/description,snippet/thumbnails/default/url,statistics/subscriberCount)");
-            channelRequest.setKey(getCurrentApiKey());
-            incrementApiKeyUsage();
             channelsApiCounter.increment();
-            ChannelListResponse channelResponse = channelRequest.execute();
+            ChannelListResponse channelResponse = youTubeApiService.executeRequest(channelRequest);
             if (channelResponse.getItems() == null) return;
 
             for (Channel channel : channelResponse.getItems()) {
@@ -217,23 +197,6 @@ public class UploadVtuberService {
             }
         } catch (IOException e) {
             logger.error("채널 처리 중 API 오류 발생: {}", e.getMessage());
-            rotateApiKey();
-        }
-    }
-
-    private String getCurrentApiKey() {
-        return apiKeys.get(currentKeyIndex);
-    }
-
-    private synchronized void rotateApiKey() {
-        if (apiKeys.size() == 1) throw new RuntimeException("모든 API 키의 할당량이 소진되었습니다.");
-        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
-        logger.warn("API 키를 다음 키로 전환했습니다.");
-    }
-
-    private void incrementApiKeyUsage() {
-        if (apiKeyUsage.get(currentKeyIndex).incrementAndGet() >= MAX_QUOTA_PER_KEY) {
-            rotateApiKey();
         }
     }
 
@@ -263,20 +226,16 @@ public class UploadVtuberService {
 
     private String fetchChannelProfileImage(String channelId) {
         try {
-            rateLimiter.acquire();
             YouTube.Channels.List channelsList = youTube.channels().list(List.of("snippet"));
             channelsList.setId(List.of(channelId));
-            channelsList.setKey(getCurrentApiKey());
             channelsList.setFields("items(snippet/thumbnails/default/url)");
-            incrementApiKeyUsage();
             channelsApiCounter.increment();
-            ChannelListResponse response = channelsList.execute();
+            ChannelListResponse response = youTubeApiService.executeRequest(channelsList);
             if (!response.getItems().isEmpty() && response.getItems().get(0).getSnippet().getThumbnails() != null) {
                 return response.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl();
             }
         } catch (Exception e) {
             logger.warn("프로필 이미지 가져오기 실패 - 채널 ID: {} - 오류: {}", channelId, e.getMessage());
-            rotateApiKey();
         }
         return null;
     }
