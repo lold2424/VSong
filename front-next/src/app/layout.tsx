@@ -6,6 +6,7 @@ import WeeklyChartContainer from "@/components/WeeklyChartContainer";
 import Link from "next/link";
 
 import { AuthProvider } from "@/context/AuthContext";
+import { WebVitalsReporter } from "@/components/WebVitalsReporter";
 
 export const metadata: Metadata = {
   title: {
@@ -27,6 +28,7 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         <AuthProvider>
+          <WebVitalsReporter /> {/* Add the WebVitalsReporter here */}
           <div className="flex flex-col min-h-screen overflow-x-hidden bg-[#272822]">
             <Suspense fallback={<div>Loading...</div>}>
               <Header />
