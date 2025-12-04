@@ -71,12 +71,12 @@ public class UpdateVtuberSongsService {
             }
         }
 
-        Instant threeDaysAgoInstant = LocalDateTime.now().minusDays(3).toInstant(ZoneOffset.UTC);
+
         for (VtuberEntity vtuber : existingVtubers) {
             if (logger.isInfoEnabled()) {
                 logger.info("기존 Vtuber 최근 노래 검색 시작: {}", vtuber.getName());
             }
-            fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), threeDaysAgoInstant);
+            fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName());
         }
 
         logger.info("메인 페이지 캐시를 초기화하고 다시 채웁니다.");
@@ -278,19 +278,7 @@ public class UpdateVtuberSongsService {
         }
     }
 
-    private void handleSearchResults(List<SearchResult> searchResults, String channelName) {
-        if (searchResults == null || searchResults.isEmpty()) return;
 
-        List<String> videoIds = new ArrayList<>();
-        for (SearchResult result : searchResults) {
-            if (result.getId() != null && result.getId().getVideoId() != null) {
-                videoIds.add(result.getId().getVideoId());
-            }
-        }
-        if (videoIds.isEmpty()) return;
-
-        fetchAndProcessVideos(videoIds, channelName);
-    }
 
     private void saveNewSong(Video video, VideoStatistics statistics, String channelName, String classification) {
         VtuberSongsEntity song = new VtuberSongsEntity();
@@ -361,7 +349,7 @@ public class UpdateVtuberSongsService {
         return null;
     }
 
-    private void fetchRecentSongsFromSearch(String channelId, String channelName, Instant publishedAfterInstant) {
+    private void fetchRecentSongsFromSearch(String channelId, String channelName) {
         String rssUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId;
 
         try {
@@ -392,17 +380,5 @@ public class UpdateVtuberSongsService {
         }
     }
 
-    private long fetchViewCount(String videoId) {
-        try {
-            YouTube.Videos.List request = youTube.videos().list(List.of("statistics"));
-            request.setId(List.of(videoId));
-            var response = youTubeApiService.executeRequest(request);
-            if (response != null && !response.getItems().isEmpty()) {
-                return response.getItems().get(0).getStatistics().getViewCount().longValue();
-            }
-        } catch (IOException e) {
-            logger.error("조회수 가져오는데 실패: ", e);
-        }
-        return 0;
-    }
+
 }
