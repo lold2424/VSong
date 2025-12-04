@@ -33,7 +33,7 @@ public class VisitorController {
         boolean hasVisited = false;
         if (cookies != null) {
             hasVisited = Arrays.stream(cookies)
-                               .anyMatch(c -> VISITOR_COOKIE_NAME.equals(c.getName())));
+                               .anyMatch(c -> VISITOR_COOKIE_NAME.equals(c.getName()));
         }
 
         if (!hasVisited) {

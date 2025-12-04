@@ -102,7 +102,9 @@ public class UploadVtuberService {
                     }
                     pageToken = searchResponse.getNextPageToken();
                 } catch (IOException e) {
-                    logger.error("API 호출 중 오류 발생: {}", e.getMessage());
+                    if (logger.isErrorEnabled()) {
+                        logger.error("API 호출 중 오류 발생: {}", e.getMessage());
+                    }
                 }
             } while (pageToken != null);
         }
@@ -121,12 +123,16 @@ public class UploadVtuberService {
         logger.info("=== fetchAllChannelIdsFromApi 시작 ===");
         List<String> allChannelIds = new java.util.ArrayList<>();
         for (String query : queries) {
-            logger.info("ID 수집 쿼리 실행: {}", query);
+            if (logger.isInfoEnabled()) {
+                logger.info("ID 수집 쿼리 실행: {}", query);
+            }
             String pageToken = null;
             int pagesFetched = 0;
             do {
                 if (pagesFetched >= MAX_PAGES_PER_QUERY) {
-                    logger.info("쿼리 '{}'에 대해 최대 페이지 수를 초과했습니다.", query);
+                    if (logger.isInfoEnabled()) {
+                        logger.info("쿼리 '{}'에 대해 최대 페이지 수를 초과했습니다.", query);
+                    }
                     break;
                 }
                 pagesFetched++;
@@ -144,7 +150,9 @@ public class UploadVtuberService {
                             .collect(Collectors.toList()));
                     pageToken = searchResponse.getNextPageToken();
                 } catch (IOException e) {
-                    logger.error("API 호출 중 오류 발생: {}", e.getMessage());
+                    if (logger.isErrorEnabled()) {
+                        logger.error("API 호출 중 오류 발생: {}", e.getMessage());
+                    }
                 }
             } while (pageToken != null);
         }
@@ -168,13 +176,17 @@ public class UploadVtuberService {
 
                 String processableReason = validationService.getChannelProcessableReason(channelId);
                 if (processableReason != null) {
-                    logger.info("걸러진 채널: {} (ID: {}) - 이유: {}", channelTitle, channelId, processableReason);
+                    if (logger.isInfoEnabled()) {
+                        logger.info("걸러진 채널: {} (ID: {}) - 이유: {}", channelTitle, channelId, processableReason);
+                    }
                     continue;
                 }
 
                 String koreanVtuberReason = validationService.getKoreanVtuberReason(channel);
                 if (koreanVtuberReason != null) {
-                    logger.info("걸러진 채널: {} (ID: {}) - 이유: {}", channelTitle, channelId, koreanVtuberReason);
+                    if (logger.isInfoEnabled()) {
+                        logger.info("걸러진 채널: {} (ID: {}) - 이유: {}", channelTitle, channelId, koreanVtuberReason);
+                    }
                     continue;
                 }
 
@@ -193,24 +205,32 @@ public class UploadVtuberService {
                 }
                 vtuber.setStatus("new");
                 vtuberRepository.save(vtuber);
-                logger.info("새로운 VTuber 저장: {} (ID: {})", vtuber.getName(), channelId);
+                if (logger.isInfoEnabled()) {
+                    logger.info("새로운 VTuber 저장: {} (ID: {})", vtuber.getName(), channelId);
+                }
             }
         } catch (IOException e) {
-            logger.error("채널 처리 중 API 오류 발생: {}", e.getMessage());
+            if (logger.isErrorEnabled()) {
+                logger.error("채널 처리 중 API 오류 발생: {}", e.getMessage());
+            }
         }
     }
 
     private void updateExistingChannelsMissingImages(ThreadPoolExecutor executor) {
         List<VtuberEntity> vtubersWithMissingImages = vtuberRepository.findByChannelImgIsNull();
         if (vtubersWithMissingImages.isEmpty()) return;
-        logger.info("프로필 이미지가 없는 VTuber 수: {}", vtubersWithMissingImages.size());
+        if (logger.isInfoEnabled()) {
+            logger.info("프로필 이미지가 없는 VTuber 수: {}", vtubersWithMissingImages.size());
+        }
         for (VtuberEntity vtuber : vtubersWithMissingImages) {
             executor.submit(() -> {
                 String imageUrl = fetchChannelProfileImage(vtuber.getChannelId());
                 if (imageUrl != null && !imageUrl.isEmpty()) {
                     vtuber.setChannelImg(imageUrl);
                     vtuberRepository.save(vtuber);
-                    logger.info("프로필 이미지 업데이트 완료: {}", vtuber.getName());
+                    if (logger.isInfoEnabled()) {
+                        logger.info("프로필 이미지 업데이트 완료: {}", vtuber.getName());
+                    }
                 }
             });
         }
@@ -235,7 +255,9 @@ public class UploadVtuberService {
                 return response.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl();
             }
         } catch (Exception e) {
-            logger.warn("프로필 이미지 가져오기 실패 - 채널 ID: {} - 오류: {}", channelId, e.getMessage());
+            if (logger.isWarnEnabled()) {
+                logger.warn("프로필 이미지 가져오기 실패 - 채널 ID: {} - 오류: {}", channelId, e.getMessage());
+            }
         }
         return null;
     }

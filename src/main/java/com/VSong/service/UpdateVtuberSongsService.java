@@ -145,19 +145,19 @@ public class UpdateVtuberSongsService {
                                 song.setViewsIncreaseDay(viewIncreaseDay);
                                 song.setUpdateDayTime(LocalDateTime.now());
 
-                                // Always accumulate weekly increase
                                 song.setViewsIncreaseWeek(song.getViewsIncreaseWeek() + viewIncreaseDay);
 
-                                // Reset lastWeekViewCount and viewsIncreaseWeek on Monday
                                 if (LocalDateTime.now().getDayOfWeek() == DayOfWeek.MONDAY) {
                                     try {
-                                        song.setViewsIncreaseWeek(0L); // Reset for the new week
-                                        song.setLastWeekViewCount(newViewCount); // Set new baseline for the week
+                                        song.setViewsIncreaseWeek(0L);
+                                        song.setLastWeekViewCount(newViewCount);
                                         song.setUpdateWeekTime(LocalDateTime.now());
-                                        weeklyUpdatedCount++; // This count is for the reset, not accumulation
+                                        weeklyUpdatedCount++;
                                     } catch (Exception e) {
                                         weeklyFailedCount++;
-                                        logger.error("주간 조회수 초기화 및 기준점 설정 실패 (videoId: {})", song.getVideoId(), e);
+                                        if (logger.isErrorEnabled()) {
+                                            logger.error("주간 조회수 초기화 및 기준점 설정 실패 (videoId: {})", song.getVideoId(), e);
+                                        }
                                     }
                                 }
                                 vtuberSongsRepository.save(song);
@@ -176,7 +176,9 @@ public class UpdateVtuberSongsService {
                             }
                         } catch (Exception e) {
                             failedCount++;
-                            logger.error("조회수 업데이트 중 예외 발생 (videoId: {})", video.getId(), e);
+                            if (logger.isErrorEnabled()) {
+                                logger.error("조회수 업데이트 중 예외 발생 (videoId: {})", video.getId(), e);
+                            }
                         }
                     }
                 }
@@ -193,7 +195,9 @@ public class UpdateVtuberSongsService {
 
             } catch (IOException e) {
                 failedCount += batch.size();
-                logger.error("조회수 업데이트 배치 실패. 다음 동영상 ID들이 영향을 받았습니다: {}", String.join(", ", batch), e);
+                if (logger.isErrorEnabled()) {
+                    logger.error("조회수 업데이트 배치 실패. 다음 동영상 ID들이 영향을 받았습니다: {}", String.join(", ", batch), e);
+                }
             }
         }
         if (logger.isInfoEnabled()) {
@@ -217,7 +221,6 @@ public class UpdateVtuberSongsService {
         int newSongsAddedCount = 0;
 
         try {
-            // Fetch video details including snippet, contentDetails, and statistics in one go
             YouTube.Videos.List videoRequest = youTube.videos().list(List.of("id", "snippet", "contentDetails", "statistics"));
             videoRequest.setId(videoIds);
             VideoListResponse videoResponse = youTubeApiService.executeRequest(videoRequest);
@@ -258,7 +261,6 @@ public class UpdateVtuberSongsService {
                     continue;
                 }
 
-                // If all checks pass, save the new song
                 saveNewSong(video, video.getStatistics(), channelName, classification);
                 newSongsAddedCount++;
             }
@@ -373,7 +375,7 @@ public class UpdateVtuberSongsService {
                 if (logger.isInfoEnabled()) {
                     logger.info("Found {} RSS 최신 비디오 {}. Processing...", videoIds.size(), channelName);
                 }
-                fetchAndProcessVideos(videoIds, channelName); // <-- BUG FIX: This call was missing
+                fetchAndProcessVideos(videoIds, channelName);
             }
         } catch (Exception e) {
             logger.error("RSS 피드를 가져오거나 구문 분석하는 데 실패 {}", channelName, e);

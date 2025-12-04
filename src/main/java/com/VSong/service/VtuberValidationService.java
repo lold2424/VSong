@@ -198,7 +198,9 @@ public class VtuberValidationService {
 
             return patternMatches >= 3;
         } catch (Exception e) {
-            logger.warn("채널 {} 콘텐츠 패턴 분석 실패: {}", channelId, e.getMessage());
+            if (logger.isWarnEnabled()) {
+                logger.warn("채널 {} 콘텐츠 패턴 분석 실패: {}", channelId, e.getMessage());
+            }
             return false;
         }
     }
@@ -244,7 +246,9 @@ public class VtuberValidationService {
         boolean finalDecision = isMusicCategory || hasSongKeyword;
 
         if (finalDecision) {
-            logger.info("Validation Check for Video ID: {} -> ACCEPTED. Reasons: {}", videoId, String.join(", ", reasons));
+            if (logger.isInfoEnabled()) {
+                logger.info("Validation Check for Video ID: {} -> ACCEPTED. Reasons: {}", videoId, String.join(", ", reasons));
+            }
         }
 
         return finalDecision;
@@ -264,7 +268,9 @@ public class VtuberValidationService {
             if (videoDuration.compareTo(Duration.ofMinutes(1)) <= 0 || title.toLowerCase().contains("short")) return "shorts";
             return "videos";
         } catch (Exception e) {
-            logger.error("Error parsing duration '{}' for videoId: {}. Ignoring.", durationStr, video.getId(), e);
+            if (logger.isErrorEnabled()) {
+                logger.error("Error parsing duration '{}' for videoId: {}. Ignoring.", durationStr, video.getId(), e);
+            }
             return "ignore";
         }
     }
