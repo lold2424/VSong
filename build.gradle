@@ -1,6 +1,6 @@
 plugins {
-    id 'org.springframework.boot' version '3.5.7'
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.springframework.boot' version '3.5.8'
+    id 'io.spring.dependency-management' version '1.1.7'
     id 'java'
     id 'pmd'
 }
@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'com.mysql:mysql-connector-j:8.4.0'
+    implementation 'com.mysql:mysql-connector-j:9.5.0'
     // implementation 'com.google.api-client:google-api-client:2.8.1'
     implementation "com.google.apis:google-api-services-youtube:v3-rev20240916-2.0.0"
     implementation 'com.google.http-client:google-http-client-jackson2:2.0.2'
