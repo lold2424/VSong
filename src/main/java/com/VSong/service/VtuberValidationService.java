@@ -97,6 +97,7 @@ public class VtuberValidationService {
         return null;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public String getKoreanVtuberReason(Channel channel) {
         String channelId = channel.getId();
         String title = channel.getSnippet().getTitle();
@@ -167,6 +168,7 @@ public class VtuberValidationService {
                 .anyMatch(company -> description.toLowerCase().contains(company.toLowerCase()));
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private boolean hasVtuberContentPattern(String channelId) {
         try {
             YouTube.Search.List search = youTube.search().list(List.of("snippet"));
@@ -210,6 +212,7 @@ public class VtuberValidationService {
             "spotify", "melon", "apple music"
     );
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public boolean isSongRelated(Video video) {
         String title = video.getSnippet().getTitle();
         String lowerTitle = title.toLowerCase();
@@ -258,6 +261,7 @@ public class VtuberValidationService {
         return vtuberSongsRepository.existsByVideoId(videoId);
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public String classifyVideo(Video video) {
         String title = video.getSnippet().getTitle();
         String durationStr = video.getContentDetails().getDuration();

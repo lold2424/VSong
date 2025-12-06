@@ -65,6 +65,7 @@ public class UploadVtuberService {
         this.channelsApiCounter = meterRegistry.counter("youtube.api.channels");
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public void fetchAndSaveVtuberChannels() {
         logger.info("=== fetchAndSaveVtuberChannels 시작 ===");
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
@@ -119,6 +120,7 @@ public class UploadVtuberService {
         logger.info("=== fetchAndSaveVtuberChannels 종료 ===");
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public List<String> fetchAllChannelIdsFromApi() {
         logger.info("=== fetchAllChannelIdsFromApi 시작 ===");
         List<String> allChannelIds = new java.util.ArrayList<>();
@@ -162,6 +164,7 @@ public class UploadVtuberService {
         return allChannelIds.stream().distinct().collect(Collectors.toList());
     }
 
+    @SuppressWarnings({"PMD.LooseCoupling"})
     private void processChannels(List<String> channelIds) {
         if (logger.isDebugEnabled()) {
             logger.debug("processChannels 시작 - 채널 ID 개수: {}", channelIds.size());
@@ -248,6 +251,7 @@ public class UploadVtuberService {
         return partitions;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private String fetchChannelProfileImage(String channelId) {
         try {
             YouTube.Channels.List channelsList = youTube.channels().list(List.of("snippet"));

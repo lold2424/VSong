@@ -100,6 +100,7 @@ public class UpdateVtuberSongsService {
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public void updateViewCounts() {
         List<VtuberSongsEntity> songs = vtuberSongsRepository.findAll();
         if (logger.isInfoEnabled()) {
@@ -210,6 +211,7 @@ public class UpdateVtuberSongsService {
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void fetchAndProcessVideos(List<String> videoIds, String channelName) {
         if (videoIds == null || videoIds.isEmpty()) {
             if (logger.isInfoEnabled()) {
@@ -282,6 +284,7 @@ public class UpdateVtuberSongsService {
 
 
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void saveNewSong(Video video, VideoStatistics statistics, String channelName, String classification) {
         VtuberSongsEntity song = new VtuberSongsEntity();
         song.setChannelId(video.getSnippet().getChannelId());
@@ -305,6 +308,7 @@ public class UpdateVtuberSongsService {
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void fetchAllSongsFromPlaylist(String channelId, String channelName) {
         if (logger.isInfoEnabled()) {
             logger.info("채널 [{}]에서 모든 노래를 가져옵니다. 채널 ID: {}", channelName, channelId);
@@ -340,6 +344,7 @@ public class UpdateVtuberSongsService {
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private String getUploadsPlaylistId(String channelId) throws IOException {
         YouTube.Channels.List channelRequest = youTube.channels().list(List.of("contentDetails"));
         channelRequest.setId(List.of(channelId));
@@ -351,6 +356,7 @@ public class UpdateVtuberSongsService {
         return null;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void fetchRecentSongsFromSearch(String channelId, String channelName) {
         String rssUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId;
 

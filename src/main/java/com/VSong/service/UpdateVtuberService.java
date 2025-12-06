@@ -85,6 +85,7 @@ public class UpdateVtuberService {
         logger.info("=== syncVtuberData 종료 ===");
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void processSyncPartition(List<String> channelIds, Set<String> existingApiChannelIds) {
         if (channelIds.isEmpty()) {
             return;

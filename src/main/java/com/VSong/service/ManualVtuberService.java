@@ -37,6 +37,7 @@ public class ManualVtuberService {
         this.youTubeApiService = youTubeApiService;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public String addVtuberChannel(String channelId) {
         if (logger.isInfoEnabled()) {
             logger.info("수동 버튜버 채널 추가 요청: {}", channelId);

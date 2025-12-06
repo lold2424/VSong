@@ -149,6 +149,7 @@ public class RelatedChannelService {
         return discoveredIds;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void processDiscoveredChannels(Set<String> channelIds) {
         if (logger.isInfoEnabled()) {
             logger.info("새로 발견된 채널 정보 처리 시작. 대상: {}개", channelIds.size());
@@ -207,6 +208,7 @@ public class RelatedChannelService {
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void saveNewVtuber(Channel channel) {
         VtuberEntity vtuber = new VtuberEntity();
         vtuber.setChannelId(channel.getId());

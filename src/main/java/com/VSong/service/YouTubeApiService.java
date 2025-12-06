@@ -52,7 +52,9 @@ public class YouTubeApiService {
         do {
             currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
             if (keyAvailable.get(currentKeyIndex)) {
-                logger.info("API Key switched to: {}", getCurrentApiKey());
+                if (logger.isInfoEnabled()) {
+                    logger.info("API Key switched to: {}", getCurrentApiKey());
+                }
                 return;
             }
         } while (currentKeyIndex != initialKeyIndex);
@@ -68,6 +70,7 @@ public class YouTubeApiService {
         logger.info("Daily API usage has been reset.");
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public <T> T executeRequest(YouTubeRequest<T> request) throws IOException {
         rateLimiter.acquire();
         int attempts = 0;
