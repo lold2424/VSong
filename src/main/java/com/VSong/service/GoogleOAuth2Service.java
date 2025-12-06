@@ -30,6 +30,7 @@ public class GoogleOAuth2Service {
     @Value("${spring.security.oauth2.client.provider.google.token-uri}")
     private String tokenUri;
 
+    @SuppressWarnings({"PMD.LooseCoupling", "rawtypes"})
     public Map<String, String> getAccessToken(String authorizationCode) {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("code", authorizationCode);

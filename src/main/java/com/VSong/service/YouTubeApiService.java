@@ -29,7 +29,7 @@ public class YouTubeApiService {
         this.apiKeys = new ArrayList<>(apiKeys);
         this.apiKeyUsage = new ArrayList<>();
         this.keyAvailable = new ArrayList<>();
-        for (int i = 0; i < apiKeys.size(); i++) {
+        for (String ignored : apiKeys) {
             this.apiKeyUsage.add(new AtomicInteger(0));
             this.keyAvailable.add(true);
         }

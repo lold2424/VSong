@@ -31,6 +31,7 @@ public class TokenController {
     }
 
     @PostMapping("/refresh")
+    @SuppressWarnings("PMD.LooseCoupling")
     public ResponseEntity<?> refreshAccessToken(@RequestParam String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));

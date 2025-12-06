@@ -156,12 +156,16 @@ public class UploadVtuberService {
                 }
             } while (pageToken != null);
         }
-        logger.info("=== fetchAllChannelIdsFromApi 종료, 총 {}개 ID 수집 ===", allChannelIds.size());
+        if (logger.isInfoEnabled()) {
+            logger.info("=== fetchAllChannelIdsFromApi 종료, 총 {}개 ID 수집 ===", allChannelIds.size());
+        }
         return allChannelIds.stream().distinct().collect(Collectors.toList());
     }
 
     private void processChannels(List<String> channelIds) {
-        logger.debug("processChannels 시작 - 채널 ID 개수: {}", channelIds.size());
+        if (logger.isDebugEnabled()) {
+            logger.debug("processChannels 시작 - 채널 ID 개수: {}", channelIds.size());
+        }
         try {
             YouTube.Channels.List channelRequest = youTube.channels().list(List.of("snippet", "statistics"));
             channelRequest.setId(channelIds);

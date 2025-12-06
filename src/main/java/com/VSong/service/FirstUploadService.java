@@ -103,6 +103,7 @@ public class FirstUploadService {
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private boolean processVideo(Video video, VtuberEntity vtuber) {
         // 통합된 검증 로직 사용
         if (!validationService.isSongRelated(video)) {
@@ -151,6 +152,7 @@ public class FirstUploadService {
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private String getUploadsPlaylistId(String channelId) throws IOException {
         dailyApiUsage.incrementAndGet();
         YouTube.Channels.List channelRequest = youTube.channels().list(List.of("contentDetails"));
@@ -163,6 +165,7 @@ public class FirstUploadService {
         return null;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private boolean fetchSongsFromPlaylist(VtuberEntity vtuber, String uploadsPlaylistId) {
         String pageToken = null;
         int totalSongs = 0;
@@ -194,6 +197,7 @@ public class FirstUploadService {
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private int fetchAndProcessVideos(List<String> videoIds, VtuberEntity vtuber) throws IOException {
         int songsFound = 0;
         try {
@@ -215,6 +219,7 @@ public class FirstUploadService {
         return songsFound;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void saveNewSong(Video video, VtuberEntity vtuber, String classification) {
         VtuberSongsEntity song = new VtuberSongsEntity();
         song.setChannelId(video.getSnippet().getChannelId());

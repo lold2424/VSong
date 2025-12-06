@@ -87,6 +87,7 @@ public class ManualVtuberService {
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private Channel fetchChannelDetails(String channelId) throws IOException {
         YouTube.Channels.List channelRequest = youTube.channels().list(List.of("snippet", "statistics"));
         channelRequest.setId(List.of(channelId));
@@ -101,6 +102,7 @@ public class ManualVtuberService {
         return channels.get(0);
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void saveNewVtuber(Channel channel) {
         VtuberEntity vtuber = new VtuberEntity();
         vtuber.setChannelId(channel.getId());
