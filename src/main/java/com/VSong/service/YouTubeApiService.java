@@ -23,7 +23,7 @@ public class YouTubeApiService {
     private final List<Boolean> keyAvailable;
     private int currentKeyIndex = 0;
 
-    private final RateLimiter rateLimiter = RateLimiter.create(5.0); // 5 requests per second
+    private final RateLimiter rateLimiter = RateLimiter.create(5.0);
 
     public YouTubeApiService(@Value("${youtube.api.keys}") List<String> apiKeys) {
         this.apiKeys = new ArrayList<>(apiKeys);
@@ -41,7 +41,7 @@ public class YouTubeApiService {
 
     public void incrementApiUsage() {
         apiKeyUsage.get(currentKeyIndex).incrementAndGet();
-        if (apiKeyUsage.get(currentKeyIndex).get() >= 9000) { // Threshold before hitting the limit
+        if (apiKeyUsage.get(currentKeyIndex).get() >= 9000) {
             switchApiKey();
         }
     }
@@ -78,7 +78,9 @@ public class YouTubeApiService {
                 return request.execute();
             } catch (GoogleJsonResponseException e) {
                 if (e.getDetails() != null && "quotaExceeded".equals(e.getDetails().getErrors().get(0).getReason())) {
-                    logger.warn("API quota exceeded for key. Switching to the next key and retrying.");
+                    if (logger.isWarnEnabled()) {
+                        logger.warn("API quota exceeded for key. Switching to the next key and retrying.");
+                    }
                     switchApiKey();
                     attempts++;
                 } else {

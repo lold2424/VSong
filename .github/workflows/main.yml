@@ -139,6 +139,10 @@ jobs:
           echo "spring.datasource.password=$DB_PASSWORD" | sudo tee -a $PROPERTIES_FILE
           echo "spring.datasource.driver-class-name=$DB_DRIVER_CLASS_NAME" | sudo tee -a $PROPERTIES_FILE
           echo "youtube.api.keys=$YOUTUBE_API_KEYS" | sudo tee -a $PROPERTIES_FILE
+          echo "# Logging Output to File" | sudo tee -a $PROPERTIES_FILE
+          echo "logging.file.name=logs/vtuber.log" | sudo tee -a $PROPERTIES_FILE
+          echo "logging.file.path=logs" | sudo tee -a $PROPERTIES_FILE
+          echo "logging.pattern.file=%d{yyyy-MM-dd HH:mm:ss} - %msg%n" | sudo tee -a $PROPERTIES_FILE
           echo "spring.security.oauth2.client.registration.google.client-id=$GOOGLE_CLIENT_ID" | sudo tee -a $PROPERTIES_FILE
           echo "spring.security.oauth2.client.registration.google.client-secret=$GOOGLE_CLIENT_SECRET" | sudo tee -a $PROPERTIES_FILE
           echo "baseUrl=$BASE_URL" | sudo tee -a $PROPERTIES_FILE

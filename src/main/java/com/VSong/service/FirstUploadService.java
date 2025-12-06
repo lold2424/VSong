@@ -4,10 +4,8 @@ import com.VSong.entity.VtuberEntity;
 import com.VSong.entity.VtuberSongsEntity;
 import com.VSong.repository.VtuberRepository;
 import com.VSong.repository.VtuberSongsRepository;
-import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
-import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +15,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,11 +27,8 @@ public class FirstUploadService {
     private final YouTube youTube;
     private final VtuberRepository vtuberRepository;
     private final VtuberSongsRepository vtuberSongsRepository;
-    private final VtuberValidationService validationService; // 검증 서비스 주입
-    private final List<String> apiKeys;
-    private final List<AtomicInteger> apiKeyUsage;
-    private final List<Boolean> keyAvailable;
-    private int currentKeyIndex = 0;
+    private final VtuberValidationService validationService;
+    private final YouTubeApiService youTubeApiService;
 
     private static final Logger logger = LoggerFactory.getLogger(FirstUploadService.class);
 
@@ -45,31 +39,26 @@ public class FirstUploadService {
     @Value("${first-upload.batch-size:50}")
     private int VTUBERS_PER_DAY;
 
-    private static final RateLimiter rateLimiter = RateLimiter.create(5.0);
     private final AtomicInteger dailyApiUsage = new AtomicInteger(0);
 
     public FirstUploadService(
             YouTube youTube,
             VtuberRepository vtuberRepository,
             VtuberSongsRepository vtuberSongsRepository,
-            VtuberValidationService validationService, // 생성자에 추가
-            @Value("${youtube.api.keys}") List<String> apiKeys) {
+            VtuberValidationService validationService,
+            YouTubeApiService youTubeApiService) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
         this.vtuberSongsRepository = vtuberSongsRepository;
-        this.validationService = validationService; // 초기화
-        this.apiKeys = new ArrayList<>(apiKeys);
-        this.apiKeyUsage = new ArrayList<>();
-        this.keyAvailable = new ArrayList<>();
-        for (int i = 0; i < apiKeys.size(); i++) {
-            this.apiKeyUsage.add(new AtomicInteger(0));
-            this.keyAvailable.add(true);
-        }
+        this.validationService = validationService;
+        this.youTubeApiService = youTubeApiService;
     }
 
     public void dailyFirstUpload() {
         if (!firstUploadEnabled) {
-            logger.debug("첫 업로드 기능이 비활성화되어 있습니다.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("첫 업로드 기능이 비활성화되어 있습니다.");
+            }
             return;
         }
         logger.info("=== 첫 업로드 작업 시작 ===");
@@ -82,7 +71,9 @@ public class FirstUploadService {
         }
 
         List<VtuberEntity> todayVtubers = unprocessedVtubers.stream().limit(VTUBERS_PER_DAY).collect(Collectors.toList());
-        logger.info("오늘 처리할 VTuber 수: {}", todayVtubers.size());
+        if (logger.isInfoEnabled()) {
+            logger.info("오늘 처리할 VTuber 수: {}", todayVtubers.size());
+        }
 
         int processedCount = 0;
         for (VtuberEntity vtuber : todayVtubers) {
@@ -96,14 +87,20 @@ public class FirstUploadService {
                     vtuber.setStatus("processed");
                     vtuberRepository.save(vtuber);
                     processedCount++;
-                    logger.info("VTuber 처리 완료: {} ({}/{})", vtuber.getName(), processedCount, todayVtubers.size());
+                    if (logger.isInfoEnabled()) {
+                        logger.info("VTuber 처리 완료: {} ({}/{})", vtuber.getName(), processedCount, todayVtubers.size());
+                    }
                 }
                 Thread.sleep(1000);
             } catch (Exception e) {
-                logger.error("VTuber 처리 중 오류 발생: {} - {}", vtuber.getName(), e.getMessage());
+                if (logger.isErrorEnabled()) {
+                    logger.error("VTuber 처리 중 오류 발생: {} - {}", vtuber.getName(), e.getMessage());
+                }
             }
         }
-        logger.info("=== 첫 업로드 작업 완료 - 처리된 VTuber 수: {}, 사용된 API 할당량: {} ===", processedCount, dailyApiUsage.get());
+        if (logger.isInfoEnabled()) {
+            logger.info("=== 첫 업로드 작업 완료 - 처리된 VTuber 수: {}, 사용된 API 할당량: {} ===", processedCount, dailyApiUsage.get());
+        }
     }
 
     private boolean processVideo(Video video, VtuberEntity vtuber) {
@@ -124,8 +121,6 @@ public class FirstUploadService {
         return true;
     }
 
-    // --- Other methods remain largely the same ---
-
     private List<VtuberEntity> getUnprocessedVtubers() {
         return vtuberRepository.findAll().stream()
                 .filter(vtuber -> {
@@ -142,23 +137,25 @@ public class FirstUploadService {
         try {
             String uploadsPlaylistId = getUploadsPlaylistId(vtuber.getChannelId());
             if (uploadsPlaylistId == null) {
-                logger.error("업로드 플레이리스트를 찾을 수 없습니다: {}", vtuber.getChannelId());
+                if (logger.isErrorEnabled()) {
+                    logger.error("업로드 플레이리스트를 찾을 수 없습니다: {}", vtuber.getChannelId());
+                }
                 return false;
             }
             return fetchSongsFromPlaylist(vtuber, uploadsPlaylistId);
         } catch (Exception e) {
-            logger.error("VTuber 노래 처리 중 오류: {} - {}", vtuber.getName(), e.getMessage());
+            if (logger.isErrorEnabled()) {
+                logger.error("VTuber 노래 처리 중 오류: {} - {}", vtuber.getName(), e.getMessage());
+            }
             return false;
         }
     }
 
     private String getUploadsPlaylistId(String channelId) throws IOException {
-        rateLimiter.acquire();
-        incrementApiUsage();
+        dailyApiUsage.incrementAndGet();
         YouTube.Channels.List channelRequest = youTube.channels().list(List.of("contentDetails"));
         channelRequest.setId(List.of(channelId));
-        channelRequest.setKey(getCurrentApiKey());
-        ChannelListResponse channelResult = channelRequest.execute();
+        ChannelListResponse channelResult = youTubeApiService.executeRequest(channelRequest);
         List<Channel> channelsList = channelResult.getItems();
         if (channelsList != null && !channelsList.isEmpty()) {
             return channelsList.get(0).getContentDetails().getRelatedPlaylists().getUploads();
@@ -172,16 +169,14 @@ public class FirstUploadService {
         try {
             do {
                 if (dailyApiUsage.get() >= DAILY_QUOTA_LIMIT) break;
-                rateLimiter.acquire();
-                incrementApiUsage();
 
+                dailyApiUsage.incrementAndGet();
                 YouTube.PlaylistItems.List playlistItemsRequest = youTube.playlistItems().list(List.of("contentDetails", "snippet"));
                 playlistItemsRequest.setPlaylistId(uploadsPlaylistId);
                 playlistItemsRequest.setMaxResults(50L);
                 playlistItemsRequest.setPageToken(pageToken);
-                playlistItemsRequest.setKey(getCurrentApiKey());
 
-                PlaylistItemListResponse playlistItemResult = playlistItemsRequest.execute();
+                PlaylistItemListResponse playlistItemResult = youTubeApiService.executeRequest(playlistItemsRequest);
                 List<PlaylistItem> playlistItems = playlistItemResult.getItems();
                 if (playlistItems == null || playlistItems.isEmpty()) break;
 
@@ -192,28 +187,30 @@ public class FirstUploadService {
             } while (pageToken != null);
             return totalSongs > 0;
         } catch (Exception e) {
-            logger.error("Error fetching songs from playlist for {}: {}", vtuber.getName(), e.getMessage());
+            if (logger.isErrorEnabled()) {
+                logger.error("Error fetching songs from playlist for {}: {}", vtuber.getName(), e.getMessage());
+            }
             return false;
         }
     }
 
-    private int fetchAndProcessVideos(List<String> videoIds, VtuberEntity vtuber) {
+    private int fetchAndProcessVideos(List<String> videoIds, VtuberEntity vtuber) throws IOException {
         int songsFound = 0;
         try {
-            rateLimiter.acquire();
-            incrementApiUsage();
+            dailyApiUsage.incrementAndGet();
             YouTube.Videos.List videosRequest = youTube.videos().list(List.of("id", "snippet", "contentDetails", "statistics"));
             videosRequest.setId(videoIds);
-            videosRequest.setKey(getCurrentApiKey());
-            VideoListResponse videoResponse = videosRequest.execute();
+            VideoListResponse videoResponse = youTubeApiService.executeRequest(videosRequest);
             for (Video video : videoResponse.getItems()) {
                 if (processVideo(video, vtuber)) {
                     songsFound++;
                 }
             }
         } catch (IOException e) {
-            logger.error("비디오 정보 조회 실패: {} - {}", vtuber.getName(), e.getMessage());
-            switchApiKey();
+            if (logger.isErrorEnabled()) {
+                logger.error("비디오 정보 조회 실패: {} - {}", vtuber.getName(), e.getMessage());
+            }
+            throw e;
         }
         return songsFound;
     }
@@ -237,38 +234,8 @@ public class FirstUploadService {
         vtuberSongsRepository.save(song);
     }
 
-    private String getCurrentApiKey() {
-        return apiKeys.get(currentKeyIndex);
-    }
-
-    private void incrementApiUsage() {
-        apiKeyUsage.get(currentKeyIndex).incrementAndGet();
-        dailyApiUsage.incrementAndGet();
-        if (apiKeyUsage.get(currentKeyIndex).get() >= 9000) {
-            switchApiKey();
-        }
-    }
-
-    private void switchApiKey() {
-        keyAvailable.set(currentKeyIndex, false);
-        int initialKeyIndex = currentKeyIndex;
-        do {
-            currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
-            if (keyAvailable.get(currentKeyIndex)) {
-                logger.info("API 키 전환: {}", getCurrentApiKey());
-                return;
-            }
-        } while (currentKeyIndex != initialKeyIndex);
-        throw new RuntimeException("모든 API 키의 할당량이 소진되었습니다.");
-    }
-
     private void resetDailyUsage() {
         dailyApiUsage.set(0);
-        for (int i = 0; i < apiKeyUsage.size(); i++) {
-            apiKeyUsage.get(i).set(0);
-            keyAvailable.set(i, true);
-        }
-        currentKeyIndex = 0;
         logger.info("일일 API 사용량 리셋 완료");
     }
 

@@ -17,11 +17,11 @@ public class VtuberChannelService {
 
     @Cacheable(value = "channelIds", key = "#gender")
     public List<String> getChannelIdsByGender(String gender) {
-        if (gender == null || gender.equalsIgnoreCase("all")) {
+        if (gender == null || "all".equalsIgnoreCase(gender)) {
             return vtuberRepository.findAllChannelIds();
-        } else if (gender.equalsIgnoreCase("male") || gender.equalsIgnoreCase("female")) {
+        } else if ("male".equalsIgnoreCase(gender) || "female".equalsIgnoreCase(gender)) {
             return vtuberRepository.findChannelIdsByGender(gender.toLowerCase());
-        } else if (gender.equalsIgnoreCase("mixed")) {
+        } else if ("mixed".equalsIgnoreCase(gender)) {
             return vtuberRepository.findChannelIdsWithNullGender();
         } else {
             return vtuberRepository.findAllChannelIds();
