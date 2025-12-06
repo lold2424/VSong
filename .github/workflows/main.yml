@@ -194,13 +194,10 @@ jobs:
             exit 1
           fi
           echo "6단계: 소유권 설정"
-          sudo chown -R ubuntu:ubuntu $FRONTEND_APP_PATH
+          sudo chown -R opc:opc $FRONTEND_APP_PATH
           
           echo "7단계: 프론트엔드 서비스 재시작"
           cd $FRONTEND_APP_PATH
-          
-          echo "8단계: Next.js 이미지 최적화 라이브러리 (sharp) 설치"
-          npm install sharp --prefix .
           
           pm2 startOrRestart ecosystem.config.js
           echo "--- 배포 성공적으로 완료 ---"
