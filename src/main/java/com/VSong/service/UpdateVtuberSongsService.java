@@ -140,6 +140,12 @@ public class UpdateVtuberSongsService {
                         try {
                             VtuberSongsEntity song = songMap.get(video.getId());
                             if (song != null && video.getStatistics() != null) {
+                                if (video.getStatistics().getViewCount() == null) {
+                                    if (logger.isWarnEnabled()) {
+                                        logger.warn("조회수 정보를 가져올 수 없습니다 (videoId: {}). 건너뜁니다.", video.getId());
+                                    }
+                                    continue;
+                                }
                                 long newViewCount = video.getStatistics().getViewCount().longValue();
                                 long viewIncreaseDay = newViewCount - song.getViewCount();
                                 song.setViewCount(newViewCount);
@@ -259,6 +265,13 @@ public class UpdateVtuberSongsService {
                 if ("ignore".equals(classification)) {
                     if (logger.isInfoEnabled()) {
                         logger.info("비디오 분류가 'ignore'이므로 건너뜁니다: {}", videoTitle);
+                    }
+                    continue;
+                }
+
+                if (video.getStatistics() == null || video.getStatistics().getViewCount() == null) {
+                    if (logger.isWarnEnabled()) {
+                        logger.warn("비디오 통계 정보(조회수)가 없어 DB에 추가하지 않습니다 (videoId: {}, title: {}). 회원용 동영상일 수 있습니다.", videoId, videoTitle);
                     }
                     continue;
                 }
