@@ -79,9 +79,8 @@ public class UpdateVtuberSongsService {
             fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName());
         }
 
-        logger.info("메인 페이지 캐시를 초기화하고 다시 채웁니다.");
-        Objects.requireNonNull(cacheManager.getCache("mainPage")).clear();
-        mainPageService.getCacheableMainPageData("all");
+        logger.info("메인 페이지 캐시를 초기화합니다.");
+        mainPageService.refreshMainPageCache();
 
         logger.info("=== fetchVtuberSongs 실행 종료 ===");
     }
