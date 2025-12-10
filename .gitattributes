@@ -1,2 +1,22 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# 모든 텍스트 파일의 기본 줄 끝을 LF(Unix)로 설정합니다.
+# Docker, CI/CD 환경과의 호환성을 보장합니다.
+* text=auto eol=lf
+
+# 아래 파일들은 명시적으로 LF를 사용하도록 강제합니다.
+.gitattributes text eol=lf
+.gitignore   text eol=lf
+Dockerfile   text eol=lf
+*.yml        text eol=lf
+*.yaml       text eol=lf
+*.json       text eol=lf
+*.md         text eol=lf
+*.js         text eol=lf
+*.ts         text eol=lf
+*.tsx        text eol=lf
+*.css        text eol=lf
+*.sh         text eol=lf
+gradlew      text eol=lf
+
+# Windows 전용 스크립트 파일들은 CRLF(Windows)를 유지합니다.
+*.bat        text eol=crlf
+gradlew.bat  text eol=crlf
