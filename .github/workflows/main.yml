@@ -7,8 +7,8 @@ on:
       - deploy
 
 env:
-  BACKEND_IMAGE_NAME: ghcr.io/lold2/vsong-backend
-  FRONTEND_IMAGE_NAME: ghcr.io/lold2/vsong-frontend
+  BACKEND_IMAGE_NAME: ghcr.io/${{ github.repository }}/backend
+  FRONTEND_IMAGE_NAME: ghcr.io/${{ github.repository }}/frontend
 
 jobs:
   build_and_push:
