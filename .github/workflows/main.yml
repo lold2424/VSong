@@ -1,4 +1,4 @@
-name: VSong CI/CD to OCI
+name: VSong CI/CD with Docker Compose
 
 on:
   push:
@@ -6,198 +6,91 @@ on:
       - main
       - deploy
 
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: ${{ github.repository_owner }}/vsong/backend
+  FRONTEND_IMAGE_NAME: ${{ github.repository_owner }}/vsong/frontend
+  NGINX_IMAGE_NAME: ${{ github.repository_owner }}/vsong/nginx
+
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
         with:
-          node-version: '20'
+          context: .
+          dockerfile: backend.Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Clean and Build Frontend
-        env:
-          API_KEY: ${{ secrets.YOUTUBE_API_KEYS }}
-          NODE_OPTIONS: '--max-old-space-size=4096'
-        working-directory: ./front-next
-        run: |
-          echo "Aggressively cleaning up previous build artifacts..."
-          rm -rf .next node_modules build dist assets static standalone
-          
-          echo "Installing dependencies and building..."
-          npm ci
-          NEXT_PUBLIC_API_URL=${{ secrets.BASE_URL }} npm run build
-
-      - name: Verify Frontend Build
-        working-directory: ./front-next
-        run: |
-          echo "--- Verifying structure of .next directory after build ---"
-          find .next -maxdepth 3
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Build Backend with Gradle
-        run: ./gradlew build -x test
-
-      - name: Package Artifacts
-        run: |
-          set -e
-          mkdir -p artifacts/backend
-          find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
-          
-          echo "--- Preparing frontend artifact ---"
-          SRC_DIR="./front-next"
-          DEST_DIR="./artifacts/frontend"
-
-          rm -rf $DEST_DIR
-          mkdir -p $DEST_DIR
-
-          echo "Copying standalone files (server.js, node_modules, .next/server)..."
-          rsync -a $SRC_DIR/.next/standalone/ $DEST_DIR/
-          
-          echo "Copying public assets..."
-          # Ensure public dir exists in case source doesn't have one
-          mkdir -p $DEST_DIR/public
-          rsync -a $SRC_DIR/public/ $DEST_DIR/public/
-          
-          echo "Copying static assets..."
-          # This is the critical step. Ensure .next/static is created.
-          mkdir -p $DEST_DIR/.next/static
-          rsync -a $SRC_DIR/.next/static/ $DEST_DIR/.next/static/
-          
-          echo "Copying ecosystem config..."
-          cp $SRC_DIR/ecosystem.config.js $DEST_DIR/
-          
-          echo "Renaming .next to next-build to avoid artifact issues..."
-          mv $DEST_DIR/.next $DEST_DIR/next-build
-
-      - name: Verify Frontend Artifact
-        run: |
-          echo "--- Verifying structure of artifacts/frontend ---"
-          find artifacts/frontend -maxdepth 3
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
         with:
-          name: v-song-build
-          path: artifacts/
+          context: .
+          dockerfile: frontend.Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.BASE_URL }}
+
+      - name: Build and push nginx image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          dockerfile: nginx.Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.NGINX_IMAGE_NAME }}:${{ github.sha }}
 
   deploy:
-    needs: build
+    needs: build-and-push
     runs-on: self-hosted
     steps:
-      - name: Set Timezone to KST
-        run: sudo timedatectl set-timezone Asia/Seoul
+      - name: Checkout source code
+        uses: actions/checkout@v3
 
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: v-song-build
-          path: ./v-song-build
-
-      - name: Verify Downloaded Artifact
+      - name: Create .env file from secrets
         run: |
-          echo "--- Verifying contents of downloaded artifact ./v-song-build/frontend ---"
-          ls -lR ./v-song-build/frontend
+          echo "IMAGE_TAG=${{ github.sha }}" > .env
+          echo "REGISTRY=${{ env.REGISTRY }}" >> .env
+          echo "BACKEND_IMAGE_NAME=${{ env.BACKEND_IMAGE_NAME }}" >> .env
+          echo "FRONTEND_IMAGE_NAME=${{ env.FRONTEND_IMAGE_NAME }}" >> .env
+          echo "NGINX_IMAGE_NAME=${{ env.NGINX_IMAGE_NAME }}" >> .env
+          
+          echo "DB_URL=${{ secrets.DB_URL }}" >> .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_DRIVER_CLASS_NAME=${{ secrets.DB_DRIVER_CLASS_NAME }}" >> .env
+          echo "YOUTUBE_API_KEYS=${{ secrets.YOUTUBE_API_KEYS }}" >> .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+          echo "BASE_URL=${{ secrets.BASE_URL }}" >> .env
+          echo "MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=${{ secrets.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}" >> .env
+          echo "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}" >> .env
+          echo "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}" >> .env
+          echo "OAUTH2_SUCCESS_REDIRECT_URL=${{ secrets.BASE_URL }}" >> .env
 
-      - name: Deploy Application
-        env:
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_DRIVER_CLASS_NAME: ${{ secrets.DB_DRIVER_CLASS_NAME }}
-          YOUTUBE_API_KEYS: ${{ secrets.YOUTUBE_API_KEYS }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          BASE_URL: ${{ secrets.BASE_URL }}
-          MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: ${{ secrets.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}
-          MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: ${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}
-          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
+      - name: Deploy with Docker Compose
         run: |
-          set -e
-          echo "--- 배포 시작 ---"
-          sudo mkdir -p /home/opc/vsong/logs
-          sudo chown -R opc:opc /home/opc/vsong/logs
-          echo "현재 사용자: $(whoami)"
-          echo "현재 디렉터리: $(pwd)"
-          sudo mkdir -p /home/opc/vsong/backend
-          sudo chown -R opc:opc /home/opc/vsong/
-          PROPERTIES_FILE="/home/opc/vsong/application.properties"
-          echo "application.properties 파일 생성 중..."
-          echo "spring.datasource.url=$DB_URL" | sudo tee $PROPERTIES_FILE
-          echo "spring.datasource.username=$DB_USERNAME" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.datasource.password=$DB_PASSWORD" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.datasource.driver-class-name=$DB_DRIVER_CLASS_NAME" | sudo tee -a $PROPERTIES_FILE
-          echo "youtube.api.keys=$YOUTUBE_API_KEYS" | sudo tee -a $PROPERTIES_FILE
-          echo "# Logging Output to File" | sudo tee -a $PROPERTIES_FILE
-          echo "logging.file.name=logs/vtuber.log" | sudo tee -a $PROPERTIES_FILE
-          echo "logging.file.path=logs" | sudo tee -a $PROPERTIES_FILE
-          echo "logging.pattern.file=%d{yyyy-MM-dd HH:mm:ss} - %msg%n" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.client-id=$GOOGLE_CLIENT_ID" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.client-secret=$GOOGLE_CLIENT_SECRET" | sudo tee -a $PROPERTIES_FILE
-          echo "baseUrl=$BASE_URL" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.scope=profile,email,https://www.googleapis.com/auth/youtube.readonly" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.redirect-uri=\\\${baseUrl}/login/oauth2/code/google" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.client-name=Google" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.provider.google.authorization-uri=https://accounts.google.com/o/oauth2/v2/auth" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.provider.google.token-uri=https://oauth2.googleapis.com/token" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.provider.google.user-info-uri=https://www.googleapis.com/oauth2/v3/userinfo" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.provider.google.user-name-attribute=sub" | sudo tee -a $PROPERTIES_FILE
-          echo "server.port=8080" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.jpa.hibernate.ddl-auto=update" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.jackson.time-zone=Asia/Seoul" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.task.scheduling.enabled=true" | sudo tee -a $PROPERTIES_FILE
-          echo "management.endpoints.web.exposure.include=$MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE" | sudo tee -a $PROPERTIES_FILE
-          echo "management.endpoint.health.show-details=$MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS" | sudo tee -a $PROPERTIES_FILE
-          echo "cors.allowed-origins=$CORS_ALLOWED_ORIGINS" | sudo tee -a $PROPERTIES_FILE
-          echo "oauth2.success.redirect-url=$BASE_URL" | sudo tee -a $PROPERTIES_FILE
-          JAR_SOURCE_FILE=$(find ./v-song-build/backend/ -name "*.jar")
-          JAR_DEST_PATH="/home/opc/vsong/VSong.jar"
-          echo "백엔드 JAR 파일 배포 중..."
-          sudo cp $JAR_SOURCE_FILE $JAR_DEST_PATH
-          echo "백엔드 서비스 재시작 중..."
-          sudo systemctl restart vsong
-          FRONTEND_APP_PATH="/home/opc/vsong/frontend"
-          echo "프론트엔드 배포 중: $FRONTEND_APP_PATH"
-          echo "1단계: 이전 디렉터리 삭제"
-          sudo rm -rf $FRONTEND_APP_PATH
-          echo "2단계: 새 디렉터리 생성"
-          sudo mkdir -p $FRONTEND_APP_PATH
-          echo "3단계: 디렉터리 생성 확인"
-          if [ ! -d "$FRONTEND_APP_PATH" ]; then
-            echo "오류: $FRONTEND_APP_PATH 디렉터리가 생성되지 않았습니다."
-            exit 1
-          fi
-          echo "4단계: 새 파일 복사 (rsync 사용)"
-          sudo rsync -a --delete ./v-song-build/frontend/ $FRONTEND_APP_PATH/
-          echo "--- 복사 후 $FRONTEND_APP_PATH 내용 ---"
-          ls -lR $FRONTEND_APP_PATH
-          echo "Renaming next-build back to .next..."
-          sudo mv $FRONTEND_APP_PATH/next-build $FRONTEND_APP_PATH/.next
-          echo "5단계: 파일 복사 확인"
-          if [ ! -f "$FRONTEND_APP_PATH/server.js" ]; then
-            echo "오류: server.js 파일이 복사되지 않았습니다. 파일 복사에 실패했습니다."
-            exit 1
-          fi
-          if [ ! -d "$FRONTEND_APP_PATH/.next" ]; then
-            echo "오류: .next 디렉터리가 복사되지 않았습니다. 파일 복사에 실패했습니다."
-            exit 1
-          fi
-          echo "6단계: 소유권 설정"
-          sudo chown -R opc:opc $FRONTEND_APP_PATH
+          # ghcr.io에 로그인 (self-hosted runner에 필요할 수 있음)
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
           
-          echo "7단계: 프론트엔드 서비스 재시작"
-          cd $FRONTEND_APP_PATH
+          # 최신 이미지 받아오기
+          docker-compose pull
           
-          pm2 startOrRestart ecosystem.config.js
-          echo "--- 배포 성공적으로 완료 ---"
+          # 서비스 시작 (이전 컨테이너 강제 재성성)
+          docker-compose up -d --force-recreate

@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: vsong-backend
+    restart: always
+    env_file:
+      - ./.env
+    networks:
+      - vsong-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+      args:
+        # 이 부분은 GitHub Actions에서 빌드 시 주입합니다.
+        NEXT_PUBLIC_API_URL: ${BASE_URL}
+    container_name: vsong-frontend
+    restart: always
+    networks:
+      - vsong-net
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
+    container_name: vsong-nginx
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - vsong-net
+
+networks:
+  vsong-net:
+    driver: bridge
