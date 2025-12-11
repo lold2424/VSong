@@ -1,4 +1,4 @@
-name: VSong CI/CD with Docker Compose
+name: VSong CI/CD with Docker Compose (Debug Sync)
 
 on:
   push:
@@ -22,6 +22,21 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
+        with:
+          ref: 'deploy' # 1. 'deploy' 브랜치를 명시적으로 체크아웃
+
+      - name: Force sync and show status # 2. 강제 동기화 및 상태 확인
+        run: |
+          git pull origin deploy
+          git status
+          echo "--- All Files ---"
+          ls -laR
+
+      - name: Show workflow file content # 3. main.yml 내용 직접 출력
+        run: |
+          echo "--- Workflow File Content ---"
+          cat .github/workflows/main.yml
+          echo "--- End of Content ---"
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -29,8 +44,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-
 
       - name: Build and push backend image
         uses: docker/build-push-action@v5
@@ -72,19 +85,13 @@ jobs:
           echo "BACKEND_IMAGE_NAME=${{ env.BACKEND_IMAGE_NAME }}" >> .env
           echo "FRONTEND_IMAGE_NAME=${{ env.FRONTEND_IMAGE_NAME }}" >> .env
           echo "NGINX_IMAGE_NAME=${{ env.NGINX_IMAGE_NAME }}" >> .env
-          
-          # Spring Boot Datasource Properties
           echo "SPRING_DATASOURCE_URL=${{ secrets.DB_URL }}" >> .env
           echo "SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
           echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "SPRING_DATASOURCE_DRIVER_CLASS_NAME=${{ secrets.DB_DRIVER_CLASS_NAME }}" >> .env
           echo "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect" >> .env
-
-          # Spring Boot Security/OAuth2 Properties - Mapped directly from secrets
           echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
           echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
-          
-          # Spring Boot Security/OAuth2 Properties - Hardcoded values from old deployment script
           echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_SCOPE=profile,email,https://www.googleapis.com/auth/youtube.readonly" >> .env
           echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI=${{ secrets.BASE_URL }}/login/oauth2/code/google" >> .env
           echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_NAME=Google" >> .env
@@ -92,25 +99,15 @@ jobs:
           echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_TOKEN_URI=https://oauth2.googleapis.com/token" >> .env
           echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_USER_INFO_URI=https://www.googleapis.com/oauth2/v3/userinfo" >> .env
           echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_USER_NAME_ATTRIBUTE=sub" >> .env
-
-          # Custom Application Properties
           echo "YOUTUBE_API_KEYS=${{ secrets.YOUTUBE_API_KEYS }}" >> .env
           echo "BASE_URL=${{ secrets.BASE_URL }}" >> .env
           echo "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}" >> .env
           echo "OAUTH2_SUCCESS_REDIRECT_URL=${{ secrets.BASE_URL }}" >> .env
-          
-          # Other Spring Boot Properties
           echo "MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=${{ secrets.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}" >> .env
           echo "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}" >> .env
 
-
       - name: Deploy with Docker Compose
         run: |
-          # ghcr.io에 로그인 (self-hosted runner에 필요할 수 있음)
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-          
-          # 최신 이미지 받아오기
           docker compose pull
-          
-          # 서비스 시작 (이전 컨테이너 강제 재성성)
           docker compose up -d --force-recreate
