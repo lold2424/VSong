@@ -78,10 +78,20 @@ jobs:
           echo "SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
           echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "SPRING_DATASOURCE_DRIVER_CLASS_NAME=${{ secrets.DB_DRIVER_CLASS_NAME }}" >> .env
+          echo "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect" >> .env
 
-          # Spring Boot Security/OAuth2 Properties
+          # Spring Boot Security/OAuth2 Properties - Mapped directly from secrets
           echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
           echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+          
+          # Spring Boot Security/OAuth2 Properties - Hardcoded values from old deployment script
+          echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_SCOPE=profile,email,https://www.googleapis.com/auth/youtube.readonly" >> .env
+          echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI=${{ secrets.BASE_URL }}/login/oauth2/code/google" >> .env
+          echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_NAME=Google" >> .env
+          echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_AUTHORIZATION_URI=https://accounts.google.com/o/oauth2/v2/auth" >> .env
+          echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_TOKEN_URI=https://oauth2.googleapis.com/token" >> .env
+          echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_USER_INFO_URI=https://www.googleapis.com/oauth2/v3/userinfo" >> .env
+          echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_USER_NAME_ATTRIBUTE=sub" >> .env
 
           # Custom Application Properties
           echo "YOUTUBE_API_KEYS=${{ secrets.YOUTUBE_API_KEYS }}" >> .env
@@ -92,7 +102,7 @@ jobs:
           # Other Spring Boot Properties
           echo "MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=${{ secrets.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}" >> .env
           echo "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}" >> .env
-          echo "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect" >> .env
+
 
       - name: Deploy with Docker Compose
         run: |
