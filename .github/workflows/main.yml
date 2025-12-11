@@ -92,7 +92,7 @@ jobs:
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
           
           # 최신 이미지 받아오기
-          docker-compose pull
+          docker compose pull
           
           # 서비스 시작 (이전 컨테이너 강제 재성성)
-          docker-compose up -d --force-recreate
+          docker compose up -d --force-recreate
