@@ -111,6 +111,8 @@ jobs:
           mkdir -p ./nginx/ssl
           sudo cp /etc/letsencrypt/live/vsong.site/fullchain.pem ./nginx/ssl/fullchain.pem
           sudo cp /etc/letsencrypt/live/vsong.site/privkey.pem ./nginx/ssl/privkey.pem
+          sudo cp /etc/letsencrypt/options-ssl-nginx.conf ./nginx/ssl/options-ssl-nginx.conf
+          sudo cp /etc/letsencrypt/ssl-dhparams.pem ./nginx/ssl/ssl-dhparams.pem
 
       - name: Deploy with Docker Compose
         run: |
