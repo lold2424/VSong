@@ -36,8 +36,8 @@ services:
     volumes:
       # 로컬의 nginx.conf 파일을 컨테이너의 설정 파일로 마운트
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-      # 서버에서 발급받은 SSL 인증서 폴더를 컨테이너에 마운트
-      - /etc/letsencrypt:/etc/letsencrypt
+      # 프로젝트 내부에 복사된 SSL 인증서 폴더를 컨테이너에 마운트
+      - ./nginx/ssl:/etc/ssl/certs
     depends_on:
       - backend
       - frontend

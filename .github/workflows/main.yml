@@ -106,6 +106,12 @@ jobs:
           echo "MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=${{ secrets.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}" >> .env
           echo "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}" >> .env
 
+      - name: Copy SSL certificates
+        run: |
+          mkdir -p ./nginx/ssl
+          sudo cp /etc/letsencrypt/live/vsong.site/fullchain.pem ./nginx/ssl/fullchain.pem
+          sudo cp /etc/letsencrypt/live/vsong.site/privkey.pem ./nginx/ssl/privkey.pem
+
       - name: Deploy with Docker Compose
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
