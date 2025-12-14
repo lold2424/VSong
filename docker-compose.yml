@@ -44,6 +44,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
       # 프로젝트 내부에 복사된 SSL 인증서 폴더를 컨테이너에 마운트
       - ./nginx/ssl:/etc/ssl/certs
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     depends_on:
       - backend
       - frontend
