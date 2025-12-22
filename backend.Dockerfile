@@ -9,6 +9,9 @@ COPY gradle ./gradle
 COPY build.gradle .
 COPY settings.gradle .
 
+# gradlew에 실행 권한 부여
+RUN chmod +x ./gradlew
+
 # 의존성을 먼저 다운로드하여 별도의 레이어에 캐시
 RUN ./gradlew dependencies
 
