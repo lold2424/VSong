@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    build:
-      context: .
-      dockerfile: backend.Dockerfile
+    image: ${REGISTRY}/${BACKEND_IMAGE_NAME}:${IMAGE_TAG}
     container_name: vsong-backend
     restart: always
     env_file:
@@ -16,12 +14,7 @@ services:
       - vsong-net
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend.Dockerfile
-      args:
-        # 이 부분은 GitHub Actions에서 빌드 시 주입합니다.
-        NEXT_PUBLIC_API_URL: ${BASE_URL}
+    image: ${REGISTRY}/${FRONTEND_IMAGE_NAME}:${IMAGE_TAG}
     container_name: vsong-frontend
     restart: always
     volumes:
@@ -31,9 +24,7 @@ services:
       - vsong-net
 
   nginx:
-    build:
-      context: .
-      dockerfile: nginx.Dockerfile
+    image: ${REGISTRY}/${NGINX_IMAGE_NAME}:${IMAGE_TAG}
     container_name: vsong-nginx
     restart: always
     ports:
