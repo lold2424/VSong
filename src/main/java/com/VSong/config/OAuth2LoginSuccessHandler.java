@@ -16,15 +16,24 @@ import java.io.IOException;
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Value("${oauth2.success.redirect-url}")
     private String successRedirectUrl;
+
+    public OAuth2LoginSuccessHandler(HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository) {
+        this.httpCookieOAuth2AuthorizationRequestRepository = httpCookieOAuth2AuthorizationRequestRepository;
+    }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         if (response.isCommitted()) {
             return;
         }
+
+        // Clear auth cookies
+        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+
         redirectStrategy.sendRedirect(request, response, successRedirectUrl);
     }
 }
