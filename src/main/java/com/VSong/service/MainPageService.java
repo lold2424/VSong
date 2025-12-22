@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+
 @Service
 public class MainPageService {
 
@@ -18,18 +21,25 @@ public class MainPageService {
     private final SortSongsService sortSongsService;
     private final VtuberChannelService vtuberChannelService;
     private final Executor taskExecutor;
+    private final CacheManager cacheManager;
 
     public MainPageService(SongService songService, SortSongsService sortSongsService,
-                           VtuberChannelService vtuberChannelService, @Qualifier("taskExecutor") Executor taskExecutor) {
+                           VtuberChannelService vtuberChannelService, @Qualifier("taskExecutor") Executor taskExecutor, CacheManager cacheManager) {
         this.songService = songService;
         this.sortSongsService = sortSongsService;
         this.vtuberChannelService = vtuberChannelService;
         this.taskExecutor = taskExecutor;
+        this.cacheManager = cacheManager;
+    }
+
+    @CacheEvict(value = "mainPage", allEntries = true)
+    public void refreshMainPageCache() {
     }
 
     @Cacheable(value = "mainPage", key = "#gender")
     public MainPageCacheableResponse getCacheableMainPageData(String gender) {
         List<String> channelIds = vtuberChannelService.getChannelIdsByGender(gender);
+
 
         CompletableFuture<List<VtuberSongsEntity>> top10WeeklySongsFuture = CompletableFuture.supplyAsync(
                 () -> sortSongsService.getTop10SongsByViewsIncreaseWeek(channelIds, "videos"), taskExecutor);

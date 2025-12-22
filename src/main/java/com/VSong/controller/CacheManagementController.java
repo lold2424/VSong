@@ -1,6 +1,6 @@
 package com.VSong.controller;
 
-import com.VSong.scheduler.GlobalScheduler;
+import com.VSong.service.MainPageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -13,17 +13,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class CacheManagementController {
 
     private static final Logger logger = LoggerFactory.getLogger(CacheManagementController.class);
-    private final GlobalScheduler globalScheduler;
+    private final MainPageService mainPageService;
 
-    public CacheManagementController(GlobalScheduler globalScheduler) {
-        this.globalScheduler = globalScheduler;
+    public CacheManagementController(MainPageService mainPageService) {
+        this.mainPageService = mainPageService;
     }
 
     @PostMapping("/refresh-main-page")
     public ResponseEntity<String> refreshMainPageCache() {
         logger.info("Manual cache refresh request received for main page by an admin.");
         try {
-            globalScheduler.scheduleUpdateViewCounts();
+            mainPageService.refreshMainPageCache();
             logger.info("Manual cache refresh job executed successfully.");
             return ResponseEntity.ok("메인 페이지 캐시 갱신 작업이 성공적으로 실행되었습니다.");
         } catch (Exception e) {

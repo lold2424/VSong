@@ -5,6 +5,20 @@ import axios from 'axios';
 
 axios.defaults.withCredentials = true;
 
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.status === 401) {
+      if (window.location.pathname !== '/') {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        window.location.href = '/';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+
 interface User {
   name: string;
   email: string;
