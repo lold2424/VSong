@@ -47,8 +47,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ github.ref_name }}
+          cache-to: type=gha,scope=${{ github.ref_name }},mode=max
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
@@ -60,8 +60,8 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_API_URL=${{ secrets.BASE_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ github.ref_name }}
+          cache-to: type=gha,scope=${{ github.ref_name }},mode=max
 
       - name: Build and push nginx image
         uses: docker/build-push-action@v5
@@ -71,8 +71,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ${{ env.REGISTRY }}/${{ env.NGINX_IMAGE_NAME }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ github.ref_name }}
+          cache-to: type=gha,scope=${{ github.ref_name }},mode=max
 
   deploy:
     needs: build-and-push
