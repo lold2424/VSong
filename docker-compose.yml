@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: vsong-backend
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - vsong-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+      args:
+        # 이 부분은 GitHub Actions에서 빌드 시 주입합니다.
+        NEXT_PUBLIC_API_URL: ${BASE_URL}
+    container_name: vsong-frontend
+    restart: always
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - vsong-net
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
+    container_name: vsong-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443" # HTTPS 포트 추가
+    volumes:
+      # 로컬의 nginx.conf 파일을 컨테이너의 설정 파일로 마운트
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      # 프로젝트 내부에 복사된 SSL 인증서 폴더를 컨테이너에 마운트
+      - ./nginx/ssl:/etc/ssl/certs
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - vsong-net
+
+networks:
+  vsong-net:
+    driver: bridge
