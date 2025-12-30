@@ -1,5 +1,5 @@
 # 1단계: 프론트엔드 애플리케이션 빌드
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN echo "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}" > .env.production
 RUN npm run build
 
 # 2단계: 실제 실행을 위한 최소한의 이미지 생성
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
