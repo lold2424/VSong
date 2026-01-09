@@ -1,5 +1,6 @@
 package com.VSong.controller;
 
+import com.VSong.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,12 @@ import java.util.Map;
 public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
+    private final UserRepository userRepository;
+
+    public LoginController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
 
     @GetMapping("/success")
     public String loginSuccess(@AuthenticationPrincipal OAuth2User oAuth2User) {
@@ -47,10 +54,10 @@ public class LoginController {
         userInfo.put("email", oauth2User.getAttribute("email"));
         userInfo.put("picture", oauth2User.getAttribute("picture"));
 
-        String role = authentication.getAuthorities().stream()
-                .findFirst()
-                .map(authority -> authority.getAuthority())
-                .orElse("ROLE_USER");
+        String email = oauth2User.getAttribute("email");
+        com.VSong.entity.User user = userRepository.findByEmail(email).orElse(null);
+
+        String role = (user != null && user.getRole() != null) ? user.getRole().getKey() : "ROLE_USER";
 
         userInfo.put("role", role.replace("ROLE_", ""));
 
