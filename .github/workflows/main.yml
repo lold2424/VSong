@@ -143,6 +143,8 @@ jobs:
           echo "OAUTH2_SUCCESS_REDIRECT_URL=${{ secrets.BASE_URL }}" >> .env
           echo "MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=${{ secrets.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}" >> .env
           echo "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}" >> .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+          echo "GEMINI_API_URL=${{ secrets.GEMINI_API_URL }}" >> .env
 
       - name: Copy SSL certificates
         run: |
