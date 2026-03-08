@@ -59,7 +59,7 @@ public class GlobalScheduler {
     } **/
 
     // UpdateVtuberSongsService - 최신 노래 수집
-    @Scheduled(cron = "0 30 23 * * ?", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 39 23 * * ?", zone = "Asia/Seoul")
     public void scheduleFetchVtuberSongs() {
         logger.info("Executing scheduled task: fetchVtuberSongs");
         updateVtuberSongsService.fetchVtuberSongs();

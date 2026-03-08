@@ -74,17 +74,20 @@ public class VtuberValidationService {
     private final VtuberSongsRepository vtuberSongsRepository;
     private final YouTube youTube;
     private final YouTubeApiService youTubeApiService;
+    private final GeminiService geminiService;
 
     public VtuberValidationService(VtuberRepository vtuberRepository,
                                      ExceptVtuberRepository exceptVtuberRepository,
                                      VtuberSongsRepository vtuberSongsRepository,
                                      YouTube youTube,
-                                     YouTubeApiService youTubeApiService) {
+                                     YouTubeApiService youTubeApiService,
+                                     GeminiService geminiService) {
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.vtuberSongsRepository = vtuberSongsRepository;
         this.youTube = youTube;
         this.youTubeApiService = youTubeApiService;
+        this.geminiService = geminiService;
     }
 
     public String getChannelProcessableReason(String channelId) {
@@ -249,8 +252,16 @@ public class VtuberValidationService {
         boolean finalDecision = isMusicCategory || hasSongKeyword;
 
         if (finalDecision) {
+            boolean isSongByAI = geminiService.isSongByAI(title, description);
+            if (!isSongByAI) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Validation Check for Video ID: {} -> REJECTED BY AI ({}).", videoId, title);
+                }
+                return false;
+            }
+
             if (logger.isInfoEnabled()) {
-                logger.info("Validation Check for Video ID: {} -> ACCEPTED. Reasons: {}", videoId, String.join(", ", reasons));
+                logger.info("Validation Check for Video ID: {} -> ACCEPTED WITH AI. Reasons: {}", videoId, String.join(", ", reasons));
             }
         }
 
