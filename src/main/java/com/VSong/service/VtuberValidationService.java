@@ -174,13 +174,21 @@ public class VtuberValidationService {
     @SuppressWarnings("PMD.LooseCoupling")
     private boolean hasVtuberContentPattern(String channelId) {
         try {
-            YouTube.Search.List search = youTube.search().list(List.of("snippet"));
-            search.setChannelId(channelId);
-            search.setOrder("date");
-            search.setMaxResults(10L);
-            search.setType(List.of("video"));
+            com.google.api.services.youtube.YouTube.Channels.List channelRequest = youTube.channels().list(java.util.List.of("contentDetails"));
+            channelRequest.setId(java.util.List.of(channelId));
+            com.google.api.services.youtube.model.ChannelListResponse channelResponse = youTubeApiService.executeRequest(channelRequest);
 
-            SearchListResponse response = youTubeApiService.executeRequest(search);
+            if (channelResponse.getItems() == null || channelResponse.getItems().isEmpty()) {
+                return false;
+            }
+
+            String uploadsPlaylistId = channelResponse.getItems().get(0).getContentDetails().getRelatedPlaylists().getUploads();
+
+            com.google.api.services.youtube.YouTube.PlaylistItems.List playlistRequest = youTube.playlistItems().list(java.util.List.of("snippet"));
+            playlistRequest.setPlaylistId(uploadsPlaylistId);
+            playlistRequest.setMaxResults(10L);
+
+            com.google.api.services.youtube.model.PlaylistItemListResponse response = youTubeApiService.executeRequest(playlistRequest);
             if (response.getItems() == null || response.getItems().isEmpty()) {
                 return false;
             }
