@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -39,9 +40,9 @@ public class YouTubeApiService {
         return apiKeys.get(currentKeyIndex);
     }
 
-    public void incrementApiUsage() {
-        apiKeyUsage.get(currentKeyIndex).incrementAndGet();
-        if (apiKeyUsage.get(currentKeyIndex).get() >= 9000) {
+    public void incrementApiUsage(int cost) {
+        apiKeyUsage.get(currentKeyIndex).addAndGet(cost);
+        if (apiKeyUsage.get(currentKeyIndex).get() >= 9500) {
             switchApiKey();
         }
     }
@@ -53,7 +54,7 @@ public class YouTubeApiService {
             currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
             if (keyAvailable.get(currentKeyIndex)) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("API Key switched to: {}", getCurrentApiKey());
+                    logger.info("API Key switched to index {}: {}", currentKeyIndex, getCurrentApiKey().substring(0, 10) + "...");
                 }
                 return;
             }
@@ -70,19 +71,37 @@ public class YouTubeApiService {
         logger.info("Daily API usage has been reset.");
     }
 
+    public List<Map<String, Object>> getApiKeysStatus() {
+        List<Map<String, Object>> statusList = new ArrayList<>();
+        for (int i = 0; i < apiKeys.size(); i++) {
+            Map<String, Object> status = new java.util.HashMap<>();
+            String key = apiKeys.get(i);
+            status.put("index", i);
+            status.put("keyPrefix", key.substring(0, Math.min(key.length(), 10)) + "...");
+            status.put("usage", apiKeyUsage.get(i).get());
+            status.put("isAvailable", keyAvailable.get(i));
+            status.put("isCurrent", i == currentKeyIndex);
+            statusList.add(status);
+        }
+        return statusList;
+    }
+
     @SuppressWarnings("PMD.LooseCoupling")
     public <T> T executeRequest(YouTubeRequest<T> request) throws IOException {
         rateLimiter.acquire();
         int attempts = 0;
+
+        int cost = request.getClass().getSimpleName().contains("Search") ? 100 : 1;
+
         while (attempts < apiKeys.size()) {
             try {
                 request.setKey(getCurrentApiKey());
-                incrementApiUsage();
+                incrementApiUsage(cost);
                 return request.execute();
             } catch (GoogleJsonResponseException e) {
                 if (e.getDetails() != null && "quotaExceeded".equals(e.getDetails().getErrors().get(0).getReason())) {
                     if (logger.isWarnEnabled()) {
-                        logger.warn("API quota exceeded for key. Switching to the next key and retrying.");
+                        logger.warn("API quota exceeded for key index {}. Switching to the next key and retrying.", currentKeyIndex);
                     }
                     switchApiKey();
                     attempts++;

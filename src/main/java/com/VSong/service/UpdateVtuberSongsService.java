@@ -13,10 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +27,11 @@ public class UpdateVtuberSongsService {
     private final MainPageService mainPageService;
     private final CacheManager cacheManager;
     private static final Logger logger = LoggerFactory.getLogger(UpdateVtuberSongsService.class);
+    private final Map<String, Object> lastOperationStats = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public Map<String, Object> getLastOperationStats() {
+        return lastOperationStats;
+    }
 
     public UpdateVtuberSongsService(
             YouTube youTube,
@@ -50,7 +52,10 @@ public class UpdateVtuberSongsService {
 
     public void fetchVtuberSongs() {
         logger.info("=== fetchVtuberSongs 실행 시작 ===");
+        LocalDateTime startTime = LocalDateTime.now();
         List<String> allNewSongTitles = new ArrayList<>();
+        List<String> allExcludedSongInfo = new ArrayList<>();
+        List<Map<String, Object>> performanceLogs = new ArrayList<>();
 
         List<VtuberEntity> newVtubers = vtuberRepository.findByStatus("new");
         List<VtuberEntity> existingVtubers = vtuberRepository.findByStatus("existing");
@@ -61,40 +66,49 @@ public class UpdateVtuberSongsService {
         }
 
         for (VtuberEntity vtuber : newVtubers) {
-            if (logger.isInfoEnabled()) {
-                logger.info("새로운 Vtuber 처리 시작: {}", vtuber.getName());
-            }
-            fetchAllSongsFromPlaylist(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles);
+            long channelStartTime = System.currentTimeMillis();
+            fetchAllSongsFromPlaylist(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo);
+            long duration = System.currentTimeMillis() - channelStartTime;
+            
+            Map<String, Object> log = new HashMap<>();
+            log.put("name", vtuber.getName());
+            log.put("durationMs", duration);
+            log.put("type", "NEW");
+            performanceLogs.add(log);
+
             vtuber.setStatus("existing");
             vtuberRepository.save(vtuber);
-            if (logger.isInfoEnabled()) {
-                logger.info("새로운 Vtuber 처리 완료: {}", vtuber.getName());
-            }
         }
-
 
         for (VtuberEntity vtuber : existingVtubers) {
-            if (logger.isInfoEnabled()) {
-                logger.info("기존 Vtuber 최근 노래 검색 시작: {}", vtuber.getName());
-            }
-            fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles);
+            long channelStartTime = System.currentTimeMillis();
+            fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo);
+            long duration = System.currentTimeMillis() - channelStartTime;
+
+            Map<String, Object> log = new HashMap<>();
+            log.put("name", vtuber.getName());
+            log.put("durationMs", duration);
+            log.put("type", "EXISTING");
+            performanceLogs.add(log);
         }
 
-        logger.info("메인 페이지 캐시를 초기화합니다.");
         mainPageService.refreshMainPageCache();
 
-        if (logger.isInfoEnabled()) {
-            if (!allNewSongTitles.isEmpty()) {
-                logger.info("=== 이번 작업에서 추가된 노래 목록 (총 {}개) ===", allNewSongTitles.size());
-                for (int i = 0; i < allNewSongTitles.size(); i++) {
-                    logger.info("[{}/{}] {}", i + 1, allNewSongTitles.size(), allNewSongTitles.get(i));
-                }
-            } else {
-                logger.info("=== 이번 작업에서 새로 추가된 노래가 없습니다. ===");
-            }
-        }
+        performanceLogs.sort((a, b) -> Long.compare((long) b.get("durationMs"), (long) a.get("durationMs")));
+        int slowestCount = (int) Math.ceil(performanceLogs.size() * 0.2);
+        List<Map<String, Object>> slowestChannels = performanceLogs.stream()
+                .limit(slowestCount)
+                .collect(Collectors.toList());
 
         logger.info("=== fetchVtuberSongs 실행 종료 ===");
+
+        lastOperationStats.put("lastRunTime", LocalDateTime.now());
+        lastOperationStats.put("durationSeconds", java.time.Duration.between(startTime, LocalDateTime.now()).getSeconds());
+        lastOperationStats.put("newSongsCount", allNewSongTitles.size());
+        lastOperationStats.put("excludedSongsCount", allExcludedSongInfo.size());
+        lastOperationStats.put("newSongs", new ArrayList<>(allNewSongTitles));
+        lastOperationStats.put("excludedSongs", new ArrayList<>(allExcludedSongInfo));
+        lastOperationStats.put("slowestChannels", slowestChannels);
     }
 
     public void updateSongStatusToExisting() {
@@ -229,7 +243,7 @@ public class UpdateVtuberSongsService {
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    private List<String> fetchAndProcessVideos(List<String> videoIds, String channelName) {
+    private List<String> fetchAndProcessVideos(List<String> videoIds, String channelName, List<String> excludedSongInfo) {
         List<String> newSongTitles = new ArrayList<>();
         if (videoIds == null || videoIds.isEmpty()) {
             if (logger.isInfoEnabled()) {
@@ -255,19 +269,23 @@ public class UpdateVtuberSongsService {
                 String videoId = video.getId();
 
                 if (validationService.isSongAlreadyExists(videoId)) {
+                    excludedSongInfo.add(String.format("[%s] %s - 제외 사유: 이미 DB에 존재함", channelName, videoTitle));
                     continue;
                 }
 
                 if (!validationService.isSongRelated(video)) {
+                    excludedSongInfo.add(String.format("[%s] %s - 제외 사유: 노래와 관련 없음 (AI 판별 또는 키워드 부족)", channelName, videoTitle));
                     continue;
                 }
 
                 String classification = validationService.classifyVideo(video);
                 if ("ignore".equals(classification)) {
+                    excludedSongInfo.add(String.format("[%s] %s - 제외 사유: 분류 제외 (길이 초과 등)", channelName, videoTitle));
                     continue;
                 }
 
                 if (video.getStatistics() == null || video.getStatistics().getViewCount() == null) {
+                    excludedSongInfo.add(String.format("[%s] %s - 제외 사유: 조회수 정보 없음 (회원 전용 등)", channelName, videoTitle));
                     if (logger.isWarnEnabled()) {
                         logger.warn("비디오 통계 정보(조회수)가 없어 DB에 추가하지 않습니다 (videoId: {}, title: {}). 회원용 동영상일 수 있습니다.", videoId, videoTitle);
                     }
@@ -320,7 +338,7 @@ public class UpdateVtuberSongsService {
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    private void fetchAllSongsFromPlaylist(String channelId, String channelName, List<String> allNewSongTitles) {
+    private void fetchAllSongsFromPlaylist(String channelId, String channelName, List<String> allNewSongTitles, List<String> excludedSongInfo) {
         if (logger.isInfoEnabled()) {
             logger.info("채널 [{}]에서 모든 노래를 가져옵니다. 채널 ID: {}", channelName, channelId);
         }
@@ -347,7 +365,7 @@ public class UpdateVtuberSongsService {
                 for (PlaylistItem item : playlistItems) {
                     videoIds.add(item.getContentDetails().getVideoId());
                 }
-                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName));
+                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, excludedSongInfo));
                 pageToken = playlistItemResult.getNextPageToken();
             } while (pageToken != null);
         } catch (Exception e) {
@@ -370,7 +388,7 @@ public class UpdateVtuberSongsService {
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    private void fetchRecentSongsFromSearch(String channelId, String channelName, List<String> allNewSongTitles) {
+    private void fetchRecentSongsFromSearch(String channelId, String channelName, List<String> allNewSongTitles, List<String> excludedSongInfo) {
         if (logger.isInfoEnabled()) {
             logger.info("기존 Vtuber 최근 노래 검색 시작 (API): {}", channelName);
         }
@@ -406,7 +424,7 @@ public class UpdateVtuberSongsService {
                 if (logger.isInfoEnabled()) {
                     logger.info("채널 [{}]에서 {}개의 최신 비디오를 찾았습니다. 처리 중...", channelName, videoIds.size());
                 }
-                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName));
+                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, excludedSongInfo));
             }
         } catch (IOException e) {
             if (logger.isErrorEnabled()) {
