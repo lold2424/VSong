@@ -45,7 +45,7 @@ public class MainPageService {
         CompletableFuture<List<VtuberSongsEntity>> top10DailySongsFuture = CompletableFuture.supplyAsync(
                 () -> sortSongsService.getTop10SongsByViewsIncreaseDay(channelIds), taskExecutor);
         CompletableFuture<List<VtuberSongsEntity>> top10RecentSongsFuture = CompletableFuture.supplyAsync(
-                () -> sortSongsService.getTop9SongsByPublishedAt(channelIds, "videos"), taskExecutor);
+                () -> sortSongsService.getTop10SongsByPublishedAt(channelIds, "videos"), taskExecutor);
 
         CompletableFuture.allOf(
                 top10WeeklySongsFuture, top10DailySongsFuture, top10RecentSongsFuture)
@@ -61,15 +61,15 @@ public class MainPageService {
     public MainPageRandomResponse getRandomMainPageData(String gender) {
         List<String> channelIds = vtuberChannelService.getChannelIdsByGender(gender);
 
-        CompletableFuture<List<VtuberSongsEntity>> randomVideoSongsFuture = CompletableFuture.supplyAsync(
+        CompletableFuture<List<VtuberSongsEntity>> randomSongsFuture = CompletableFuture.supplyAsync(
                 () -> songService.getRandomVideoSongs(9, channelIds), taskExecutor);
 
-        randomVideoSongsFuture.join();
+        randomSongsFuture.join();
 
-        List<VtuberSongsEntity> randomVideos = randomVideoSongsFuture.join();
+        List<VtuberSongsEntity> randomSongs = randomSongsFuture.join();
 
         return new MainPageRandomResponse(
-                randomVideos != null ? randomVideos : List.of()
+                randomSongs != null ? randomSongs : List.of()
         );
     }
 }

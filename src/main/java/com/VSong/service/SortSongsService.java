@@ -32,10 +32,10 @@ public class SortSongsService {
         return vtuberSongsRepository.findTop10ByViewsIncreaseDayDescAndChannelIds(channelIds);
     }
 
-    public List<VtuberSongsEntity> getTop9SongsByPublishedAt(List<String> channelIds, String classification) {
+    public List<VtuberSongsEntity> getTop10SongsByPublishedAt(List<String> channelIds, String classification) {
         if (channelIds.isEmpty()) {
             return List.of();
         }
-        return vtuberSongsRepository.findTop9ByPublishedAtDescAndChannelIdsAndClassification(channelIds, classification);
+        return vtuberSongsRepository.findTop10ByPublishedAtDescAndChannelIdsAndClassification(channelIds, classification);
     }
 }

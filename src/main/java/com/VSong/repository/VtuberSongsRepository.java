@@ -31,8 +31,8 @@ public interface VtuberSongsRepository extends JpaRepository<VtuberSongsEntity, 
     @Query(value = "SELECT * FROM vtuber_songs WHERE classification = :classification AND channel_id IN (:channelIds) ORDER BY views_increase_week DESC LIMIT 10", nativeQuery = true)
     List<VtuberSongsEntity> findTop10ByViewsIncreaseWeekDescAndChannelIdsAndClassification(@Param("channelIds") List<String> channelIds, @Param("classification") String classification);
 
-    @Query(value = "SELECT * FROM vtuber_songs WHERE classification = :classification AND channel_id IN (:channelIds) ORDER BY published_at DESC LIMIT 9", nativeQuery = true)
-    List<VtuberSongsEntity> findTop9ByPublishedAtDescAndChannelIdsAndClassification(@Param("channelIds") List<String> channelIds, @Param("classification") String classification);
+    @Query(value = "SELECT * FROM vtuber_songs WHERE classification = :classification AND channel_id IN (:channelIds) ORDER BY published_at DESC LIMIT 10", nativeQuery = true)
+    List<VtuberSongsEntity> findTop10ByPublishedAtDescAndChannelIdsAndClassification(@Param("channelIds") List<String> channelIds, @Param("classification") String classification);
 
     // LIKE 절 수정: CONCAT 함수 사용
     @Query(value = "SELECT * FROM vtuber_songs WHERE title LIKE CONCAT('%', :title, '%') AND classification = :classification ORDER BY view_count DESC", nativeQuery = true)

@@ -25,10 +25,10 @@ public class MainController {
         MainPageRandomResponse randomData = mainPageService.getRandomMainPageData(gender);
 
         return new MainPageResponse(
-                randomData.randomVideoSongs(),
+                randomData.randomSongs(),
                 cacheableData.top10WeeklySongs(),
                 cacheableData.top10DailySongs(),
-                cacheableData.top9RecentSongs()
+                cacheableData.top10RecentSongs()
         );
     }
 }
