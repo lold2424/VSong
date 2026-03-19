@@ -41,11 +41,11 @@ public class MainPageService {
         List<String> channelIds = vtuberChannelService.getChannelIdsByGender(gender);
 
         CompletableFuture<List<VtuberSongsEntity>> top10WeeklySongsFuture = CompletableFuture.supplyAsync(
-                () -> sortSongsService.getTop10SongsByViewsIncreaseWeek(channelIds, "videos"), taskExecutor);
+                () -> sortSongsService.getTop10SongsByViewsIncreaseWeek(channelIds), taskExecutor);
         CompletableFuture<List<VtuberSongsEntity>> top10DailySongsFuture = CompletableFuture.supplyAsync(
                 () -> sortSongsService.getTop10SongsByViewsIncreaseDay(channelIds), taskExecutor);
         CompletableFuture<List<VtuberSongsEntity>> top10RecentSongsFuture = CompletableFuture.supplyAsync(
-                () -> sortSongsService.getTop10SongsByPublishedAt(channelIds, "videos"), taskExecutor);
+                () -> sortSongsService.getTop10SongsByPublishedAt(channelIds), taskExecutor);
 
         CompletableFuture.allOf(
                 top10WeeklySongsFuture, top10DailySongsFuture, top10RecentSongsFuture)

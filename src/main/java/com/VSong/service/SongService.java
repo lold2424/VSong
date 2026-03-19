@@ -25,6 +25,6 @@ public class SongService {
             return List.of();
         }
         Pageable pageable = PageRequest.of(0, limit);
-        return vtuberSongsRepository.findRandomSongsByChannelIdsAndClassification(channelIds, "videos", pageable);
+        return vtuberSongsRepository.findRandomSongsByChannelIds(channelIds, pageable);
     }
 }

@@ -27,18 +27,20 @@ const nextConfig = {
     ];
   },
   async rewrites() {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    
     return [
       {
         source: "/api/:path*",
-        destination: "http://backend:8080/api/:path*",
+        destination: `${backendUrl}/api/:path*`,
       },
       {
         source: "/login/:path*",
-        destination: "http://backend:8080/login/:path*",
+        destination: `${backendUrl}/login/:path*`,
       },
       {
         source: "/oauth2/:path*",
-        destination: "http://backend:8080/oauth2/:path*",
+        destination: `${backendUrl}/oauth2/:path*`,
       },
     ];
   },
@@ -66,4 +68,3 @@ const nextConfig = {
   },
 };
 module.exports = nextConfig;
-

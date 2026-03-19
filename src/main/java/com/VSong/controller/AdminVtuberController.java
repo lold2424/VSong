@@ -16,8 +16,11 @@ public class AdminVtuberController {
 
     private final VtuberService vtuberService;
 
-    public AdminVtuberController(VtuberService vtuberService) {
+    private final com.VSong.repository.VtuberSongsRepository vtuberSongsRepository;
+
+    public AdminVtuberController(VtuberService vtuberService, com.VSong.repository.VtuberSongsRepository vtuberSongsRepository) {
         this.vtuberService = vtuberService;
+        this.vtuberSongsRepository = vtuberSongsRepository;
     }
 
     @PostMapping

@@ -38,7 +38,7 @@ public class GeminiService {
         try {
             String prompt = String.format(
                 "다음 유튜브 영상 정보를 보고, 이 영상이 실제 '노래(커버곡, MV, 오리지널 곡, 리믹스 포함)'인지 판별해줘. " +
-                "단순 게임 방송, 잡담, 짧은 웃음 클립, 노래 제목이 언급된 BGM 정보는 제외해야 해. " +
+                "단순 게임 방송, 잡담, 짧은 웃음 클립, 1분 미만의 쇼츠(Shorts) 영상, 노래 제목이 언급된 BGM 정보는 반드시 제외해야 해. " +
                 "결과는 반드시 'true' 또는 'false' 한 단어로만 응답해줘.\n" +
                 "영상 제목: %s\n" +
                 "영상 설명: %s", title, description);

@@ -12,7 +12,8 @@ interface MainPageApiResponse {
 
 async function fetchMainPageData(gender: string) {
     try {
-        const response = await axios.get<MainPageApiResponse>(`/api/home`, {
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+        const response = await axios.get<MainPageApiResponse>(`${backendUrl}/api/home`, {
             params: { gender },
         });
         return response.data;
@@ -37,7 +38,7 @@ export default async function Page({ searchParams }: { searchParams: { [key: str
                 <h2 className="text-2xl mb-5 text-[#A6E22E]">최신 노래</h2>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
                     {data.top10RecentSongs?.map((song: any, index: number) => (
-                        <VideoCard key={song.id} song={song} isPriority={index < 4} />
+                        <VideoCard key={song.videoId || song.id} song={song} isPriority={index < 4} />
                     ))}
                 </div>
             </section>
@@ -46,7 +47,7 @@ export default async function Page({ searchParams }: { searchParams: { [key: str
                 <h2 className="text-2xl mb-5 mt-10 text-[#A6E22E]">이 노래 어떠신가요?</h2>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
                     {data.randomSongs?.map((song: any) => (
-                        <VideoCard key={song.id} song={song} />
+                        <VideoCard key={song.videoId || song.id} song={song} />
                     ))}
                 </div>
             </section>

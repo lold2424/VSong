@@ -17,6 +17,8 @@ services:
     image: ${REGISTRY}/${FRONTEND_IMAGE_NAME}:${IMAGE_TAG}
     container_name: vsong-frontend
     restart: always
+    environment:
+      - BACKEND_URL=http://backend:8080
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
