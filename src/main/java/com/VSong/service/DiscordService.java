@@ -42,7 +42,7 @@ public class DiscordService {
     }
 
     public List<SongResponseDto> getLatestSongs(List<String> channelIds, String classification) {
-        return vtuberSongsRepository.findTop9ByPublishedAtDescAndChannelIdsAndClassification(channelIds, classification).stream()
+        return vtuberSongsRepository.findTop10ByPublishedAtDescAndChannelIdsAndClassification(channelIds, classification).stream()
                 .map(SongResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
