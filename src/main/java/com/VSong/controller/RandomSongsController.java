@@ -3,14 +3,15 @@ package com.VSong.controller;
 import com.VSong.entity.VtuberSongsEntity;
 import com.VSong.service.SongService;
 import com.VSong.service.VtuberChannelService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-import com.VSong.repository.VtuberRepository;
-
 @RestController
-@RequestMapping("/api/v1/random-songs")
+@RequestMapping("/api/songs")
 public class RandomSongsController {
 
     private final SongService songService;
@@ -21,19 +22,11 @@ public class RandomSongsController {
         this.vtuberChannelService = vtuberChannelService;
     }
 
-    @GetMapping("/random")
+    @GetMapping("/random-videos")
     public List<VtuberSongsEntity> getRandomVideoSongs(
-            @RequestParam(value = "limit", defaultValue = "6") int limit,
-            @RequestParam(value = "gender", required = false, defaultValue = "all") String gender) {
+            @RequestParam(defaultValue = "9") int limit,
+            @RequestParam(defaultValue = "all") String gender) {
         List<String> channelIds = vtuberChannelService.getChannelIdsByGender(gender);
         return songService.getRandomVideoSongs(limit, channelIds);
-    }
-
-    @GetMapping("/random-shorts")
-    public List<VtuberSongsEntity> getRandomShortsSongs(
-            @RequestParam(value = "limit", defaultValue = "6") int limit,
-            @RequestParam(value = "gender", required = false, defaultValue = "all") String gender) {
-        List<String> channelIds = vtuberChannelService.getChannelIdsByGender(gender);
-        return songService.getRandomShortsSongs(limit, channelIds);
     }
 }

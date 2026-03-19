@@ -38,18 +38,4 @@ public class SortSongsService {
         }
         return vtuberSongsRepository.findTop9ByPublishedAtDescAndChannelIdsAndClassification(channelIds, classification);
     }
-
-    public List<VtuberSongsEntity> getTop10ShortsByViewsIncreaseWeek(List<String> channelIds, String classification) {
-        if (channelIds.isEmpty()) {
-            return List.of();
-        }
-        return vtuberSongsRepository.findTop10ByViewsIncreaseWeekDescAndChannelIdsAndClassification(channelIds, classification);
-    }
-
-    public List<VtuberSongsEntity> getTop9ShortsByPublishedAt(List<String> channelIds, String classification) {
-        if (channelIds.isEmpty()) {
-            return List.of();
-        }
-        return vtuberSongsRepository.findTop9ByPublishedAtDescAndChannelIdsAndClassification(channelIds, classification);
-    }
 }

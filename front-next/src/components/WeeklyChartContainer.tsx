@@ -7,24 +7,21 @@ import WeeklyChart from "./WeeklyChart";
 interface MainApiResponse {
   top10WeeklySongs: any[];
   top10DailySongs: any[];
-  top10WeeklyShorts: any[];
 }
 
 const WeeklyChartContainer: React.FC = () => {
   const [chartData, setChartData] = useState<MainApiResponse>({
     top10WeeklySongs: [],
     top10DailySongs: [],
-    top10WeeklyShorts: [],
   });
 
   useEffect(() => {
     axios
-      .get<MainApiResponse>("/api/main")
+      .get<MainApiResponse>("/api/home")
       .then((response) => {
         setChartData({
           top10WeeklySongs: response.data.top10WeeklySongs || [],
           top10DailySongs: response.data.top10DailySongs || [],
-          top10WeeklyShorts: response.data.top10WeeklyShorts || [],
         });
       })
       .catch((error) => {
@@ -36,7 +33,6 @@ const WeeklyChartContainer: React.FC = () => {
     <WeeklyChart
       top10WeeklySongs={chartData.top10WeeklySongs}
       top10DailySongs={chartData.top10DailySongs}
-      top10WeeklyShorts={chartData.top10WeeklyShorts}
     />
   );
 };

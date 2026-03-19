@@ -9,10 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api/main")
+@RequestMapping("/api")
 public class MainController {
 
     private final MainPageService mainPageService;
@@ -21,10 +19,8 @@ public class MainController {
         this.mainPageService = mainPageService;
     }
 
-    @GetMapping
-    public MainPageResponse getMainPage(
-            @RequestParam(value = "gender", required = false, defaultValue = "all") String gender) {
-
+    @GetMapping("/home")
+    public MainPageResponse getHomeData(@RequestParam(defaultValue = "all") String gender) {
         MainPageCacheableResponse cacheableData = mainPageService.getCacheableMainPageData(gender);
         MainPageRandomResponse randomData = mainPageService.getRandomMainPageData(gender);
 
@@ -32,15 +28,7 @@ public class MainController {
                 randomData.randomVideoSongs(),
                 cacheableData.top10WeeklySongs(),
                 cacheableData.top10DailySongs(),
-                cacheableData.top10RecentSongs(),
-                randomData.randomShorts(),
-                cacheableData.top10WeeklyShorts(),
-                cacheableData.top9RecentShorts()
+                cacheableData.top9RecentSongs()
         );
-    }
-
-    @GetMapping("/version")
-    public Map<String, String> getVersion() {
-        return Map.of("version", "v2-cookie-fix");
     }
 }

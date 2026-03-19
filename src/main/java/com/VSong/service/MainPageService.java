@@ -40,29 +40,21 @@ public class MainPageService {
     public MainPageCacheableResponse getCacheableMainPageData(String gender) {
         List<String> channelIds = vtuberChannelService.getChannelIdsByGender(gender);
 
-
         CompletableFuture<List<VtuberSongsEntity>> top10WeeklySongsFuture = CompletableFuture.supplyAsync(
                 () -> sortSongsService.getTop10SongsByViewsIncreaseWeek(channelIds, "videos"), taskExecutor);
         CompletableFuture<List<VtuberSongsEntity>> top10DailySongsFuture = CompletableFuture.supplyAsync(
                 () -> sortSongsService.getTop10SongsByViewsIncreaseDay(channelIds), taskExecutor);
         CompletableFuture<List<VtuberSongsEntity>> top10RecentSongsFuture = CompletableFuture.supplyAsync(
                 () -> sortSongsService.getTop9SongsByPublishedAt(channelIds, "videos"), taskExecutor);
-        CompletableFuture<List<VtuberSongsEntity>> top10WeeklyShortsFuture = CompletableFuture.supplyAsync(
-                () -> sortSongsService.getTop10ShortsByViewsIncreaseWeek(channelIds, "shorts"), taskExecutor);
-        CompletableFuture<List<VtuberSongsEntity>> top9RecentShortsFuture = CompletableFuture.supplyAsync(
-                () -> sortSongsService.getTop9ShortsByPublishedAt(channelIds, "shorts"), taskExecutor);
 
         CompletableFuture.allOf(
-                top10WeeklySongsFuture, top10DailySongsFuture, top10RecentSongsFuture,
-                top10WeeklyShortsFuture, top9RecentShortsFuture)
+                top10WeeklySongsFuture, top10DailySongsFuture, top10RecentSongsFuture)
                 .join();
 
         return new MainPageCacheableResponse(
                 top10WeeklySongsFuture.join(),
                 top10DailySongsFuture.join(),
-                top10RecentSongsFuture.join(),
-                top10WeeklyShortsFuture.join(),
-                top9RecentShortsFuture.join()
+                top10RecentSongsFuture.join()
         );
     }
 
@@ -71,18 +63,13 @@ public class MainPageService {
 
         CompletableFuture<List<VtuberSongsEntity>> randomVideoSongsFuture = CompletableFuture.supplyAsync(
                 () -> songService.getRandomVideoSongs(9, channelIds), taskExecutor);
-        CompletableFuture<List<VtuberSongsEntity>> randomShortsFuture = CompletableFuture.supplyAsync(
-                () -> songService.getRandomShortsSongs(9, channelIds), taskExecutor);
 
-        CompletableFuture.allOf(randomVideoSongsFuture, randomShortsFuture).join();
+        randomVideoSongsFuture.join();
 
         List<VtuberSongsEntity> randomVideos = randomVideoSongsFuture.join();
-        List<VtuberSongsEntity> randomShorts = randomShortsFuture.join();
 
         return new MainPageRandomResponse(
-                randomVideos != null ? randomVideos : List.of(),
-                randomShorts != null ? randomShorts : List.of()
+                randomVideos != null ? randomVideos : List.of()
         );
     }
 }
-
