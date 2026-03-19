@@ -16,6 +16,7 @@ const AdminPage = () => {
 
   const [monitoringData, setMonitoringData] = useState<any>(null);
   const [isLoadingMonitoring, setIsLoadingMonitoring] = useState(false);
+  const [isUpdatingSongs, setIsUpdatingSongs] = useState(false);
 
   const fetchMonitoringData = async () => {
     setIsLoadingMonitoring(true);
@@ -31,6 +32,30 @@ const AdminPage = () => {
       console.error('Failed to fetch monitoring data', error);
     } finally {
       setIsLoadingMonitoring(false);
+    }
+  };
+
+  const handleRunSongUpdate = async () => {
+    if (!confirm('노래 수집을 즉시 실행하시겠습니까? (버튜버 수에 따라 수 분이 소요될 수 있습니다)')) return;
+    
+    setIsUpdatingSongs(true);
+    try {
+      const response = await fetch('/api/admin/monitoring/run-song-update', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert(data.message || '노래 수집 작업이 시작되었습니다.');
+        // fetchMonitoringData(); // 비동기 작업이므로 즉시 새로고침할 필요는 없습니다.
+      } else {
+        alert('노래 수집 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to run song update', error);
+      alert('네트워크 오류가 발생했습니다.');
+    } finally {
+      setIsUpdatingSongs(false);
     }
   };
 
@@ -123,13 +148,22 @@ const AdminPage = () => {
       <div className="bg-gray-700 p-6 rounded-md mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-[#66D9EF]">시스템 모니터링</h2>
-          <button 
-            onClick={fetchMonitoringData} 
-            className="text-sm bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded transition"
-            disabled={isLoadingMonitoring}
-          >
-            {isLoadingMonitoring ? '갱신 중...' : '모니터링 새로고침'}
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={handleRunSongUpdate} 
+              className="text-sm bg-[#A6E22E] text-gray-900 hover:bg-lime-400 px-3 py-1 rounded transition font-bold disabled:bg-gray-500"
+              disabled={isUpdatingSongs}
+            >
+              {isUpdatingSongs ? '수집 진행 중...' : '노래 수집 즉시 실행'}
+            </button>
+            <button 
+              onClick={fetchMonitoringData} 
+              className="text-sm bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded transition"
+              disabled={isLoadingMonitoring}
+            >
+              {isLoadingMonitoring ? '갱신 중...' : '모니터링 새로고침'}
+            </button>
+          </div>
         </div>
 
         {monitoringData ? (
@@ -182,6 +216,10 @@ const AdminPage = () => {
                     <span className="text-gray-400">제외된 노래:</span>
                     <span className="text-orange-400 font-bold">{monitoringData.songUpdateStats.excludedSongsCount || 0}개</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">실패한 노래:</span>
+                    <span className="text-red-500 font-bold">{monitoringData.songUpdateStats.failedSongsCount || 0}개</span>
+                  </div>
                 </div>
               </div>
               <div className="bg-gray-900 p-4 rounded-md">
@@ -211,6 +249,17 @@ const AdminPage = () => {
                   <summary className="cursor-pointer text-orange-400 hover:text-white transition font-bold">제외된 노래 상세 사유 보기 ({monitoringData.songUpdateStats.excludedSongs.length})</summary>
                   <div className="mt-2 max-h-40 overflow-y-auto space-y-1 p-2 bg-black bg-opacity-30 rounded text-gray-400">
                     {monitoringData.songUpdateStats.excludedSongs.map((info: string, idx: number) => (
+                      <p key={idx} className="border-b border-gray-800 pb-1 last:border-0">{info}</p>
+                    ))}
+                  </div>
+                </details>
+              )}
+              
+              {monitoringData.songUpdateStats.failedSongs?.length > 0 && (
+                <details className="text-xs bg-gray-900 rounded-md p-2 col-span-1 md:col-span-2 border border-red-900">
+                  <summary className="cursor-pointer text-red-500 hover:text-white transition font-bold">수집 실패(시스템 오류) 목록 보기 ({monitoringData.songUpdateStats.failedSongs.length})</summary>
+                  <div className="mt-2 max-h-40 overflow-y-auto space-y-1 p-2 bg-black bg-opacity-30 rounded text-red-300 font-mono">
+                    {monitoringData.songUpdateStats.failedSongs.map((info: string, idx: number) => (
                       <p key={idx} className="border-b border-gray-800 pb-1 last:border-0">{info}</p>
                     ))}
                   </div>

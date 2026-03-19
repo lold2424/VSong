@@ -288,7 +288,11 @@ public class VtuberValidationService {
         try {
             Duration videoDuration = Duration.parse(durationStr);
             if (videoDuration.compareTo(Duration.ofMinutes(8)) > 0) return "ignore";
-            if (videoDuration.compareTo(Duration.ofMinutes(1)) <= 0 || title.toLowerCase().contains("short")) return "shorts";
+
+            if (videoDuration.compareTo(Duration.ofMinutes(1)) <= 0 || title.toLowerCase().contains("short")) {
+                return "ignore";
+            }
+            
             return "videos";
         } catch (Exception e) {
             if (logger.isErrorEnabled()) {
