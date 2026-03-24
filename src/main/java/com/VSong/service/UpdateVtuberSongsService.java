@@ -277,14 +277,14 @@ public class UpdateVtuberSongsService {
                     continue;
                 }
 
-                if (!validationService.isSongRelated(video)) {
-                    excludedSongInfo.add(String.format("[%s] %s - 제외 사유: 노래와 관련 없음 (AI 판별 또는 키워드 부족)", channelName, videoTitle));
+                String classification = validationService.classifyVideo(video);
+                if ("ignore".equals(classification)) {
+                    excludedSongInfo.add(String.format("[%s] %s - 제외 사유: 분류 제외 (길이 초과, 쇼츠 등)", channelName, videoTitle));
                     continue;
                 }
 
-                String classification = validationService.classifyVideo(video);
-                if ("ignore".equals(classification)) {
-                    excludedSongInfo.add(String.format("[%s] %s - 제외 사유: 분류 제외 (길이 초과 등)", channelName, videoTitle));
+                if (!validationService.isSongRelated(video)) {
+                    excludedSongInfo.add(String.format("[%s] %s - 제외 사유: 노래와 관련 없음 (AI 판별 또는 키워드 부족)", channelName, videoTitle));
                     continue;
                 }
 
