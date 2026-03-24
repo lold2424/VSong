@@ -19,17 +19,7 @@ public class VisitorService {
 
     @Transactional
     public void incrementVisitorCount() {
-        LocalDate today = LocalDate.now();
-        DailyVisitor dailyVisitor = visitorRepository.findByVisitDate(today)
-                .orElseGet(() -> {
-                    DailyVisitor newVisitor = new DailyVisitor();
-                    newVisitor.setVisitDate(today);
-                    newVisitor.setCount(0);
-                    return newVisitor;
-                });
-
-        dailyVisitor.setCount(dailyVisitor.getCount() + 1);
-        visitorRepository.save(dailyVisitor);
+        visitorRepository.incrementVisitorCount(LocalDate.now());
     }
 
     @Transactional(readOnly = true)
