@@ -253,6 +253,8 @@ public class UpdateVtuberSongsService {
             category = "API_FORBIDDEN";
         } else if (message.contains("quotaExceeded")) {
             category = "API_QUOTA_EXCEEDED";
+        } else if (message.contains("업로드 재생목록 ID 조회 실패")) {
+            category = "CHANNEL_NOT_FOUND";
         } else if (message.contains("IOException") || message.contains("시스템 오류")) {
             category = "NETWORK_OR_SYSTEM_ERROR";
         } else if (message.contains("DB 저장 오류")) {
