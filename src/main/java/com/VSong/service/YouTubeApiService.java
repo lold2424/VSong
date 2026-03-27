@@ -99,9 +99,18 @@ public class YouTubeApiService {
                 incrementApiUsage(cost);
                 return request.execute();
             } catch (GoogleJsonResponseException e) {
-                if (e.getDetails() != null && "quotaExceeded".equals(e.getDetails().getErrors().get(0).getReason())) {
+                String reason = (e.getDetails() != null && !e.getDetails().getErrors().isEmpty()) 
+                        ? e.getDetails().getErrors().get(0).getReason() : "";
+
+                if ("quotaExceeded".equals(reason)) {
                     if (logger.isWarnEnabled()) {
                         logger.warn("API quota exceeded for key index {}. Switching to the next key and retrying.", currentKeyIndex);
+                    }
+                    switchApiKey();
+                    attempts++;
+                } else if (e.getStatusCode() == 403 || "accessNotConfigured".equals(reason) || "SERVICE_DISABLED".equals(reason)) {
+                    if (logger.isErrorEnabled()) {
+                        logger.error("API key at index {} is disabled or has no permission (Reason: {}). Switching to the next key.", currentKeyIndex, reason);
                     }
                     switchApiKey();
                     attempts++;

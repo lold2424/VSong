@@ -56,6 +56,7 @@ public class UpdateVtuberSongsService {
         List<String> allNewSongTitles = new ArrayList<>();
         List<String> allExcludedSongInfo = new ArrayList<>();
         List<String> allFailedSongInfo = new ArrayList<>();
+        Map<String, Integer> errorSummary = new HashMap<>();
         List<Map<String, Object>> performanceLogs = new ArrayList<>();
 
         List<VtuberEntity> newVtubers = vtuberRepository.findByStatus("new");
@@ -68,7 +69,7 @@ public class UpdateVtuberSongsService {
 
         for (VtuberEntity vtuber : newVtubers) {
             long channelStartTime = System.currentTimeMillis();
-            fetchAllSongsFromPlaylist(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo, allFailedSongInfo);
+            fetchAllSongsFromPlaylist(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo, allFailedSongInfo, errorSummary);
             long duration = System.currentTimeMillis() - channelStartTime;
             
             Map<String, Object> log = new HashMap<>();
@@ -83,7 +84,7 @@ public class UpdateVtuberSongsService {
 
         for (VtuberEntity vtuber : existingVtubers) {
             long channelStartTime = System.currentTimeMillis();
-            fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo, allFailedSongInfo);
+            fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo, allFailedSongInfo, errorSummary);
             long duration = System.currentTimeMillis() - channelStartTime;
 
             Map<String, Object> log = new HashMap<>();
@@ -108,6 +109,7 @@ public class UpdateVtuberSongsService {
         lastOperationStats.put("newSongsCount", allNewSongTitles.size());
         lastOperationStats.put("excludedSongsCount", allExcludedSongInfo.size());
         lastOperationStats.put("failedSongsCount", allFailedSongInfo.size());
+        lastOperationStats.put("errorSummary", errorSummary);
         lastOperationStats.put("newSongs", new ArrayList<>(allNewSongTitles));
         lastOperationStats.put("excludedSongs", new ArrayList<>(allExcludedSongInfo));
         lastOperationStats.put("failedSongs", new ArrayList<>(allFailedSongInfo));
@@ -245,8 +247,25 @@ public class UpdateVtuberSongsService {
         }
     }
 
+    private void summarizeError(String message, Map<String, Integer> errorSummary) {
+        String category = "OTHER_ERROR";
+        if (message.contains("403 Forbidden") || message.contains("accessNotConfigured") || message.contains("SERVICE_DISABLED")) {
+            category = "API_FORBIDDEN";
+        } else if (message.contains("quotaExceeded")) {
+            category = "API_QUOTA_EXCEEDED";
+        } else if (message.contains("IOException") || message.contains("시스템 오류")) {
+            category = "NETWORK_OR_SYSTEM_ERROR";
+        } else if (message.contains("DB 저장 오류")) {
+            category = "DATABASE_ERROR";
+        } else if (message.contains("재생목록 항목 조회 실패") || message.contains("응답 없음")) {
+            category = "API_RESPONSE_ERROR";
+        }
+
+        errorSummary.put(category, errorSummary.getOrDefault(category, 0) + 1);
+    }
+
     @SuppressWarnings("PMD.LooseCoupling")
-    private List<String> fetchAndProcessVideos(List<String> videoIds, String channelName, List<String> excludedSongInfo, List<String> allFailedSongInfo) {
+    private List<String> fetchAndProcessVideos(List<String> videoIds, String channelName, List<String> excludedSongInfo, List<String> allFailedSongInfo, Map<String, Integer> errorSummary) {
         List<String> newSongTitles = new ArrayList<>();
         if (videoIds == null || videoIds.isEmpty()) {
             if (logger.isInfoEnabled()) {
@@ -264,7 +283,9 @@ public class UpdateVtuberSongsService {
                 if (logger.isWarnEnabled()) {
                     logger.warn("채널 [{}]의 비디오 ID 목록에 대한 세부 정보를 가져오지 못했습니다.", channelName);
                 }
-                allFailedSongInfo.add(String.format("[%s] 비디오 세부 정보 응답 없음 (API 응답 null 또는 빈 목록)", channelName));
+                String errorMsg = String.format("[%s] 비디오 세부 정보 응답 없음 (API 응답 null 또는 빈 목록)", channelName);
+                allFailedSongInfo.add(errorMsg);
+                summarizeError(errorMsg, errorSummary);
                 return newSongTitles;
             }
 
@@ -300,7 +321,9 @@ public class UpdateVtuberSongsService {
                     saveNewSong(video, video.getStatistics(), channelName, classification);
                     newSongTitles.add(String.format("%s (분류: %s)", videoTitle, classification));
                 } catch (Exception e) {
-                    allFailedSongInfo.add(String.format("[%s] %s - 실패 사유: DB 저장 오류 (%s)", channelName, videoTitle, e.getMessage()));
+                    String errorMsg = String.format("[%s] %s - 실패 사유: DB 저장 오류 (%s)", channelName, videoTitle, e.getMessage());
+                    allFailedSongInfo.add(errorMsg);
+                    summarizeError(errorMsg, errorSummary);
                     if (logger.isErrorEnabled()) {
                         logger.error("노래 저장 중 오류 발생 - 비디오: {}", videoTitle, e);
                     }
@@ -318,7 +341,9 @@ public class UpdateVtuberSongsService {
             }
 
         } catch (IOException e) {
-            allFailedSongInfo.add(String.format("[%s] 시스템 오류: 비디오 정보 조회 중 IOException 발생 (%s)", channelName, e.getMessage()));
+            String errorMsg = String.format("[%s] 시스템 오류: 비디오 정보 조회 중 IOException 발생 (%s)", channelName, e.getMessage());
+            allFailedSongInfo.add(errorMsg);
+            summarizeError(errorMsg, errorSummary);
             if (logger.isErrorEnabled()) {
                 logger.error("비디오 정보를 가져오는 동안 IOException 발생 {}", channelName, e);
             }
@@ -350,7 +375,7 @@ public class UpdateVtuberSongsService {
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    private void fetchAllSongsFromPlaylist(String channelId, String channelName, List<String> allNewSongTitles, List<String> excludedSongInfo, List<String> allFailedSongInfo) {
+    private void fetchAllSongsFromPlaylist(String channelId, String channelName, List<String> allNewSongTitles, List<String> excludedSongInfo, List<String> allFailedSongInfo, Map<String, Integer> errorSummary) {
         if (logger.isInfoEnabled()) {
             logger.info("채널 [{}]에서 모든 노래를 가져옵니다. 채널 ID: {}", channelName, channelId);
         }
@@ -360,7 +385,9 @@ public class UpdateVtuberSongsService {
                 if (logger.isErrorEnabled()) {
                     logger.error("channel ID에 대한 업로드 재생목록 찾을 수 없음: {}", channelId);
                 }
-                allFailedSongInfo.add(String.format("[%s] 업로드 재생목록 ID 조회 실패", channelName));
+                String errorMsg = String.format("[%s] 업로드 재생목록 ID 조회 실패", channelName);
+                allFailedSongInfo.add(errorMsg);
+                summarizeError(errorMsg, errorSummary);
                 return;
             }
             String pageToken = null;
@@ -372,7 +399,9 @@ public class UpdateVtuberSongsService {
 
                 PlaylistItemListResponse playlistItemResult = youTubeApiService.executeRequest(playlistItemsRequest);
                 if (playlistItemResult == null) {
-                    allFailedSongInfo.add(String.format("[%s] 재생목록 항목 조회 실패 (API 응답 null)", channelName));
+                    String errorMsg = String.format("[%s] 재생목록 항목 조회 실패 (API 응답 null)", channelName);
+                    allFailedSongInfo.add(errorMsg);
+                    summarizeError(errorMsg, errorSummary);
                     break;
                 }
                 List<PlaylistItem> playlistItems = playlistItemResult.getItems();
@@ -382,11 +411,13 @@ public class UpdateVtuberSongsService {
                 for (PlaylistItem item : playlistItems) {
                     videoIds.add(item.getContentDetails().getVideoId());
                 }
-                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, excludedSongInfo, allFailedSongInfo));
+                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, excludedSongInfo, allFailedSongInfo, errorSummary));
                 pageToken = playlistItemResult.getNextPageToken();
             } while (pageToken != null);
         } catch (Exception e) {
-            allFailedSongInfo.add(String.format("[%s] 시스템 오류: 재생목록 처리 중 예외 발생 (%s)", channelName, e.getMessage()));
+            String errorMsg = String.format("[%s] 시스템 오류: 재생목록 처리 중 예외 발생 (%s)", channelName, e.getMessage());
+            allFailedSongInfo.add(errorMsg);
+            summarizeError(errorMsg, errorSummary);
             if (logger.isErrorEnabled()) {
                 logger.error("API 호출 중 오류 발생 - 채널명: {}, 채널 ID: {}", channelName, channelId, e);
             }
@@ -406,7 +437,7 @@ public class UpdateVtuberSongsService {
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    private void fetchRecentSongsFromSearch(String channelId, String channelName, List<String> allNewSongTitles, List<String> excludedSongInfo, List<String> allFailedSongInfo) {
+    private void fetchRecentSongsFromSearch(String channelId, String channelName, List<String> allNewSongTitles, List<String> excludedSongInfo, List<String> allFailedSongInfo, Map<String, Integer> errorSummary) {
         if (logger.isInfoEnabled()) {
             logger.info("기존 Vtuber 최근 노래 검색 시작 (API): {}", channelName);
         }
@@ -416,7 +447,9 @@ public class UpdateVtuberSongsService {
                 if (logger.isErrorEnabled()) {
                     logger.error("채널 ID [{}]에 대한 업로드 재생목록을 찾을 수 없음: {}", channelName, channelId);
                 }
-                allFailedSongInfo.add(String.format("[%s] 업로드 재생목록 ID 조회 실패", channelName));
+                String errorMsg = String.format("[%s] 업로드 재생목록 ID 조회 실패", channelName);
+                allFailedSongInfo.add(errorMsg);
+                summarizeError(errorMsg, errorSummary);
                 return;
             }
 
@@ -426,7 +459,9 @@ public class UpdateVtuberSongsService {
 
             PlaylistItemListResponse playlistItemResult = youTubeApiService.executeRequest(playlistItemsRequest);
             if (playlistItemResult == null) {
-                allFailedSongInfo.add(String.format("[%s] 최신 비디오 목록 조회 실패 (API 응답 null)", channelName));
+                String errorMsg = String.format("[%s] 최신 비디오 목록 조회 실패 (API 응답 null)", channelName);
+                allFailedSongInfo.add(errorMsg);
+                summarizeError(errorMsg, errorSummary);
                 return;
             }
             List<PlaylistItem> playlistItems = playlistItemResult.getItems();
@@ -447,20 +482,22 @@ public class UpdateVtuberSongsService {
                 if (logger.isInfoEnabled()) {
                     logger.info("채널 [{}]에서 {}개의 최신 비디오를 찾았습니다. 처리 중...", channelName, videoIds.size());
                 }
-                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, excludedSongInfo, allFailedSongInfo));
+                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, excludedSongInfo, allFailedSongInfo, errorSummary));
             }
         } catch (IOException e) {
-            allFailedSongInfo.add(String.format("[%s] 시스템 오류: 최근 노래 조회 중 IOException (%s)", channelName, e.getMessage()));
+            String errorMsg = String.format("[%s] 시스템 오류: 최근 노래 조회 중 IOException (%s)", channelName, e.getMessage());
+            allFailedSongInfo.add(errorMsg);
+            summarizeError(errorMsg, errorSummary);
             if (logger.isErrorEnabled()) {
                 logger.error("채널 [{}]의 최근 노래를 가져오는 중 API 오류 발생: {}", channelName, e.getMessage(), e);
             }
         } catch (Exception e) {
-            allFailedSongInfo.add(String.format("[%s] 알 수 없는 오류: 최근 노래 처리 중 예외 (%s)", channelName, e.getMessage()));
+            String errorMsg = String.format("[%s] 알 수 없는 오류: 최근 노래 처리 중 예외 (%s)", channelName, e.getMessage());
+            allFailedSongInfo.add(errorMsg);
+            summarizeError(errorMsg, errorSummary);
             if (logger.isErrorEnabled()) {
                 logger.error("채널 [{}]의 최근 노래 처리 중 알 수 없는 오류 발생: {}", channelName, e.getMessage(), e);
             }
         }
     }
-
-
 }
