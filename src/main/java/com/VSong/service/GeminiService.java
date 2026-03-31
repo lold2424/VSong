@@ -66,4 +66,44 @@ public class GeminiService {
             return true;
         }
     }
+
+    public List<String> analyzeUserTaste(List<String> titles) {
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            return List.of("J-POP", "애니메이션", "버튜버", "K-POP", "발라드");
+        }
+
+        try {
+            String combinedTitles = String.join(", ", titles);
+            if (combinedTitles.length() > 2000) {
+                combinedTitles = combinedTitles.substring(0, 2000);
+            }
+
+            String prompt = String.format(
+                "다음은 유저가 즐겨듣는 유튜브 재생목록과 영상 제목들이야. 이 제목들을 분석해서 이 유저가 좋아할 만한 '음악적 취향 키워드' 5개를 뽑아줘. " +
+                "결과는 반드시 '키워드1, 키워드2, 키워드3, 키워드4, 키워드5' 형식으로 쉼표로 구분해서 응답해줘.\n" +
+                "영상 제목들: %s", combinedTitles);
+
+            Map<String, Object> requestBody = new HashMap<>();
+            Map<String, Object> content = new HashMap<>();
+            content.put("parts", List.of(Map.of("text", prompt)));
+            requestBody.put("contents", List.of(content));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            String response = restTemplate.postForObject(apiUrl + apiKey, entity, String.class);
+            JsonNode root = objectMapper.readTree(response);
+            String aiAnswer = root.path("candidates").get(0)
+                                  .path("content").path("parts").get(0)
+                                  .path("text").asText().trim();
+
+            logger.info("Gemini AI 취향 분석 결과: {}", aiAnswer);
+            return List.of(aiAnswer.split(",\\s*"));
+
+        } catch (Exception e) {
+            logger.error("Gemini AI 취향 분석 중 오류 발생: {}", e.getMessage());
+            return List.of("J-POP", "애니메이션", "버튜버", "커버곡", "오리지널");
+        }
+    }
 }

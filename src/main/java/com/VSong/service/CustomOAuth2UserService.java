@@ -36,23 +36,41 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String name = (String) attributes.get("name");
         String picture = (String) attributes.get("picture");
         String accessToken = userRequest.getAccessToken().getTokenValue();
+        LocalDateTime expiresAt = LocalDateTime.ofInstant(userRequest.getAccessToken().getExpiresAt(), java.time.ZoneId.systemDefault());
+
+        String refreshToken = null;
+        if (userRequest.getAdditionalParameters().containsKey("refresh_token")) {
+            refreshToken = (String) userRequest.getAdditionalParameters().get("refresh_token");
+        }
+
+        final String finalRefreshToken = refreshToken;
 
         User user = userRepository.findByEmail(email)
                 .map(entity -> {
                     entity.setLastLoginAt(LocalDateTime.now());
-                    entity.setRefreshToken(accessToken);
+                    entity.setAccessToken(accessToken);
+                    entity.setAccessTokenExpiresAt(expiresAt);
+                    if (finalRefreshToken != null) {
+                        entity.setRefreshToken(finalRefreshToken);
+                        entity.setRefreshTokenCreatedAt(LocalDateTime.now());
+                    }
                     return entity;
                 })
                 .orElseGet(() -> {
                     User newUser = new User();
                     newUser.setEmail(email);
                     newUser.setRole(com.VSong.entity.Role.USER);
+                    newUser.setAccessToken(accessToken);
+                    newUser.setAccessTokenExpiresAt(expiresAt);
+                    if (finalRefreshToken != null) {
+                        newUser.setRefreshToken(finalRefreshToken);
+                        newUser.setRefreshTokenCreatedAt(LocalDateTime.now());
+                    }
                     return newUser;
                 });
 
         user.setName(name);
         user.setPicture(picture);
-        user.setTokenCreatedAt(LocalDateTime.now());
 
         userRepository.save(user);
 
