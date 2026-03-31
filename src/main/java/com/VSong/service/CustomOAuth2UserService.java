@@ -36,43 +36,56 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String name = (String) attributes.get("name");
         String picture = (String) attributes.get("picture");
         String accessToken = userRequest.getAccessToken().getTokenValue();
-        LocalDateTime expiresAt = LocalDateTime.ofInstant(userRequest.getAccessToken().getExpiresAt(), java.time.ZoneId.systemDefault());
+        
+        LocalDateTime expiresAt = LocalDateTime.now().plusHours(1);
+        if (userRequest.getAccessToken().getExpiresAt() != null) {
+            try {
+                expiresAt = LocalDateTime.ofInstant(userRequest.getAccessToken().getExpiresAt(), java.time.ZoneId.systemDefault());
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(CustomOAuth2UserService.class).warn("만료 시간 변환 실패: {}", e.getMessage());
+            }
+        }
 
         String refreshToken = null;
-        if (userRequest.getAdditionalParameters().containsKey("refresh_token")) {
+        if (userRequest.getAdditionalParameters() != null && userRequest.getAdditionalParameters().containsKey("refresh_token")) {
             refreshToken = (String) userRequest.getAdditionalParameters().get("refresh_token");
         }
 
         final String finalRefreshToken = refreshToken;
+        final LocalDateTime finalExpiresAt = expiresAt;
 
-        User user = userRepository.findByEmail(email)
-                .map(entity -> {
-                    entity.setLastLoginAt(LocalDateTime.now());
-                    entity.setAccessToken(accessToken);
-                    entity.setAccessTokenExpiresAt(expiresAt);
-                    if (finalRefreshToken != null) {
-                        entity.setRefreshToken(finalRefreshToken);
-                        entity.setRefreshTokenCreatedAt(LocalDateTime.now());
-                    }
-                    return entity;
-                })
-                .orElseGet(() -> {
-                    User newUser = new User();
-                    newUser.setEmail(email);
-                    newUser.setRole(com.VSong.entity.Role.USER);
-                    newUser.setAccessToken(accessToken);
-                    newUser.setAccessTokenExpiresAt(expiresAt);
-                    if (finalRefreshToken != null) {
-                        newUser.setRefreshToken(finalRefreshToken);
-                        newUser.setRefreshTokenCreatedAt(LocalDateTime.now());
-                    }
-                    return newUser;
-                });
+        try {
+            User user = userRepository.findByEmail(email)
+                    .map(entity -> {
+                        entity.setLastLoginAt(LocalDateTime.now());
+                        entity.setAccessToken(accessToken);
+                        entity.setAccessTokenExpiresAt(finalExpiresAt);
+                        if (finalRefreshToken != null) {
+                            entity.setRefreshToken(finalRefreshToken);
+                            entity.setRefreshTokenCreatedAt(LocalDateTime.now());
+                        }
+                        return entity;
+                    })
+                    .orElseGet(() -> {
+                        User newUser = new User();
+                        newUser.setEmail(email);
+                        newUser.setRole(com.VSong.entity.Role.USER);
+                        newUser.setAccessToken(accessToken);
+                        newUser.setAccessTokenExpiresAt(finalExpiresAt);
+                        if (finalRefreshToken != null) {
+                            newUser.setRefreshToken(finalRefreshToken);
+                            newUser.setRefreshTokenCreatedAt(LocalDateTime.now());
+                        }
+                        return newUser;
+                    });
 
-        user.setName(name);
-        user.setPicture(picture);
-
-        userRepository.save(user);
+            user.setName(name);
+            user.setPicture(picture);
+            userRepository.save(user);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(CustomOAuth2UserService.class).error("사용자 저장 중 오류 발생: {}", e.getMessage(), e);
+            throw new OAuth2AuthenticationException("사용자 정보 저장 실패");
+        }
 
         Set<GrantedAuthority> authorities = new HashSet<>();
         authorities.add(new SimpleGrantedAuthority(user.getRole().getKey()));
