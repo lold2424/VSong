@@ -9,6 +9,7 @@ services:
       - SERVER_FORWARD_HEADERS_STRATEGY=framework
       - SERVER_SERVLET_SESSION_COOKIE_SECURE=true
       - SERVER_SERVLET_SESSION_COOKIE_SAME_SITE=none
+      - BASE_URL=https://www.vsong.site
     env_file:
       - ./.env
     volumes:
