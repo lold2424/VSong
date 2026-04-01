@@ -3,6 +3,9 @@ FROM node:20-slim AS runner
 
 WORKDIR /app
 
+# sharp 모듈 설치를 위한 npm 설치 (이미지 최적화 기능)
+RUN npm install sharp
+
 # 호스트에서 빌드된 standalone 결과물 복사
 COPY front-next/.next/standalone/ ./
 COPY front-next/public ./public
