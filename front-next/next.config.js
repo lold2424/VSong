@@ -27,7 +27,7 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || 'http://backend:8080';
+    const backendUrl = process.env.BACKEND_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'http://backend:8080');
     
     return [
       {
@@ -58,7 +58,7 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
-      { // Googleusercontent for user profile images (e.g., from Google login)
+      {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
         port: '',

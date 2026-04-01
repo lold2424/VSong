@@ -26,25 +26,31 @@ public class CookieUtils {
     }
 
     public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
-        org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from(name, value)
+        boolean isSecure = value != null && !value.isEmpty();
+        
+        org.springframework.http.ResponseCookie.ResponseCookieBuilder cookieBuilder = org.springframework.http.ResponseCookie.from(name, value)
                 .path("/")
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
-                .maxAge(maxAge)
-                .build();
-        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
+                .maxAge(maxAge);
+
+        if (!"localhost".equals(System.getenv("NODE_ENV")) && !"local".equals(System.getProperty("spring.profiles.active"))) {
+            cookieBuilder.secure(true).sameSite("None");
+        }
+
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookieBuilder.build().toString());
     }
 
     public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
-        org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from(name, "")
+        org.springframework.http.ResponseCookie.ResponseCookieBuilder cookieBuilder = org.springframework.http.ResponseCookie.from(name, "")
                 .path("/")
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
-                .maxAge(0)
-                .build();
-        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
+                .maxAge(0);
+
+        if (!"localhost".equals(System.getenv("NODE_ENV")) && !"local".equals(System.getProperty("spring.profiles.active"))) {
+            cookieBuilder.secure(true).sameSite("None");
+        }
+
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookieBuilder.build().toString());
     }
 
     public static String serialize(Object object) {
