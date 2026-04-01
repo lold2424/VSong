@@ -36,7 +36,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String name = (String) attributes.get("name");
         String picture = (String) attributes.get("picture");
         String accessToken = userRequest.getAccessToken().getTokenValue();
-        
+
         LocalDateTime expiresAt = LocalDateTime.now().plusHours(1);
         if (userRequest.getAccessToken().getExpiresAt() != null) {
             try {
@@ -51,20 +51,26 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             refreshToken = (String) userRequest.getAdditionalParameters().get("refresh_token");
         }
 
+        if (email == null) {
+            org.slf4j.LoggerFactory.getLogger(CustomOAuth2UserService.class).error("OAuth2 제공자로부터 이메일을 가져올 수 없습니다.");
+            throw new OAuth2AuthenticationException("이메일 정보가 없습니다.");
+        }
+
         final String finalRefreshToken = refreshToken;
         final LocalDateTime finalExpiresAt = expiresAt;
+        final User user;
 
         try {
-            User user = userRepository.findByEmail(email)
-                    .map(entity -> {
-                        entity.setLastLoginAt(LocalDateTime.now());
-                        entity.setAccessToken(accessToken);
-                        entity.setAccessTokenExpiresAt(finalExpiresAt);
+            User entity = userRepository.findByEmail(email)
+                    .map(e -> {
+                        e.setLastLoginAt(LocalDateTime.now());
+                        e.setAccessToken(accessToken);
+                        e.setAccessTokenExpiresAt(finalExpiresAt);
                         if (finalRefreshToken != null) {
-                            entity.setRefreshToken(finalRefreshToken);
-                            entity.setRefreshTokenCreatedAt(LocalDateTime.now());
+                            e.setRefreshToken(finalRefreshToken);
+                            e.setRefreshTokenCreatedAt(LocalDateTime.now());
                         }
-                        return entity;
+                        return e;
                     })
                     .orElseGet(() -> {
                         User newUser = new User();
@@ -79,9 +85,9 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                         return newUser;
                     });
 
-            user.setName(name);
-            user.setPicture(picture);
-            userRepository.save(user);
+            entity.setName(name);
+            entity.setPicture(picture);
+            user = userRepository.save(entity);
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(CustomOAuth2UserService.class).error("사용자 저장 중 오류 발생: {}", e.getMessage(), e);
             throw new OAuth2AuthenticationException("사용자 정보 저장 실패");
