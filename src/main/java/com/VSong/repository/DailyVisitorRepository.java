@@ -28,4 +28,8 @@ public interface DailyVisitorRepository extends JpaRepository<DailyVisitor, Long
            "GROUP BY YEAR(dv.visitDate), MONTH(dv.visitDate) " +
            "ORDER BY YEAR(dv.visitDate) DESC, MONTH(dv.visitDate) DESC")
     List<MonthlyVisitorStats> findMonthlyVisitorStats();
+
+    @Modifying
+    @Query("DELETE FROM DailyVisitor d WHERE d.visitDate < :thresholdDate")
+    void deleteOldVisitors(@Param("thresholdDate") LocalDate thresholdDate);
 }

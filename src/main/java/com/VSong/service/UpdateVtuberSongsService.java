@@ -16,6 +16,10 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.VSong.repository.SongUpdateLogRepository;
+import com.VSong.entity.SongUpdateLog;
+
 @Service
 public class UpdateVtuberSongsService {
 
@@ -26,10 +30,28 @@ public class UpdateVtuberSongsService {
     private final YouTubeApiService youTubeApiService;
     private final MainPageService mainPageService;
     private final CacheManager cacheManager;
+    private final SongUpdateLogRepository songUpdateLogRepository;
+    private final ObjectMapper objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(UpdateVtuberSongsService.class);
     private final Map<String, Object> lastOperationStats = new java.util.concurrent.ConcurrentHashMap<>();
 
     public Map<String, Object> getLastOperationStats() {
+        if (lastOperationStats.isEmpty()) {
+            SongUpdateLog latestLog = songUpdateLogRepository.findLatestLog();
+            if (latestLog != null) {
+                lastOperationStats.put("lastRunTime", latestLog.getRunTime());
+                lastOperationStats.put("durationSeconds", latestLog.getDurationSeconds());
+                lastOperationStats.put("newSongsCount", latestLog.getNewSongsCount());
+                lastOperationStats.put("excludedSongsCount", latestLog.getExcludedSongsCount());
+                lastOperationStats.put("failedSongsCount", latestLog.getFailedSongsCount());
+                try {
+                    lastOperationStats.put("errorSummary", objectMapper.readValue(latestLog.getErrorSummaryJson(), Map.class));
+                    lastOperationStats.put("slowestChannels", objectMapper.readValue(latestLog.getSlowestChannelsJson(), List.class));
+                } catch (Exception e) {
+                    logger.error("Error reading saved stats from DB", e);
+                }
+            }
+        }
         return lastOperationStats;
     }
 
@@ -40,7 +62,9 @@ public class UpdateVtuberSongsService {
             VtuberValidationService validationService,
             YouTubeApiService youTubeApiService,
             MainPageService mainPageService,
-            CacheManager cacheManager) {
+            CacheManager cacheManager,
+            SongUpdateLogRepository songUpdateLogRepository,
+            ObjectMapper objectMapper) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
         this.vtuberSongsRepository = vtuberSongsRepository;
@@ -48,6 +72,8 @@ public class UpdateVtuberSongsService {
         this.youTubeApiService = youTubeApiService;
         this.mainPageService = mainPageService;
         this.cacheManager = cacheManager;
+        this.songUpdateLogRepository = songUpdateLogRepository;
+        this.objectMapper = objectMapper;
     }
 
     public void fetchVtuberSongs() {
@@ -114,6 +140,21 @@ public class UpdateVtuberSongsService {
         lastOperationStats.put("excludedSongs", new ArrayList<>(allExcludedSongInfo));
         lastOperationStats.put("failedSongs", new ArrayList<>(allFailedSongInfo));
         lastOperationStats.put("slowestChannels", slowestChannels);
+
+        try {
+            SongUpdateLog log = new SongUpdateLog();
+            log.setRunTime(LocalDateTime.now());
+            log.setDurationSeconds((Long) lastOperationStats.get("durationSeconds"));
+            log.setNewSongsCount(allNewSongTitles.size());
+            log.setExcludedSongsCount(allExcludedSongInfo.size());
+            log.setFailedSongsCount(allFailedSongInfo.size());
+            log.setErrorSummaryJson(objectMapper.writeValueAsString(errorSummary));
+            log.setSlowestChannelsJson(objectMapper.writeValueAsString(slowestChannels));
+            songUpdateLogRepository.save(log);
+            logger.info("Song update log saved to DB successfully.");
+        } catch (Exception e) {
+            logger.error("Failed to save song update log to DB: {}", e.getMessage());
+        }
     }
 
     public void updateSongStatusToExisting() {
