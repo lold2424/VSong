@@ -33,7 +33,12 @@ public class CookieUtils {
                 .httpOnly(true)
                 .maxAge(maxAge);
 
-        if (!"localhost".equals(System.getenv("NODE_ENV")) && !"local".equals(System.getProperty("spring.profiles.active"))) {
+        String activeProfile = System.getProperty("spring.profiles.active");
+        if (activeProfile == null) {
+            activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+        }
+
+        if (!"local".equals(activeProfile) && !"localhost".equals(System.getenv("NODE_ENV"))) {
             cookieBuilder.secure(true).sameSite("None");
         }
 
@@ -46,7 +51,12 @@ public class CookieUtils {
                 .httpOnly(true)
                 .maxAge(0);
 
-        if (!"localhost".equals(System.getenv("NODE_ENV")) && !"local".equals(System.getProperty("spring.profiles.active"))) {
+        String activeProfile = System.getProperty("spring.profiles.active");
+        if (activeProfile == null) {
+            activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+        }
+
+        if (!"local".equals(activeProfile) && !"localhost".equals(System.getenv("NODE_ENV"))) {
             cookieBuilder.secure(true).sameSite("None");
         }
 
