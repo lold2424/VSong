@@ -157,26 +157,15 @@ jobs:
           echo "BACKEND_IMAGE_NAME=${{ env.BACKEND_IMAGE_NAME }}" >> .env
           echo "FRONTEND_IMAGE_NAME=${{ env.FRONTEND_IMAGE_NAME }}" >> .env
           echo "NGINX_IMAGE_NAME=${{ env.NGINX_IMAGE_NAME }}" >> .env
-          echo "SPRING_DATASOURCE_URL=${{ secrets.DB_URL }}" >> .env
-          echo "SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-          echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "SPRING_DATASOURCE_DRIVER_CLASS_NAME=${{ secrets.DB_DRIVER_CLASS_NAME }}" >> .env
-          echo "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect" >> .env
-          echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
-          echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
-          echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_SCOPE=profile,email,https://www.googleapis.com/auth/youtube.readonly,https://www.googleapis.com/auth/youtube" >> .env
-          echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI=${{ secrets.BASE_URL }}/login/oauth2/code/google" >> .env
-          echo "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_NAME=Google" >> .env
-          echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_AUTHORIZATION_URI=https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&prompt=consent" >> .env
-          echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_TOKEN_URI=https://oauth2.googleapis.com/token" >> .env
-          echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_USER_INFO_URI=https://www.googleapis.com/oauth2/v3/userinfo" >> .env
-          echo "SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_USER_NAME_ATTRIBUTE=sub" >> .env
+          echo "DB_URL=${{ secrets.DB_URL }}" >> .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
           echo "YOUTUBE_API_KEYS=${{ secrets.YOUTUBE_API_KEYS }}" >> .env
           echo "BASE_URL=${{ secrets.BASE_URL }}" >> .env
           echo "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}" >> .env
-          echo "OAUTH2_SUCCESS_REDIRECT_URL=${{ secrets.BASE_URL }}" >> .env
-          echo "MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=${{ secrets.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}" >> .env
-          echo "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}" >> .env
+          echo "OAUTH2_REDIRECT_URL=${{ secrets.BASE_URL }}" >> .env
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
           echo "GEMINI_API_URL=${{ secrets.GEMINI_API_URL }}" >> .env
 

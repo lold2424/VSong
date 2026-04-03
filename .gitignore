@@ -36,9 +36,11 @@ out/
 ### VS Code ###
 .vscode/
 
-# Ignore all .properties files
+# Properties files
 *.properties
 !gradle/wrapper/gradle-wrapper.properties
+!src/main/resources/application.properties
+src/main/resources/application-local.properties
 
 ### Node.js Dependencies ###
 # General node_modules
