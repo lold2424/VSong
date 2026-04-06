@@ -498,7 +498,7 @@ public class UpdateVtuberSongsService {
 
             YouTube.PlaylistItems.List playlistItemsRequest = youTube.playlistItems().list(List.of("contentDetails"));
             playlistItemsRequest.setPlaylistId(uploadsPlaylistId);
-            playlistItemsRequest.setMaxResults(15L);
+            playlistItemsRequest.setMaxResults(10L);
 
             PlaylistItemListResponse playlistItemResult = youTubeApiService.executeRequest(playlistItemsRequest);
             if (playlistItemResult == null) {
