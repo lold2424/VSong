@@ -25,10 +25,10 @@ public interface VtuberSongsRepository extends JpaRepository<VtuberSongsEntity, 
     @Query(value = "SELECT * FROM vtuber_songs WHERE channel_id IN (:channelIds) AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY RAND()", nativeQuery = true)
     List<VtuberSongsEntity> findRandomSongsByChannelIds(@Param("channelIds") List<String> channelIds, Pageable pageable);
 
-    @Query(value = "SELECT * FROM vtuber_songs WHERE channel_id IN (:channelIds) AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY views_increase_day DESC LIMIT 10", nativeQuery = true)
+    @Query(value = "SELECT * FROM vtuber_songs WHERE channel_id IN (:channelIds) AND (status = 'existing' OR (status = 'new' AND TIMESTAMPDIFF(HOUR, published_at, added_time) <= 24)) AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY views_increase_day DESC LIMIT 10", nativeQuery = true)
     List<VtuberSongsEntity> findTop10ByViewsIncreaseDayDescAndChannelIds(@Param("channelIds") List<String> channelIds);
 
-    @Query(value = "SELECT * FROM vtuber_songs WHERE channel_id IN (:channelIds) AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY views_increase_week DESC LIMIT 10", nativeQuery = true)
+    @Query(value = "SELECT * FROM vtuber_songs WHERE channel_id IN (:channelIds) AND (status = 'existing' OR (status = 'new' AND TIMESTAMPDIFF(HOUR, published_at, added_time) <= 24)) AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY views_increase_week DESC LIMIT 10", nativeQuery = true)
     List<VtuberSongsEntity> findTop10ByViewsIncreaseWeekDescAndChannelIds(@Param("channelIds") List<String> channelIds);
 
     @Query(value = "SELECT * FROM vtuber_songs WHERE channel_id IN (:channelIds) AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY published_at DESC LIMIT 10", nativeQuery = true)

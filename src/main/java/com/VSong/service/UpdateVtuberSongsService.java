@@ -166,15 +166,34 @@ public class UpdateVtuberSongsService {
 
     public void updateSongStatusToExisting() {
         List<VtuberSongsEntity> newSongs = vtuberSongsRepository.findByStatus("new");
+        LocalDateTime now = LocalDateTime.now();
+        int updatedCount = 0;
 
-        newSongs.forEach(song -> {
-            song.setStatus("existing");
-            song.setUpdateDayTime(LocalDateTime.now());
-            vtuberSongsRepository.save(song);
-        });
+        for (VtuberSongsEntity song : newSongs) {
+            long pubToAddedHours = java.time.Duration.between(song.getPublishedAt(), song.getAddedTime()).toHours();
+            long addedToNowHours = java.time.Duration.between(song.getAddedTime(), now).toHours();
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Updated {} songs from 'new' to 'existing'.", newSongs.size());
+            boolean shouldBecomeExisting = false;
+            if (pubToAddedHours <= 24) {
+                if (addedToNowHours >= 24) {
+                    shouldBecomeExisting = true;
+                }
+            } else {
+                if (addedToNowHours >= 168) {
+                    shouldBecomeExisting = true;
+                }
+            }
+
+            if (shouldBecomeExisting) {
+                song.setStatus("existing");
+                song.setUpdateDayTime(now);
+                vtuberSongsRepository.save(song);
+                updatedCount++;
+            }
+        }
+
+        if (logger.isInfoEnabled() && updatedCount > 0) {
+            logger.info("Updated {} songs from 'new' to 'existing' based on stabilization rules.", updatedCount);
         }
     }
 
