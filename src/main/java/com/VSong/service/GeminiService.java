@@ -67,6 +67,45 @@ public class GeminiService {
         }
     }
 
+    public boolean isVtuberByAI(String title, String description) {
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            logger.warn("Gemini API Key가 설정되지 않았습니다. 기본 검증 로직으로 대체합니다.");
+            return true;
+        }
+
+        try {
+            String prompt = String.format(
+                "다음 유튜브 채널 정보를 보고, 이 채널이 실제 '버츄얼 유튜버(VTuber, V-Tuber)'의 채널인지 판별해줘. " +
+                "실제 사람이 얼굴을 드러내고 방송하는 채널(Face-cam), 단순 애니메이션 채널, 게임 하이라이트/클립 채널, 일반 유튜버는 반드시 'false'여야 해. " +
+                "2D 또는 3D 아바타를 사용하여 소통하고 콘텐츠를 제작하는 제작자인지 확인해줘. " +
+                "결과는 반드시 'true' 또는 'false' 한 단어로만 응답해줘.\n" +
+                "채널명: %s\n" +
+                "채널 설명: %s", title, description);
+
+            Map<String, Object> requestBody = new HashMap<>();
+            Map<String, Object> content = new HashMap<>();
+            content.put("parts", List.of(Map.of("text", prompt)));
+            requestBody.put("contents", List.of(content));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            String response = restTemplate.postForObject(apiUrl + apiKey, entity, String.class);
+            JsonNode root = objectMapper.readTree(response);
+            String aiAnswer = root.path("candidates").get(0)
+                                  .path("content").path("parts").get(0)
+                                  .path("text").asText().trim().toLowerCase();
+
+            logger.info("Gemini AI 버튜버 판별 결과 ({}): {}", title, aiAnswer);
+            return aiAnswer.contains("true");
+
+        } catch (Exception e) {
+            logger.error("Gemini API 버튜버 판별 중 오류 발생: {}", e.getMessage());
+            return true;
+        }
+    }
+
     public List<String> analyzeUserTaste(List<String> titles) {
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
             return List.of("J-POP", "애니메이션", "버튜버", "K-POP", "발라드");

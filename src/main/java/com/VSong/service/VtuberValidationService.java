@@ -140,6 +140,13 @@ public class VtuberValidationService {
         boolean isVtuber = hasVtuberKeyword || hasVisualCharacteristics || belongsToCompany || hasContentPattern || containsPriorityKeyword;
 
         if (isVtuber) {
+            boolean aiConfirmed = geminiService.isVtuberByAI(title, description);
+            if (!aiConfirmed) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Channel ID: {} -> REJECTED BY AI ({}).", channelId, title);
+                }
+                return "AI 판별 결과 버튜버가 아님";
+            }
             return null;
         } else {
             return "버튜버 특징 미발견";
