@@ -22,6 +22,15 @@ public class SongUpdateLog {
     @Column(columnDefinition = "TEXT")
     private String slowestChannelsJson;
 
+    @Column(columnDefinition = "TEXT")
+    private String newSongsJson;
+
+    @Column(columnDefinition = "TEXT")
+    private String excludedSongsJson;
+
+    @Column(columnDefinition = "TEXT")
+    private String failedSongsJson;
+
     public SongUpdateLog() {}
 
     public Long getId() { return id; }
@@ -47,4 +56,13 @@ public class SongUpdateLog {
 
     public String getSlowestChannelsJson() { return slowestChannelsJson; }
     public void setSlowestChannelsJson(String slowestChannelsJson) { this.slowestChannelsJson = slowestChannelsJson; }
+
+    public String getNewSongsJson() { return newSongsJson; }
+    public void setNewSongsJson(String newSongsJson) { this.newSongsJson = newSongsJson; }
+
+    public String getExcludedSongsJson() { return excludedSongsJson; }
+    public void setExcludedSongsJson(String excludedSongsJson) { this.excludedSongsJson = excludedSongsJson; }
+
+    public String getFailedSongsJson() { return failedSongsJson; }
+    public void setFailedSongsJson(String failedSongsJson) { this.failedSongsJson = failedSongsJson; }
 }

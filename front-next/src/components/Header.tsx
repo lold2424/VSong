@@ -6,7 +6,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
-const SearchBar = () => {
+const SearchBarContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
   const pathname = usePathname();
@@ -48,7 +48,7 @@ const SearchBar = () => {
         placeholder="검색"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyPress}
         className="border-none bg-transparent outline-none text-[#F8F8F2] text-sm p-1 w-50 placeholder:text-[#F8F8F2] placeholder:opacity-70"
       />
       <button className="bg-transparent border-none cursor-pointer ml-1.5" onClick={handleSearch}>
@@ -58,7 +58,7 @@ const SearchBar = () => {
   );
 };
 
-const Header: React.FC = () => {
+const HeaderContent: React.FC = () => {
   const searchParams = useSearchParams();
   const genderFilter = searchParams.get("gender") || "all";
   const { isLoggedIn, user, isLoading, login, logout } = useAuth();
@@ -109,11 +109,10 @@ const Header: React.FC = () => {
           </button>
         )}
       </div>
-      <Suspense fallback={<div>Loading...</div>}>
-        <SearchBar />
-      </Suspense>
+      
+      <SearchBarContent />
+
       <div className="flex gap-2.5">
-        {/* Gender Filter Buttons */}
         <Link href="/?gender=male" passHref>
           <button
             className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "male" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
@@ -137,6 +136,14 @@ const Header: React.FC = () => {
         </Link>
       </div>
     </header>
+  );
+};
+
+const Header: React.FC = () => {
+  return (
+    <Suspense fallback={<header className="bg-[#272822] h-[76px] shadow-md px-5 py-2.5"></header>}>
+      <HeaderContent />
+    </Suspense>
   );
 };
 

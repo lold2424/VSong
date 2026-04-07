@@ -17,6 +17,7 @@ const AdminPage = () => {
   const [monitoringData, setMonitoringData] = useState<any>(null);
   const [isLoadingMonitoring, setIsLoadingMonitoring] = useState(false);
   const [isUpdatingSongs, setIsUpdatingSongs] = useState(false);
+  const [isUpdatingVtubers, setIsUpdatingVtubers] = useState(false);
 
   const fetchMonitoringData = async () => {
     setIsLoadingMonitoring(true);
@@ -47,7 +48,6 @@ const AdminPage = () => {
       const data = await response.json();
       if (response.ok) {
         alert(data.message || '노래 수집 작업이 시작되었습니다.');
-        // fetchMonitoringData(); // 비동기 작업이므로 즉시 새로고침할 필요는 없습니다.
       } else {
         alert('노래 수집 중 오류가 발생했습니다.');
       }
@@ -56,6 +56,29 @@ const AdminPage = () => {
       alert('네트워크 오류가 발생했습니다.');
     } finally {
       setIsUpdatingSongs(false);
+    }
+  };
+
+  const handleRunVtuberUpdate = async () => {
+    if (!confirm('버튜버 수집 및 동기화를 즉시 실행하시겠습니까?')) return;
+    
+    setIsUpdatingVtubers(true);
+    try {
+      const response = await fetch('/api/admin/monitoring/run-vtuber-update', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert(data.message || '버튜버 수집 작업이 시작되었습니다.');
+      } else {
+        alert('버튜버 수집 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to run vtuber update', error);
+      alert('네트워크 오류가 발생했습니다.');
+    } finally {
+      setIsUpdatingVtubers(false);
     }
   };
 
@@ -148,17 +171,24 @@ const AdminPage = () => {
       <div className="bg-gray-700 p-6 rounded-md mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-[#66D9EF]">시스템 모니터링</h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button 
+              onClick={handleRunVtuberUpdate} 
+              className="text-xs bg-cyan-600 text-white hover:bg-cyan-500 px-3 py-1 rounded transition font-bold disabled:bg-gray-500"
+              disabled={isUpdatingVtubers}
+            >
+              {isUpdatingVtubers ? '수집 진행 중...' : '버튜버 수집 즉시 실행'}
+            </button>
             <button 
               onClick={handleRunSongUpdate} 
-              className="text-sm bg-[#A6E22E] text-gray-900 hover:bg-lime-400 px-3 py-1 rounded transition font-bold disabled:bg-gray-500"
+              className="text-xs bg-[#A6E22E] text-gray-900 hover:bg-lime-400 px-3 py-1 rounded transition font-bold disabled:bg-gray-500"
               disabled={isUpdatingSongs}
             >
               {isUpdatingSongs ? '수집 진행 중...' : '노래 수집 즉시 실행'}
             </button>
             <button 
               onClick={fetchMonitoringData} 
-              className="text-sm bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded transition"
+              className="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded transition"
               disabled={isLoadingMonitoring}
             >
               {isLoadingMonitoring ? '갱신 중...' : '모니터링 새로고침'}
@@ -200,13 +230,13 @@ const AdminPage = () => {
             </div>
 
             {/* 수집 통계 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gray-900 p-4 rounded-md">
                 <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase">최근 노래 수집 요약</h3>
                 <div className="space-y-1">
                   <div className="flex justify-between">
                     <span className="text-gray-400">실행 시간:</span>
-                    <span className="text-xs">{monitoringData.songUpdateStats.lastRunTime ? new Date(monitoringData.songUpdateStats.lastRunTime).toLocaleString() : '기록 없음'}</span>
+                    <span className="text-[10px]">{monitoringData.songUpdateStats.lastRunTime ? new Date(monitoringData.songUpdateStats.lastRunTime).toLocaleString() : '기록 없음'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">추가된 노래:</span>
@@ -222,13 +252,112 @@ const AdminPage = () => {
                   </div>
                 </div>
               </div>
+
+              <div className="bg-gray-900 p-4 rounded-md">
+                <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase text-cyan-400">최근 버튜버 수집 요약</h3>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">실행 시간:</span>
+                    <span className="text-[10px]">{monitoringData.vtuberUpdateStats.lastRunTime ? new Date(monitoringData.vtuberUpdateStats.lastRunTime).toLocaleString() : '기록 없음'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">신규 버튜버:</span>
+                    <span className="text-cyan-400 font-bold">{monitoringData.vtuberUpdateStats.newVtubersCount || 0}명</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">정보 갱신:</span>
+                    <span className="text-blue-400 font-bold">{monitoringData.vtuberUpdateStats.updatedVtubersCount || 0}명</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">삭제됨:</span>
+                    <span className="text-red-400 font-bold">{monitoringData.vtuberUpdateStats.deletedVtubersCount || 0}명</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-gray-900 p-4 rounded-md">
                 <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase">서버 상태</h3>
                 <div className="flex items-center gap-2">
                   <div className={`w-3 h-3 rounded-full ${monitoringData.systemHealth === 'UP' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-red-500'}`}></div>
                   <span className="font-bold">{monitoringData.systemHealth}</span>
                 </div>
+                <div className="mt-4 pt-4 border-t border-gray-800">
+                   <p className="text-[10px] text-gray-500">데이터는 매일 자정 전후로 자동 갱신됩니다.</p>
+                </div>
               </div>
+            </div>
+            
+            {/* 과거 이력 (History) 섹션 */}
+            <div className="space-y-4">
+              <details className="text-xs bg-gray-900 rounded-md p-3 border border-gray-800">
+                <summary className="cursor-pointer text-gray-300 hover:text-white transition font-bold flex justify-between items-center">
+                  <span>과거 노래 수집 상세 내역 (최근 10건)</span>
+                  <span className="text-[10px] bg-gray-800 px-2 py-0.5 rounded">클릭하여 펼치기</span>
+                </summary>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full text-[10px] text-left">
+                    <thead>
+                      <tr className="text-gray-500 border-b border-gray-800">
+                        <th className="pb-2">실행 시간</th>
+                        <th className="pb-2 text-right">소요</th>
+                        <th className="pb-2 text-right text-[#A6E22E]">추가</th>
+                        <th className="pb-2 text-right text-orange-400">제외</th>
+                        <th className="pb-2 text-right text-red-500">실패</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monitoringData.songUpdateHistory?.map((log: any) => (
+                        <tr key={log.id} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/50 transition">
+                          <td className="py-2">
+                            <Link href={`/admin/monitoring/song-log/${log.id}`} className="text-blue-400 hover:text-blue-300 transition">
+                              {new Date(log.runTime).toLocaleString()}
+                            </Link>
+                          </td>
+                          <td className="py-2 text-right text-gray-500">{log.durationSeconds}s</td>
+                          <td className="py-2 text-right font-bold">{log.newSongsCount}</td>
+                          <td className="py-2 text-right">{log.excludedSongsCount}</td>
+                          <td className="py-2 text-right text-red-400">{log.failedSongsCount}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+
+              <details className="text-xs bg-gray-900 rounded-md p-3 border border-gray-800">
+                <summary className="cursor-pointer text-gray-300 hover:text-white transition font-bold flex justify-between items-center">
+                  <span>과거 버튜버 수집 상세 내역 (최근 10건)</span>
+                  <span className="text-[10px] bg-gray-800 px-2 py-0.5 rounded">클릭하여 펼치기</span>
+                </summary>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full text-[10px] text-left">
+                    <thead>
+                      <tr className="text-gray-500 border-b border-gray-800">
+                        <th className="pb-2">실행 시간</th>
+                        <th className="pb-2 text-right">소요</th>
+                        <th className="pb-2 text-right text-cyan-400">신규</th>
+                        <th className="pb-2 text-right text-blue-400">갱신</th>
+                        <th className="pb-2 text-right text-red-400">삭제</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monitoringData.vtuberUpdateHistory?.map((log: any) => (
+                        <tr key={log.id} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/50 transition">
+                          <td className="py-2">
+                            <Link href={`/admin/monitoring/vtuber-log/${log.id}`} className="text-cyan-400 hover:text-cyan-300 transition">
+                              {new Date(log.runTime).toLocaleString()}
+                            </Link>
+                          </td>
+                          <td className="py-2 text-right text-gray-500">{log.durationSeconds}s</td>
+                          <td className="py-2 text-right font-bold text-cyan-400">{log.newVtubersCount}</td>
+                          <td className="py-2 text-right text-blue-400">{log.updatedVtubersCount}</td>
+                          <td className="py-2 text-right text-red-400">{log.deletedVtubersCount}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
             </div>
             
             {/* 제외 사유 목록 (간략히) */}

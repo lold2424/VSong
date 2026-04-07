@@ -55,6 +55,10 @@ public class UpdateVtuberSongsService {
         return lastOperationStats;
     }
 
+    public List<SongUpdateLog> getRecentLogs() {
+        return songUpdateLogRepository.findRecentLogs();
+    }
+
     public UpdateVtuberSongsService(
             YouTube youTube,
             VtuberRepository vtuberRepository,
@@ -150,6 +154,9 @@ public class UpdateVtuberSongsService {
             log.setFailedSongsCount(allFailedSongInfo.size());
             log.setErrorSummaryJson(objectMapper.writeValueAsString(errorSummary));
             log.setSlowestChannelsJson(objectMapper.writeValueAsString(slowestChannels));
+            log.setNewSongsJson(objectMapper.writeValueAsString(allNewSongTitles));
+            log.setExcludedSongsJson(objectMapper.writeValueAsString(allExcludedSongInfo));
+            log.setFailedSongsJson(objectMapper.writeValueAsString(allFailedSongInfo));
             songUpdateLogRepository.save(log);
             logger.info("Song update log saved to DB successfully.");
         } catch (Exception e) {

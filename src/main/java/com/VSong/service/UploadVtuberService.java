@@ -30,6 +30,7 @@ public class UploadVtuberService {
     private final VtuberRepository vtuberRepository;
     private final VtuberValidationService validationService;
     private final YouTubeApiService youTubeApiService;
+    private final com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository;
 
     private final List<String> queries = Arrays.asList(
             "버튜버", "Vtuber", "버츄얼 유튜버", "버츄버",
@@ -52,15 +53,37 @@ public class UploadVtuberService {
     private final Counter searchApiCounter;
     private final Counter channelsApiCounter;
 
+    private final java.util.Map<String, Object> lastOperationStats = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public java.util.Map<String, Object> getLastOperationStats() {
+        if (lastOperationStats.isEmpty()) {
+            vtuberUpdateLogRepository.findFirstByOrderByRunTimeDesc().ifPresent(log -> {
+                lastOperationStats.put("lastRunTime", log.getRunTime());
+                lastOperationStats.put("durationSeconds", log.getDurationSeconds());
+                lastOperationStats.put("newVtubersCount", log.getNewVtubersCount());
+                lastOperationStats.put("updatedVtubersCount", log.getUpdatedVtubersCount());
+                lastOperationStats.put("deletedVtubersCount", log.getDeletedVtubersCount());
+                lastOperationStats.put("failedVtubersCount", log.getFailedVtubersCount());
+            });
+        }
+        return lastOperationStats;
+    }
+
+    public List<com.VSong.entity.VtuberUpdateLog> getRecentLogs() {
+        return vtuberUpdateLogRepository.findTop10ByOrderByRunTimeDesc();
+    }
+
     public UploadVtuberService(YouTube youTube,
                                VtuberRepository vtuberRepository,
                                VtuberValidationService validationService,
                                YouTubeApiService youTubeApiService,
-                               MeterRegistry meterRegistry) {
+                               MeterRegistry meterRegistry,
+                               com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
         this.validationService = validationService;
         this.youTubeApiService = youTubeApiService;
+        this.vtuberUpdateLogRepository = vtuberUpdateLogRepository;
         this.searchApiCounter = meterRegistry.counter("youtube.api.search");
         this.channelsApiCounter = meterRegistry.counter("youtube.api.channels");
     }
@@ -68,6 +91,10 @@ public class UploadVtuberService {
     @SuppressWarnings("PMD.LooseCoupling")
     public void fetchAndSaveVtuberChannels() {
         logger.info("=== fetchAndSaveVtuberChannels 시작 ===");
+        LocalDateTime startTime = LocalDateTime.now();
+        java.util.concurrent.atomic.AtomicInteger newCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger failedCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
         for (String query : queries) {
             logger.info("쿼리 실행: {}", query);
@@ -96,13 +123,15 @@ public class UploadVtuberService {
                         List<List<String>> partitions = partitionList(channelIds, 50);
                         for (List<String> partition : partitions) {
                             executor.submit(() -> {
-                                processChannels(partition);
+                                int added = processChannels(partition);
+                                newCount.addAndGet(added);
                                 partition.forEach(id -> processedCache.put(id, true));
                             });
                         }
                     }
                     pageToken = searchResponse.getNextPageToken();
                 } catch (IOException e) {
+                    failedCount.incrementAndGet();
                     if (logger.isErrorEnabled()) {
                         logger.error("API 호출 중 오류 발생: {}", e.getMessage());
                     }
@@ -117,6 +146,25 @@ public class UploadVtuberService {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
+        
+        long duration = java.time.Duration.between(startTime, LocalDateTime.now()).getSeconds();
+        lastOperationStats.put("lastRunTime", LocalDateTime.now());
+        lastOperationStats.put("durationSeconds", duration);
+        lastOperationStats.put("newVtubersCount", newCount.get());
+        lastOperationStats.put("updatedVtubersCount", 0);
+        lastOperationStats.put("deletedVtubersCount", 0);
+        lastOperationStats.put("failedVtubersCount", failedCount.get());
+
+        com.VSong.entity.VtuberUpdateLog log = new com.VSong.entity.VtuberUpdateLog();
+        log.setRunTime(LocalDateTime.now());
+        log.setDurationSeconds(duration);
+        log.setNewVtubersCount(newCount.get());
+        log.setUpdatedVtubersCount(0);
+        log.setDeletedVtubersCount(0);
+        log.setFailedVtubersCount(failedCount.get());
+        log.setLogSummary("New VTuber discovery run completed.");
+        vtuberUpdateLogRepository.save(log);
+
         logger.info("=== fetchAndSaveVtuberChannels 종료 ===");
     }
 
@@ -165,7 +213,8 @@ public class UploadVtuberService {
     }
 
     @SuppressWarnings({"PMD.LooseCoupling"})
-    private void processChannels(List<String> channelIds) {
+    private int processChannels(List<String> channelIds) {
+        int addedCount = 0;
         if (logger.isDebugEnabled()) {
             logger.debug("processChannels 시작 - 채널 ID 개수: {}", channelIds.size());
         }
@@ -175,7 +224,7 @@ public class UploadVtuberService {
             channelRequest.setFields("items(id,snippet/title,snippet/description,snippet/thumbnails/default/url,statistics/subscriberCount)");
             channelsApiCounter.increment();
             ChannelListResponse channelResponse = youTubeApiService.executeRequest(channelRequest);
-            if (channelResponse.getItems() == null) return;
+            if (channelResponse.getItems() == null) return 0;
 
             for (Channel channel : channelResponse.getItems()) {
                 String channelId = channel.getId();
@@ -212,6 +261,7 @@ public class UploadVtuberService {
                 }
                 vtuber.setStatus("new");
                 vtuberRepository.save(vtuber);
+                addedCount++;
                 if (logger.isInfoEnabled()) {
                     logger.info("새로운 VTuber 저장: {} (ID: {})", vtuber.getName(), channelId);
                 }
@@ -221,6 +271,7 @@ public class UploadVtuberService {
                 logger.error("채널 처리 중 API 오류 발생: {}", e.getMessage());
             }
         }
+        return addedCount;
     }
 
     private void updateExistingChannelsMissingImages(ThreadPoolExecutor executor) {

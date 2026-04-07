@@ -27,21 +27,29 @@ public class UpdateVtuberService {
     private final ExceptVtuberRepository exceptVtuberRepository;
     private final VtuberService vtuberService;
     private final YouTubeApiService youTubeApiService;
+    private final com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository;
     private static final Logger logger = LoggerFactory.getLogger(UpdateVtuberService.class);
 
     public UpdateVtuberService(YouTube youTube,
                                VtuberRepository vtuberRepository,
                                ExceptVtuberRepository exceptVtuberRepository,
                                VtuberService vtuberService,
-                               YouTubeApiService youTubeApiService) {
+                               YouTubeApiService youTubeApiService,
+                               com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.vtuberService = vtuberService;
         this.youTubeApiService = youTubeApiService;
+        this.vtuberUpdateLogRepository = vtuberUpdateLogRepository;
     }
 
     public void syncVtuberData(ThreadPoolExecutor executor) {
+        java.time.LocalDateTime startTime = java.time.LocalDateTime.now();
+        java.util.concurrent.atomic.AtomicInteger updatedCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger failedCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        int deletedCount = 0;
+
         List<String> dbChannelIds = vtuberRepository.findAllChannelIds();
         Set<String> exceptChannelIds = new HashSet<>(exceptVtuberRepository.findAllChannelIds());
         dbChannelIds.removeAll(exceptChannelIds);
@@ -55,7 +63,13 @@ public class UpdateVtuberService {
 
         List<List<String>> partitions = partitionList(dbChannelIds, 50);
         for (List<String> partition : partitions) {
-            futures.add(executor.submit(() -> processSyncPartition(partition, existingApiChannelIds)));
+            futures.add(executor.submit(() -> {
+                int updated = processSyncPartition(partition, existingApiChannelIds);
+                updatedCount.addAndGet(updated);
+                if (updated == 0 && !partition.isEmpty() && existingApiChannelIds.size() < partition.size()) {
+                    failedCount.addAndGet(partition.size());
+                }
+            }));
         }
 
         for (Future<?> future : futures) {
@@ -70,6 +84,7 @@ public class UpdateVtuberService {
         originalDbIds.removeAll(existingApiChannelIds);
 
         if (!originalDbIds.isEmpty()) {
+            deletedCount = originalDbIds.size();
             if (logger.isInfoEnabled()) {
                 logger.info("API에서 확인되지 않아 삭제될 채널 수: {}", originalDbIds.size());
             }
@@ -82,13 +97,26 @@ public class UpdateVtuberService {
         } else {
             logger.info("삭제할 채널이 없습니다.");
         }
+
+        long duration = java.time.Duration.between(startTime, java.time.LocalDateTime.now()).getSeconds();
+        com.VSong.entity.VtuberUpdateLog log = new com.VSong.entity.VtuberUpdateLog();
+        log.setRunTime(java.time.LocalDateTime.now());
+        log.setDurationSeconds(duration);
+        log.setNewVtubersCount(0);
+        log.setUpdatedVtubersCount(updatedCount.get());
+        log.setDeletedVtubersCount(deletedCount);
+        log.setFailedVtubersCount(failedCount.get());
+        log.setLogSummary("VTuber data synchronization run completed.");
+        vtuberUpdateLogRepository.save(log);
+
         logger.info("=== syncVtuberData 종료 ===");
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    private void processSyncPartition(List<String> channelIds, Set<String> existingApiChannelIds) {
+    private int processSyncPartition(List<String> channelIds, Set<String> existingApiChannelIds) {
+        int updatedInPartition = 0;
         if (channelIds.isEmpty()) {
-            return;
+            return 0;
         }
         try {
             YouTube.Channels.List request = youTube.channels().list(List.of("snippet", "statistics"));
@@ -103,7 +131,7 @@ public class UpdateVtuberService {
                     logger.warn("API 응답이 null입니다. 파티션의 채널 {}개를 삭제 방지를 위해 유지합니다.", channelIds.size());
                 }
                 existingApiChannelIds.addAll(channelIds);
-                return;
+                return 0;
             }
 
             for (Channel channel : channels) {
@@ -128,6 +156,7 @@ public class UpdateVtuberService {
                 vtuber.setStatus("existing");
 
                 vtuberRepository.save(vtuber);
+                updatedInPartition++;
             }
         } catch (Exception e) {
             if (logger.isErrorEnabled()) {
@@ -135,6 +164,7 @@ public class UpdateVtuberService {
             }
             existingApiChannelIds.addAll(channelIds);
         }
+        return updatedInPartition;
     }
 
     private String truncateDescription(String description) {

@@ -15,4 +15,7 @@ public interface SongUpdateLogRepository extends JpaRepository<SongUpdateLog, Lo
 
     @Query(value = "SELECT * FROM song_update_logs ORDER BY run_time DESC LIMIT 1", nativeQuery = true)
     SongUpdateLog findLatestLog();
+
+    @Query(value = "SELECT * FROM song_update_logs ORDER BY run_time DESC LIMIT 10", nativeQuery = true)
+    java.util.List<SongUpdateLog> findRecentLogs();
 }
