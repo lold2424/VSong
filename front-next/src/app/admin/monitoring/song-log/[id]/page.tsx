@@ -125,18 +125,23 @@ const SongLogDetailPage = () => {
         {/* 성능 병목 */}
         {log.slowestChannels?.length > 0 && (
           <section>
-            <h2 className="text-lg font-bold mb-3 border-l-4 border-blue-400 pl-2 text-blue-400">수집 속도 하위 20% 채널</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-              {log.slowestChannels.map((item: any, idx: number) => (
-                <div key={idx} className="bg-gray-900 p-3 rounded border-l-2 border-red-500 flex justify-between items-center">
-                  <div>
-                    <p className="text-xs font-bold truncate max-w-[150px]">{item.name}</p>
-                    <p className="text-[10px] text-gray-500">{item.type}</p>
+            <details className="text-xs bg-gray-900 rounded-md p-3 border border-gray-800">
+              <summary className="cursor-pointer text-blue-400 hover:text-white transition font-bold flex justify-between items-center">
+                <span className="text-lg border-l-4 border-blue-400 pl-2">수집 속도 하위 20% 채널</span>
+                <span className="text-[10px] bg-gray-800 px-2 py-0.5 rounded font-normal text-white">클릭하여 펼치기</span>
+              </summary>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {log.slowestChannels.map((item: any, idx: number) => (
+                  <div key={idx} className="bg-gray-800 p-3 rounded border-l-2 border-red-500 flex justify-between items-center">
+                    <div>
+                      <p className="text-xs font-bold truncate max-w-[150px]">{item.name}</p>
+                      <p className="text-[10px] text-gray-500">{item.type}</p>
+                    </div>
+                    <span className="text-xs font-mono text-red-300">{(item.durationMs / 1000).toFixed(1)}s</span>
                   </div>
-                  <span className="text-xs font-mono text-red-300">{(item.durationMs / 1000).toFixed(1)}s</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </details>
           </section>
         )}
       </div>

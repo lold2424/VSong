@@ -398,14 +398,17 @@ const AdminPage = () => {
 
             {/* 성능 병목 지점 섹션 */}
             {monitoringData.songUpdateStats.slowestChannels?.length > 0 && (
-              <div className="bg-gray-900 p-4 rounded-md">
-                <h3 className="text-xs font-bold text-red-400 mb-2 uppercase tracking-wider flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  Performance Bottlenecks (Slowest 20%)
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              <details className="text-xs bg-gray-900 rounded-md p-3 border border-gray-800">
+                <summary className="cursor-pointer text-red-400 hover:text-white transition font-bold flex justify-between items-center">
+                  <span className="flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    Performance Bottlenecks (Slowest 20%)
+                  </span>
+                  <span className="text-[10px] bg-gray-800 px-2 py-0.5 rounded">클릭하여 펼치기</span>
+                </summary>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                   {monitoringData.songUpdateStats.slowestChannels.map((item: any, idx: number) => (
                     <div key={idx} className="bg-gray-800 p-2 rounded border-l-2 border-red-500 flex justify-between items-center">
                       <div>
@@ -416,7 +419,7 @@ const AdminPage = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </details>
             )}
           </div>
         ) : (
