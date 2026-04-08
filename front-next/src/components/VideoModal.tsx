@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getUserPlaylists, addSongToPlaylist } from '@/utils/youtubeApi';
+import { getUserPlaylists, addSongToPlaylist } from '@/utils/apiClient';
 
 interface VideoModalProps {
     videoId: string;
@@ -14,14 +14,12 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
     const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
 
-    // 키보드 이벤트 핸들러
     const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
             onClose();
         }
     };
 
-    // 모달 외부 클릭 핸들러
     const handleBackgroundClick = (event: React.MouseEvent<HTMLDivElement>) => {
         if ((event.target as HTMLDivElement).classList.contains('video-modal')) {
             onClose();
@@ -58,7 +56,6 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
         }
     };
 
-    // 키보드 이벤트 리스너 등록 및 해제
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
         return () => {

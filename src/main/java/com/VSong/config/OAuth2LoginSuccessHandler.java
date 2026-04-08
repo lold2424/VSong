@@ -31,7 +31,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             return;
         }
 
-        // Clear auth cookies
         httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
 
         redirectStrategy.sendRedirect(request, response, successRedirectUrl);

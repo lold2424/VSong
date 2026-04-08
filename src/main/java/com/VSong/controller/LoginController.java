@@ -41,7 +41,7 @@ public class LoginController {
 
         if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User)) {
             log.warn("[WARN] User is not authenticated or principal is not OAuth2User.");
-            return ResponseEntity.ok(null);
+            return ResponseEntity.status(401).build();
         }
 
         OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();

@@ -61,7 +61,7 @@ const SearchBarContent = () => {
 const HeaderContent: React.FC = () => {
   const searchParams = useSearchParams();
   const genderFilter = searchParams.get("gender") || "all";
-  const { isLoggedIn, user, isLoading, login, logout } = useAuth();
+  const { isLoggedIn, user, isLoading, login, logout, checkSession } = useAuth();
 
   if (isLoading) {
     return <header className="flex justify-between items-center px-5 py-2.5 bg-[#272822] text-[#F8F8F2] shadow-md h-[76px]"></header>;
@@ -70,7 +70,7 @@ const HeaderContent: React.FC = () => {
   return (
     <header className="flex justify-between items-center px-5 py-2.5 bg-[#272822] text-[#F8F8F2] shadow-md">
       <div className="flex items-center">
-        <Link href="/" passHref>
+        <Link href="/" passHref onClick={() => checkSession()}>
           <Image
             src="/images/V-song.png"
             alt="V-Song Logo"
