@@ -24,7 +24,7 @@ public class GlobalScheduler {
     private final ApiChannelIdService apiChannelIdService;
     private final ThreadPoolExecutor vtuberSyncExecutor;
     private final RelatedChannelService relatedChannelService;
-    private final MainPageService mainPageService; // Added MainPageService
+    private final MainPageService mainPageService;
 
     public GlobalScheduler(FirstUploadService firstUploadService,
                            UpdateVtuberSongsService updateVtuberSongsService,

@@ -22,12 +22,17 @@ public class GeminiService {
     private static final Logger logger = LoggerFactory.getLogger(GeminiService.class);
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final com.VSong.repository.AiRecommendationLogRepository aiLogRepository;
 
     @Value("${gemini.api.key}")
     private String apiKey;
 
     @Value("${gemini.api.url}")
     private String apiUrl;
+
+    public GeminiService(com.VSong.repository.AiRecommendationLogRepository aiLogRepository) {
+        this.aiLogRepository = aiLogRepository;
+    }
 
     public boolean isSongByAI(String title, String description) {
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
@@ -107,9 +112,18 @@ public class GeminiService {
     }
 
     public List<String> analyzeUserTaste(List<String> titles) {
+        return analyzeUserTaste(titles, "Unknown");
+    }
+
+    public List<String> analyzeUserTaste(List<String> titles, String userEmail) {
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
             return List.of("J-POP", "애니메이션", "버튜버", "K-POP", "발라드");
         }
+
+        long startTime = System.currentTimeMillis();
+        com.VSong.entity.AiRecommendationLog aiLog = new com.VSong.entity.AiRecommendationLog();
+        aiLog.setUserEmail(userEmail);
+        aiLog.setRequestedAt(java.time.LocalDateTime.now());
 
         try {
             String combinedTitles = String.join(", ", titles);
@@ -138,10 +152,22 @@ public class GeminiService {
                                   .path("text").asText().trim();
 
             logger.info("Gemini AI 취향 분석 결과: {}", aiAnswer);
+
+            aiLog.setResultKeywords(aiAnswer);
+            aiLog.setResponseTimeMs(System.currentTimeMillis() - startTime);
+            aiLog.setSuccess(true);
+            aiLogRepository.save(aiLog);
+
             return List.of(aiAnswer.split(",\\s*"));
 
         } catch (Exception e) {
             logger.error("Gemini AI 취향 분석 중 오류 발생: {}", e.getMessage());
+
+            aiLog.setResponseTimeMs(System.currentTimeMillis() - startTime);
+            aiLog.setSuccess(false);
+            aiLog.setErrorMessage(e.getMessage());
+            aiLogRepository.save(aiLog);
+
             return List.of("J-POP", "애니메이션", "버튜버", "커버곡", "오리지널");
         }
     }

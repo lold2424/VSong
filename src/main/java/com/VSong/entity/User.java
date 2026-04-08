@@ -23,6 +23,9 @@ public class User {
     private LocalDateTime refreshTokenCreatedAt;
     private LocalDateTime lastLoginAt;
 
+    private String lastKeywords;
+    private LocalDateTime lastRecommendationTime;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -105,5 +108,21 @@ public class User {
 
     public void setLastLoginAt(LocalDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
+    }
+
+    public String getLastKeywords() {
+        return lastKeywords;
+    }
+
+    public void setLastKeywords(String lastKeywords) {
+        this.lastKeywords = lastKeywords;
+    }
+
+    public LocalDateTime getLastRecommendationTime() {
+        return lastRecommendationTime;
+    }
+
+    public void setLastRecommendationTime(LocalDateTime lastRecommendationTime) {
+        this.lastRecommendationTime = lastRecommendationTime;
     }
 }

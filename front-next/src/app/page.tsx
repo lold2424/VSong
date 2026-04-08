@@ -1,6 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import VideoCard from '@/components/VideoCard';
+import RecommendationSection from '@/components/RecommendationSection';
 
 interface MainPageApiResponse {
     randomSongs: any[];
@@ -33,6 +34,8 @@ export default async function Page({ searchParams }: { searchParams: { [key: str
 
     return (
         <>
+            <RecommendationSection />
+            
             <section>
                 <div className="flex items-center justify-between mb-6 border-b border-[#3E3D32] pb-4">
                     <h2 className="text-2xl font-bold text-[#A6E22E] flex items-center gap-3">

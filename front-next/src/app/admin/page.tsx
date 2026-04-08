@@ -230,7 +230,7 @@ const AdminPage = () => {
             </div>
 
             {/* 수집 통계 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gray-900 p-4 rounded-md">
                 <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase">최근 노래 수집 요약</h3>
                 <div className="space-y-1">
@@ -245,10 +245,6 @@ const AdminPage = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-400">제외된 노래:</span>
                     <span className="text-orange-400 font-bold">{monitoringData.songUpdateStats.excludedSongsCount || 0}개</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">실패한 노래:</span>
-                    <span className="text-red-500 font-bold">{monitoringData.songUpdateStats.failedSongsCount || 0}개</span>
                   </div>
                 </div>
               </div>
@@ -268,9 +264,31 @@ const AdminPage = () => {
                     <span className="text-gray-400">정보 갱신:</span>
                     <span className="text-blue-400 font-bold">{monitoringData.vtuberUpdateStats.updatedVtubersCount || 0}명</span>
                   </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-900 p-4 rounded-md border-l-2 border-indigo-500">
+                <h3 className="text-xs font-bold text-indigo-400 mb-2 uppercase">AI 추천 통계</h3>
+                <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">삭제됨:</span>
-                    <span className="text-red-400 font-bold">{monitoringData.vtuberUpdateStats.deletedVtubersCount || 0}명</span>
+                    <span className="text-gray-400">총 요청:</span>
+                    <span className="text-white font-bold">{monitoringData.aiRecommendationStats.totalRequests || 0}회</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400 text-[10px]">성공:</span>
+                    <span className="text-green-400 font-bold text-[10px]">{monitoringData.aiRecommendationStats.successCount || 0}회</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400 text-[10px]">실패:</span>
+                    <span className="text-red-400 font-bold text-[10px]">{monitoringData.aiRecommendationStats.failCount || 0}회</span>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t border-gray-800">
+                    <span className="text-gray-500 text-[9px]">성공률:</span>
+                    <span className="text-indigo-300 text-[9px]">
+                      {monitoringData.aiRecommendationStats.totalRequests > 0 
+                        ? ((monitoringData.aiRecommendationStats.successCount / monitoringData.aiRecommendationStats.totalRequests) * 100).toFixed(1)
+                        : 0}%
+                    </span>
                   </div>
                 </div>
               </div>
@@ -289,6 +307,43 @@ const AdminPage = () => {
             
             {/* 과거 이력 (History) 섹션 */}
             <div className="space-y-4">
+              <details className="text-xs bg-gray-900 rounded-md p-3 border border-gray-800">
+                <summary className="cursor-pointer text-gray-300 hover:text-white transition font-bold flex justify-between items-center">
+                  <span>AI 취향 분석 상세 이력 (최근 100건)</span>
+                  <span className="text-[10px] bg-gray-800 px-2 py-0.5 rounded">클릭하여 펼치기</span>
+                </summary>
+                <div className="mt-3 overflow-x-auto max-h-60 overflow-y-auto">
+                  <table className="w-full text-[10px] text-left">
+                    <thead className="sticky top-0 bg-gray-900">
+                      <tr className="text-gray-500 border-b border-gray-800">
+                        <th className="pb-2">요청 시간</th>
+                        <th className="pb-2">사용자</th>
+                        <th className="pb-2 text-right">소요</th>
+                        <th className="pb-2">상태</th>
+                        <th className="pb-2">결과/에러</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monitoringData.aiRecommendationHistory?.map((log: any) => (
+                        <tr key={log.id} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/50 transition">
+                          <td className="py-2 text-gray-400 whitespace-nowrap">{new Date(log.requestedAt).toLocaleString()}</td>
+                          <td className="py-2 text-gray-300 max-w-[120px] truncate" title={log.userEmail}>{log.userEmail}</td>
+                          <td className="py-2 text-right text-indigo-400">{log.responseTimeMs}ms</td>
+                          <td className="py-2">
+                            {log.success 
+                              ? <span className="text-green-500">SUCCESS</span> 
+                              : <span className="text-red-500">FAIL</span>}
+                          </td>
+                          <td className="py-2 text-gray-500 max-w-[200px] truncate" title={log.success ? log.resultKeywords : log.errorMessage}>
+                            {log.success ? log.resultKeywords : log.errorMessage}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+
               <details className="text-xs bg-gray-900 rounded-md p-3 border border-gray-800">
                 <summary className="cursor-pointer text-gray-300 hover:text-white transition font-bold flex justify-between items-center">
                   <span>과거 노래 수집 상세 내역 (최근 10건)</span>

@@ -21,8 +21,7 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
         
         log.error("[AUTH FAILURE] OAuth2 Authentication failed. Reason: {}", exception.getMessage());
         log.error("[AUTH FAILURE] Exception Details: ", exception);
-        
-        // 상세 에러 파라미터 추가
+
         String targetUrl = "/login?error=" + exception.getLocalizedMessage();
         
         super.setDefaultFailureUrl(targetUrl);

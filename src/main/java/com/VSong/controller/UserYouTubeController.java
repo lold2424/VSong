@@ -14,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,15 +46,14 @@ public class UserYouTubeController {
         if (oAuth2User == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
         
         String email = oAuth2User.getAttribute("email");
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty()) return ResponseEntity.status(404).body("사용자를 찾을 수 없습니다.");
+        User user = userRepository.findByEmail(email).orElseThrow();
         
-        User user = userOpt.get();
         try {
-            List<String> titles = userYouTubeService.getUserPlaylistTitles(user);
+            if (user.getLastKeywords() == null || user.getLastKeywords().isEmpty()) {
+                return ResponseEntity.ok(Map.of("keywords", List.of(), "songs", List.of()));
+            }
 
-            List<String> keywords = geminiService.analyzeUserTaste(titles);
-
+            List<String> keywords = List.of(user.getLastKeywords().split(",\\s*"));
             String regex = String.join("|", keywords);
             List<VtuberSongsEntity> recommendedSongs = vtuberSongsRepository.findByKeywords(regex, 10);
             
@@ -64,7 +64,42 @@ public class UserYouTubeController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("추천 곡 로딩 중 오류 발생", e);
-            return ResponseEntity.status(500).body("추천 정보를 가져오는 중 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.status(500).body("추천 정보를 가져오는 중 오류가 발생했습니다.");
+        }
+    }
+
+    @PostMapping("/recommend/refresh")
+    public ResponseEntity<?> refreshRecommendations(@AuthenticationPrincipal OAuth2User oAuth2User) {
+        if (oAuth2User == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        
+        String email = oAuth2User.getAttribute("email");
+        User user = userRepository.findByEmail(email).orElseThrow();
+
+        if (user.getLastRecommendationTime() != null && 
+            user.getLastRecommendationTime().isAfter(LocalDateTime.now().minusMinutes(5))) {
+            return ResponseEntity.status(429).body("추천 분석은 5분에 한 번만 가능합니다. 잠시 후 다시 시도해주세요.");
+        }
+        
+        try {
+            logger.info("AI 취향 재분석 요청: {}", user.getEmail());
+            List<String> titles = userYouTubeService.getUserPlaylistTitles(user);
+            List<String> keywords = geminiService.analyzeUserTaste(titles, user.getEmail());
+            
+            user.setLastKeywords(String.join(", ", keywords));
+            user.setLastRecommendationTime(LocalDateTime.now());
+            userRepository.save(user);
+            
+            String regex = String.join("|", keywords);
+            List<VtuberSongsEntity> recommendedSongs = vtuberSongsRepository.findByKeywords(regex, 10);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("keywords", keywords);
+            response.put("songs", recommendedSongs);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("추천 갱신 중 오류 발생", e);
+            return ResponseEntity.status(500).body("추천 정보를 갱신하는 중 오류가 발생했습니다.");
         }
     }
 

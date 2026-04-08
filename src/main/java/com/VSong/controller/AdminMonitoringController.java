@@ -26,6 +26,7 @@ public class AdminMonitoringController {
     private final com.VSong.service.UpdateVtuberService updateVtuberService;
     private final com.VSong.repository.SongUpdateLogRepository songUpdateLogRepository;
     private final com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository;
+    private final com.VSong.repository.AiRecommendationLogRepository aiRecommendationLogRepository;
     private final HealthEndpoint healthEndpoint;
     private final java.util.concurrent.ThreadPoolExecutor vtuberSyncExecutor;
 
@@ -35,6 +36,7 @@ public class AdminMonitoringController {
                                      com.VSong.service.UpdateVtuberService updateVtuberService,
                                      com.VSong.repository.SongUpdateLogRepository songUpdateLogRepository,
                                      com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository,
+                                     com.VSong.repository.AiRecommendationLogRepository aiRecommendationLogRepository,
                                      HealthEndpoint healthEndpoint,
                                      java.util.concurrent.ThreadPoolExecutor vtuberSyncExecutor) {
         this.youtubeApiService = youtubeApiService;
@@ -43,6 +45,7 @@ public class AdminMonitoringController {
         this.updateVtuberService = updateVtuberService;
         this.songUpdateLogRepository = songUpdateLogRepository;
         this.vtuberUpdateLogRepository = vtuberUpdateLogRepository;
+        this.aiRecommendationLogRepository = aiRecommendationLogRepository;
         this.healthEndpoint = healthEndpoint;
         this.vtuberSyncExecutor = vtuberSyncExecutor;
     }
@@ -58,6 +61,14 @@ public class AdminMonitoringController {
 
         data.put("vtuberUpdateStats", uploadVtuberService.getLastOperationStats());
         data.put("vtuberUpdateHistory", uploadVtuberService.getRecentLogs());
+
+        Map<String, Object> aiStats = new HashMap<>();
+        aiStats.put("totalRequests", aiRecommendationLogRepository.count());
+        aiStats.put("successCount", aiRecommendationLogRepository.countBySuccess(true));
+        aiStats.put("failCount", aiRecommendationLogRepository.countBySuccess(false));
+        
+        data.put("aiRecommendationStats", aiStats);
+        data.put("aiRecommendationHistory", aiRecommendationLogRepository.findTop100ByOrderByRequestedAtDesc());
 
         Status healthStatus = healthEndpoint.health().getStatus();
         data.put("systemHealth", healthStatus.getCode());
