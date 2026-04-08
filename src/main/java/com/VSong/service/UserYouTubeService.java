@@ -166,4 +166,30 @@ public class UserYouTubeService {
                 .execute()
                 .getItems();
     }
+
+    public Playlist createPlaylist(User user, String title) throws GeneralSecurityException, IOException {
+        String accessToken = getOrRefreshAccessToken(user);
+        YouTube youtube = new YouTube.Builder(
+                GoogleNetHttpTransport.newTrustedTransport(),
+                GsonFactory.getDefaultInstance(),
+                null)
+                .setApplicationName("VSong")
+                .build();
+
+        Playlist playlist = new Playlist();
+        
+        PlaylistSnippet snippet = new PlaylistSnippet();
+        snippet.setTitle(title);
+        snippet.setDescription("VSong에서 생성된 재생목록입니다.");
+        playlist.setSnippet(snippet);
+        
+        PlaylistStatus status = new PlaylistStatus();
+        status.setPrivacyStatus("private");
+        playlist.setStatus(status);
+
+        return youtube.playlists()
+                .insert(List.of("snippet", "status"), playlist)
+                .setOauthToken(accessToken)
+                .execute();
+    }
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getUserPlaylists, addSongToPlaylist } from '@/utils/apiClient';
+import {getUserPlaylists, addSongToPlaylist, createPlaylist} from '@/utils/apiClient';
 
 interface VideoModalProps {
     videoId: string;
@@ -13,6 +13,8 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
     const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
     const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
+    const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
 
     const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
@@ -34,7 +36,6 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                 setPlaylists(data);
             } catch (err) {
                 console.error("재생목록 로딩 실패:", err);
-                alert("재생목록을 불러오는 데 실패했습니다.");
             } finally {
                 setIsLoadingPlaylists(false);
             }
@@ -56,6 +57,30 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
         }
     };
 
+    const handleCreateAndAdd = async () => {
+        if (!newPlaylistTitle.trim()) {
+            alert("재생목록 제목을 입력해주세요.");
+            return;
+        }
+
+        setIsCreating(true);
+        try {
+            const newPlaylist = await createPlaylist(newPlaylistTitle);
+
+            await addSongToPlaylist(videoId, newPlaylist.id);
+
+            alert(`'${newPlaylistTitle}' 재생목록이 생성되고 노래가 추가되었습니다!`);
+
+            setNewPlaylistTitle('');
+            setShowPlaylistSelector(false);
+            setPlaylists([]);
+        } catch (err) {
+            console.error("재생목록 생성 및 추가 실패:", err);
+            alert("재생목록 생성 중 오류가 발생했습니다.");
+        } finally {
+            setIsCreating(false);
+        }
+    };
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
         return () => {
@@ -99,11 +124,11 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                             </button>
 
                             {showPlaylistSelector && (
-                                <div className="absolute bottom-full right-0 mb-2 w-64 bg-[#272822] border border-[#3E3D32] rounded-lg shadow-xl overflow-hidden z-[1001]">
+                                <div className="absolute bottom-full right-0 mb-2 w-72 bg-[#272822] border border-[#3E3D32] rounded-lg shadow-xl overflow-hidden z-[1001]">
                                     <div className="p-3 border-b border-[#3E3D32] text-[#A6E22E] font-bold text-sm">
-                                        재생목록 선택
+                                        기존 재생목록 선택
                                     </div>
-                                    <div className="max-h-60 overflow-y-auto">
+                                    <div className="max-h-48 overflow-y-auto">
                                         {isLoadingPlaylists ? (
                                             <div className="p-4 text-center text-gray-400 text-sm">로딩 중...</div>
                                         ) : playlists.length === 0 ? (
@@ -113,13 +138,34 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                                                 <button
                                                     key={playlist.id}
                                                     onClick={() => handleAddToPlaylist(playlist.id)}
-                                                    disabled={isAdding}
+                                                    disabled={isAdding || isCreating}
                                                     className="w-full text-left px-4 py-3 text-[#F8F8F2] text-sm hover:bg-[#3E3D32] transition-colors border-b border-[#3E3D32] last:border-0 truncate"
                                                 >
                                                     {playlist.snippet.title}
                                                 </button>
                                             ))
                                         )}
+                                    </div>
+                                    
+                                    {/* 새 재생목록 만들기 섹션 */}
+                                    <div className="p-3 bg-[#1e1f1c] border-t border-[#3E3D32]">
+                                        <div className="flex flex-col gap-2">
+                                            <input 
+                                                type="text"
+                                                value={newPlaylistTitle}
+                                                onChange={(e) => setNewPlaylistTitle(e.target.value)}
+                                                placeholder="새 재생목록 이름"
+                                                className="bg-[#272822] border border-[#3E3D32] text-[#F8F8F2] text-xs p-2 rounded outline-none focus:border-[#A6E22E] transition-colors"
+                                                disabled={isCreating}
+                                            />
+                                            <button
+                                                onClick={handleCreateAndAdd}
+                                                disabled={isCreating || !newPlaylistTitle.trim()}
+                                                className="w-full py-2 bg-[#3E3D32] text-[#A6E22E] text-xs font-bold rounded hover:bg-[#4E4D42] transition-colors disabled:opacity-50"
+                                            >
+                                                {isCreating ? '생성 중...' : '목록 생성 후 노래 추가'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}

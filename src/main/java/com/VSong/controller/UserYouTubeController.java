@@ -118,6 +118,28 @@ public class UserYouTubeController {
         }
     }
 
+    @PostMapping("/playlists/create")
+    public ResponseEntity<?> createPlaylist(@AuthenticationPrincipal OAuth2User oAuth2User,
+                                            @RequestBody Map<String, String> request) {
+        if (oAuth2User == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        
+        String email = oAuth2User.getAttribute("email");
+        User user = userRepository.findByEmail(email).orElseThrow();
+        
+        String title = request.get("title");
+        if (title == null || title.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("재생목록 제목을 입력해주세요.");
+        }
+        
+        try {
+            Playlist playlist = userYouTubeService.createPlaylist(user, title);
+            return ResponseEntity.ok(playlist);
+        } catch (Exception e) {
+            logger.error("재생목록 생성 중 오류 발생", e);
+            return ResponseEntity.status(500).body("재생목록을 생성하는 중 오류가 발생했습니다.");
+        }
+    }
+
     @PostMapping("/playlists/add")
     public ResponseEntity<?> addSongToPlaylist(@AuthenticationPrincipal OAuth2User oAuth2User,
                                                @RequestBody Map<String, String> request) {
