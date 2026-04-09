@@ -62,7 +62,7 @@ public class MainPageService {
         List<String> channelIds = vtuberChannelService.getChannelIdsByGender(gender);
 
         CompletableFuture<List<VtuberSongsEntity>> randomSongsFuture = CompletableFuture.supplyAsync(
-                () -> songService.getRandomVideoSongs(9, channelIds), taskExecutor);
+                () -> songService.getRandomVideoSongs(10, channelIds), taskExecutor);
 
         randomSongsFuture.join();
 

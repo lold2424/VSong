@@ -24,7 +24,7 @@ public class RandomSongsController {
 
     @GetMapping("/random-videos")
     public List<VtuberSongsEntity> getRandomVideoSongs(
-            @RequestParam(defaultValue = "9") int limit,
+            @RequestParam(defaultValue = "10") int limit,
             @RequestParam(defaultValue = "all") String gender) {
         List<String> channelIds = vtuberChannelService.getChannelIdsByGender(gender);
         return songService.getRandomVideoSongs(limit, channelIds);
