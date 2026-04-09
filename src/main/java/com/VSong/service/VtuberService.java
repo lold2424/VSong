@@ -45,9 +45,20 @@ public class VtuberService {
                 result.put("songs", Collections.emptyList());
             }
         } else if (query != null && !query.isEmpty()) {
-            List<VtuberSongsEntity> songs = vtuberSongsRepository.findAllByTitleContainingOrderByViewCountDesc(query);
+            List<VtuberSongsEntity> songsByTitle = vtuberSongsRepository.findAllByTitleContainingOrderByViewCountDesc(query);
+
             List<VtuberEntity> vtubers = vtuberRepository.findAllByNameContaining(query);
-            result.put("songs", songs);
+
+            Set<VtuberSongsEntity> combinedSongs = new LinkedHashSet<>(songsByTitle);
+            for (VtuberEntity vtuber : vtubers) {
+                List<VtuberSongsEntity> songsByVtuber = vtuberSongsRepository.findByChannelId(vtuber.getChannelId());
+                combinedSongs.addAll(songsByVtuber);
+            }
+
+            List<VtuberSongsEntity> sortedSongs = new ArrayList<>(combinedSongs);
+            sortedSongs.sort(Comparator.comparing(VtuberSongsEntity::getViewCount).reversed());
+
+            result.put("songs", sortedSongs);
             result.put("vtubers", vtubers);
         } else {
             result.put("vtubers", Collections.emptyList());
