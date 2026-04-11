@@ -1,5 +1,6 @@
 package com.VSong.controller;
 
+import com.VSong.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,12 @@ import java.util.Map;
 public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
+    private final UserRepository userRepository;
+
+    public LoginController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
 
     @GetMapping("/success")
     public String loginSuccess(@AuthenticationPrincipal OAuth2User oAuth2User) {
@@ -31,20 +38,29 @@ public class LoginController {
 
     @GetMapping("/userinfo")
     public ResponseEntity<?> getUserInfo(Authentication authentication) {
-        log.info("[START] Fetching user info...");
 
         if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User)) {
             log.warn("[WARN] User is not authenticated or principal is not OAuth2User.");
-            return ResponseEntity.ok(null);
+            return ResponseEntity.status(401).build();
         }
 
-        OAuth2User user = (OAuth2User) authentication.getPrincipal();
-        log.info("[SUCCESS] Authenticated user: {}", user.getAttributes());
+        OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+        if (log.isInfoEnabled()) {
+            log.info("[SUCCESS] Authenticated user: {}", oauth2User.getAttributes());
+        }
 
         Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("name", user.getAttribute("name"));
-        userInfo.put("email", user.getAttribute("email"));
-        userInfo.put("picture", user.getAttribute("picture"));
+        userInfo.put("name", oauth2User.getAttribute("name"));
+        userInfo.put("email", oauth2User.getAttribute("email"));
+        userInfo.put("picture", oauth2User.getAttribute("picture"));
+
+        String email = oauth2User.getAttribute("email");
+        com.VSong.entity.User user = userRepository.findByEmail(email).orElse(null);
+
+        String role = (user != null && user.getRole() != null) ? user.getRole().getKey() : "ROLE_USER";
+
+        userInfo.put("role", role.replace("ROLE_", ""));
+
 
         return ResponseEntity.ok(userInfo);
     }

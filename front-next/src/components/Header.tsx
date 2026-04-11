@@ -1,31 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import React, { useEffect, useState, Suspense } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
-const saveUserInfoToLocalStorage = (userInfo: {
-  name: string;
-  picture: string;
-}) => {
-  localStorage.setItem("userInfo", JSON.stringify(userInfo));
-};
-
-const getUserInfoFromLocalStorage = () => {
-  const storedUserInfo = localStorage.getItem("userInfo");
-  return storedUserInfo ? JSON.parse(storedUserInfo) : null;
-};
-
-const removeUserInfoFromLocalStorage = () => {
-  localStorage.removeItem("userInfo");
-};
-
-interface HeaderProps {
-  onSearch?: (searchTerm: string, genderFilter: string) => void;
-}
-
-const SearchBar = () => {
+const SearchBarContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
   const pathname = usePathname();
@@ -67,7 +48,7 @@ const SearchBar = () => {
         placeholder="검색"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyPress}
         className="border-none bg-transparent outline-none text-[#F8F8F2] text-sm p-1 w-50 placeholder:text-[#F8F8F2] placeholder:opacity-70"
       />
       <button className="bg-transparent border-none cursor-pointer ml-1.5" onClick={handleSearch}>
@@ -77,79 +58,19 @@ const SearchBar = () => {
   );
 };
 
-const Header: React.FC<HeaderProps> = ({ onSearch }) => {
-  const router = useRouter();
+const HeaderContent: React.FC = () => {
   const searchParams = useSearchParams();
   const genderFilter = searchParams.get("gender") || "all";
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userInfo, setUserInfo] = useState<{ name: string; picture: string } | null>(null);
+  const { isLoggedIn, user, isLoading, login, logout, checkSession } = useAuth();
 
-  const fetchUserInfo = async () => {
-    try {
-      const response = await fetch(
-        `/api/login/userinfo`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-
-      if (response.ok) {
-        const text = await response.text();
-        const data = text ? JSON.parse(text) : null;
-
-        if (data) {
-          saveUserInfoToLocalStorage(data);
-          setIsLoggedIn(true);
-          setUserInfo(data);
-        } else {
-          removeUserInfoFromLocalStorage();
-          setIsLoggedIn(false);
-          setUserInfo(null);
-        }
-      } else {
-        removeUserInfoFromLocalStorage();
-        setIsLoggedIn(false);
-        setUserInfo(null);
-      }
-    } catch (error) {
-      removeUserInfoFromLocalStorage();
-      setIsLoggedIn(false);
-      setUserInfo(null);
-    }
-  };
-
-  useEffect(() => {
-    fetchUserInfo();
-  }, []);
-
-  const handleLogin = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth2/authorization/google`;
-  };
-
-  const handleLogout = async () => {
-    try {
-      const response = await fetch(
-        `/api/logout`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-      if (response.ok) {
-        removeUserInfoFromLocalStorage();
-        setUserInfo(null);
-        setIsLoggedIn(false);
-        alert("로그아웃되었습니다.");
-        router.push("/");
-      }
-    } catch (error) {}
-  };
+  if (isLoading) {
+    return <header className="flex justify-between items-center px-5 py-2.5 bg-[#272822] text-[#F8F8F2] shadow-md h-[76px]"></header>;
+  }
 
   return (
     <header className="flex justify-between items-center px-5 py-2.5 bg-[#272822] text-[#F8F8F2] shadow-md">
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <Link href="/" passHref>
+      <div className="flex items-center">
+        <Link href="/" passHref onClick={() => checkSession()}>
           <Image
             src="/images/V-song.png"
             alt="V-Song Logo"
@@ -159,31 +80,38 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
             priority
           />
         </Link>
-        {isLoggedIn ? (
+        {isLoggedIn && user ? (
           <div className="flex items-center gap-2.5 ml-auto">
-            {userInfo?.picture && (
+            {user.picture && (
               <Image
-                src={userInfo.picture}
+                src={user.picture}
                 alt="User"
                 className="w-9 h-9 rounded-full object-cover border-2 border-[#F8F8F2]"
                 width={36}
                 height={36}
               />
             )}
-            <span>{userInfo?.name}</span>
-            <button className="px-2.5 py-1 bg-transparent text-[#F8F8F2] border border-[#F8F8F2] rounded-lg cursor-pointer text-sm transition-colors duration-200 hover:bg-[#A6E22E] hover:text-[#272222] hover:border-[#A6E22E]" onClick={handleLogout}>
+            <span>{user.name}</span>
+            {user.role === 'ADMIN' && (
+              <Link href="/admin" passHref>
+                <button className="px-2.5 py-1 bg-yellow-500 text-black border border-yellow-500 rounded-lg cursor-pointer text-sm font-bold transition-colors duration-200 hover:bg-yellow-400">
+                  관리자
+                </button>
+              </Link>
+            )}
+            <button className="px-2.5 py-1 bg-transparent text-[#F8F8F2] border border-[#F8F8F2] rounded-lg cursor-pointer text-sm transition-colors duration-200 hover:bg-[#A6E22E] hover:text-[#272222] hover:border-[#A6E22E]" onClick={logout}>
               로그아웃
             </button>
           </div>
         ) : (
-          <button className="px-2.5 py-1 bg-transparent text-[#F8F8F2] border border-[#F8F8F2] rounded-lg cursor-pointer text-sm transition-colors duration-200 mr-[15px] hover:bg-[#A6E22E] hover:text-[#272222] hover:border-[#A6E22E]" onClick={handleLogin}>
+          <button className="px-2.5 py-1 bg-transparent text-[#F8F8F2] border border-[#F8F8F2] rounded-lg cursor-pointer text-sm transition-colors duration-200 mr-[15px] hover:bg-[#A6E22E] hover:text-[#272222] hover:border-[#A6E22E]" onClick={login}>
             로그인
           </button>
         )}
       </div>
-      <Suspense fallback={<div>Loading...</div>}>
-        <SearchBar />
-      </Suspense>
+      
+      <SearchBarContent />
+
       <div className="flex gap-2.5">
         <Link href="/?gender=male" passHref>
           <button
@@ -208,6 +136,14 @@ const Header: React.FC<HeaderProps> = ({ onSearch }) => {
         </Link>
       </div>
     </header>
+  );
+};
+
+const Header: React.FC = () => {
+  return (
+    <Suspense fallback={<header className="bg-[#272822] h-[76px] shadow-md px-5 py-2.5"></header>}>
+      <HeaderContent />
+    </Suspense>
   );
 };
 

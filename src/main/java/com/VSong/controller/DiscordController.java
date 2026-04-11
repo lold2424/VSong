@@ -31,22 +31,22 @@ public class DiscordController {
     @GetMapping("/popular/weekly")
     public List<SongResponseDto> getWeeklyPopularSongs(
                                                         @RequestParam("channels") List<String> channelIds,
-                                                        @RequestParam("classification") String classification) {
-        return discordService.getWeeklyPopularSongs(channelIds, classification);
+                                                        @RequestParam(value = "classification", required = false) String classification) {
+        return discordService.getWeeklyPopularSongs(channelIds);
     }
 
     @GetMapping("/latest")
     public List<SongResponseDto> getLatestSongs(
                                                  @RequestParam("channels") List<String> channelIds,
-                                                 @RequestParam("classification") String classification) {
-        return discordService.getLatestSongs(channelIds, classification);
+                                                 @RequestParam(value = "classification", required = false) String classification) {
+        return discordService.getLatestSongs(channelIds);
     }
 
     @GetMapping("/search")
     public List<SongResponseDto> searchSongsByTitle(
                                                      @RequestParam("title") String title,
-                                                     @RequestParam("classification") String classification) {
-        return discordService.searchSongsByTitle(title, classification);
+                                                     @RequestParam(value = "classification", required = false) String classification) {
+        return discordService.searchSongsByTitle(title);
     }
 
     @GetMapping("/artist")
@@ -57,9 +57,9 @@ public class DiscordController {
 
     @GetMapping("/random")
     public List<SongResponseDto> getRandomSongs(
-                                                 @RequestParam("classification") String classification,
+                                                 @RequestParam(value = "classification", required = false) String classification,
                                                  @RequestParam(value = "count", defaultValue = "1") int count) {
-        return discordService.getRandomSongs(classification, count);
+        return discordService.getRandomSongs(count);
     }
 
     @GetMapping("/{videoId}")

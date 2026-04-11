@@ -14,11 +14,29 @@ public class User {
     private String name;
     private String picture;
     @Column(columnDefinition = "TEXT")
+    private String accessToken;
+
+    @Column(columnDefinition = "TEXT")
     private String refreshToken;
 
-    private LocalDateTime tokenCreatedAt;
-
+    private LocalDateTime accessTokenExpiresAt;
+    private LocalDateTime refreshTokenCreatedAt;
     private LocalDateTime lastLoginAt;
+
+    private String lastKeywords;
+    private LocalDateTime lastRecommendationTime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     public Long getId() {
         return id;
@@ -52,6 +70,14 @@ public class User {
         this.picture = picture;
     }
 
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
     public String getRefreshToken() {
         return refreshToken;
     }
@@ -60,12 +86,20 @@ public class User {
         this.refreshToken = refreshToken;
     }
 
-    public LocalDateTime getTokenCreatedAt() {
-        return tokenCreatedAt;
+    public LocalDateTime getAccessTokenExpiresAt() {
+        return accessTokenExpiresAt;
     }
 
-    public void setTokenCreatedAt(LocalDateTime tokenCreatedAt) {
-        this.tokenCreatedAt = tokenCreatedAt;
+    public void setAccessTokenExpiresAt(LocalDateTime accessTokenExpiresAt) {
+        this.accessTokenExpiresAt = accessTokenExpiresAt;
+    }
+
+    public LocalDateTime getRefreshTokenCreatedAt() {
+        return refreshTokenCreatedAt;
+    }
+
+    public void setRefreshTokenCreatedAt(LocalDateTime refreshTokenCreatedAt) {
+        this.refreshTokenCreatedAt = refreshTokenCreatedAt;
     }
 
     public LocalDateTime getLastLoginAt() {
@@ -74,5 +108,21 @@ public class User {
 
     public void setLastLoginAt(LocalDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
+    }
+
+    public String getLastKeywords() {
+        return lastKeywords;
+    }
+
+    public void setLastKeywords(String lastKeywords) {
+        this.lastKeywords = lastKeywords;
+    }
+
+    public LocalDateTime getLastRecommendationTime() {
+        return lastRecommendationTime;
+    }
+
+    public void setLastRecommendationTime(LocalDateTime lastRecommendationTime) {
+        this.lastRecommendationTime = lastRecommendationTime;
     }
 }

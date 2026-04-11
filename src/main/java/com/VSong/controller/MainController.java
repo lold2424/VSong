@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/main")
+@RequestMapping("/api")
 public class MainController {
 
     private final MainPageService mainPageService;
@@ -19,21 +19,16 @@ public class MainController {
         this.mainPageService = mainPageService;
     }
 
-    @GetMapping
-    public MainPageResponse getMainPage(
-            @RequestParam(value = "gender", required = false, defaultValue = "all") String gender) {
-        
+    @GetMapping("/home")
+    public MainPageResponse getHomeData(@RequestParam(defaultValue = "all") String gender) {
         MainPageCacheableResponse cacheableData = mainPageService.getCacheableMainPageData(gender);
         MainPageRandomResponse randomData = mainPageService.getRandomMainPageData(gender);
 
         return new MainPageResponse(
-                randomData.randomVideoSongs(),
+                randomData.randomSongs(),
                 cacheableData.top10WeeklySongs(),
                 cacheableData.top10DailySongs(),
-                cacheableData.top10RecentSongs(),
-                randomData.randomShorts(),
-                cacheableData.top10WeeklyShorts(),
-                cacheableData.top9RecentShorts()
+                cacheableData.top10RecentSongs()
         );
     }
 }

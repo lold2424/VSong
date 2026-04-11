@@ -35,20 +35,20 @@ public class DiscordService {
                 .collect(Collectors.toList());
     }
 
-    public List<SongResponseDto> getWeeklyPopularSongs(List<String> channelIds, String classification) {
-        return vtuberSongsRepository.findTop10ByViewsIncreaseWeekDescAndChannelIdsAndClassification(channelIds, classification).stream()
+    public List<SongResponseDto> getWeeklyPopularSongs(List<String> channelIds) {
+        return vtuberSongsRepository.findTop10ByViewsIncreaseWeekDescAndChannelIds(channelIds).stream()
                 .map(SongResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    public List<SongResponseDto> getLatestSongs(List<String> channelIds, String classification) {
-        return vtuberSongsRepository.findTop9ByPublishedAtDescAndChannelIdsAndClassification(channelIds, classification).stream()
+    public List<SongResponseDto> getLatestSongs(List<String> channelIds) {
+        return vtuberSongsRepository.findTop10ByPublishedAtDescAndChannelIds(channelIds).stream()
                 .map(SongResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    public List<SongResponseDto> searchSongsByTitle(String title, String classification) {
-        return vtuberSongsRepository.findAllByTitleContainingAndClassificationOrderByViewCountDesc(title, classification).stream()
+    public List<SongResponseDto> searchSongsByTitle(String title) {
+        return vtuberSongsRepository.findAllByTitleContainingOrderByViewCountDesc(title).stream()
                 .map(SongResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -59,9 +59,9 @@ public class DiscordService {
                 .collect(Collectors.toList());
     }
 
-    public List<SongResponseDto> getRandomSongs(String classification, int count) {
+    public List<SongResponseDto> getRandomSongs(int count) {
         Pageable pageable = PageRequest.of(0, count);
-        return vtuberSongsRepository.findRandomSongsByClassification(classification, pageable).stream()
+        return vtuberSongsRepository.findRandomSongs(pageable).stream()
                 .map(SongResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }

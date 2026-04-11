@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import VideoModal from "./VideoModal"; // 모달 컴포넌트 임포트
+import VideoModal from "./VideoModal";
 
 
 interface Song {
@@ -14,25 +14,23 @@ interface Song {
 interface WeeklyChartProps {
   top10WeeklySongs: Song[];
   top10DailySongs: Song[];
-  top10WeeklyShorts: Song[];
 }
 
 const WeeklyChart: React.FC<WeeklyChartProps> = ({
   top10WeeklySongs,
   top10DailySongs,
-  top10WeeklyShorts,
 }) => {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [chartType, setChartType] = useState<"weekly" | "daily" | "shorts">(
+  const [chartType, setChartType] = useState<"weekly" | "daily">(
     "weekly"
   );
 
   const handleSongClick = (videoId: string) => {
-    setSelectedVideoId(videoId); // 클릭한 노래의 videoId를 설정
+    setSelectedVideoId(videoId);
   };
 
   const handleCloseModal = () => {
-    setSelectedVideoId(null); // 모달 닫기
+    setSelectedVideoId(null);
   };
 
   const getChartData = () => {
@@ -41,8 +39,6 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
         return { data: top10WeeklySongs, title: "주간 인기 노래" };
       case "daily":
         return { data: top10DailySongs, title: "일간 인기 노래" };
-      case "shorts":
-        return { data: top10WeeklyShorts, title: "주간 인기 쇼츠" };
       default:
         return { data: [], title: "" };
     }
@@ -65,12 +61,6 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
         >
           일간
         </button>
-        <button
-          onClick={() => setChartType("shorts")}
-          className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${chartType === "shorts" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
-        >
-          쇼츠
-        </button>
       </div>
       <div className="bg-[#272822] text-[#F8F8F2] rounded-lg p-5 shadow-lg">
         <h3 className="text-[#A6E22E] text-xl mb-3.5">{title}</h3>
@@ -80,7 +70,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
               <li
                 key={song.id}
                 className="flex justify-between items-center mb-2.5 p-2.5 bg-[#3E3D32] rounded-lg text-[#F8F8F2] transition-colors duration-200 hover:bg-[#A6E22E] hover:text-[#272822]"
-                onClick={() => handleSongClick(song.videoId)} // 클릭 시 모달 열기
+                onClick={() => handleSongClick(song.videoId)}
                 style={{ cursor: "pointer" }}
               >
                 <h4 className="m-0 text-base font-bold text-[#F8F8F2]">
@@ -93,7 +83,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
             <p>차트가 없습니다.</p>
           )}
         </ul>
-        <div className="mt-2.5 text-xs text-[#F8F8F2] opacity-80">월요일 00시 기준</div>
+        <div className="mt-2.5 text-xs text-[#F8F8F2] opacity-80">기준: {chartType === "weekly" ? "매주 월요일 00시" : "매일 00시"}</div>
 
         {selectedVideoId && (
           <VideoModal videoId={selectedVideoId} onClose={handleCloseModal} />

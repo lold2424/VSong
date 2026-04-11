@@ -29,7 +29,7 @@ public class VtuberValidationService {
             "응원", "통계", "번역", "다시보기", "게임", "저장", "일상", "브이로그", "보관", "잼민",
             "TV", "코인", "주식", "Tj", "tv", "팬계정", "창고", "박스", "팬", "클립", "키리누키",
             "vlog", "유튜버", "youtube", "YOUTUBE", "유튜브", "코딩", "코드", "로블록스", "덕질",
-            "음식", "기도", "교회", "여행", "VOD", "풀영상"
+            "음식", "기도", "교회", "여행", "VOD", "풀영상", "teaser"
     );
     private static final List<String> EXCLUDE_DESCRIPTION_KEYWORDS = Arrays.asList(
             "팬클립", "팬영상", "팬채널", "저장소", "브이로그", "학년", "초등학", "중학", "고등학",
@@ -74,17 +74,20 @@ public class VtuberValidationService {
     private final VtuberSongsRepository vtuberSongsRepository;
     private final YouTube youTube;
     private final YouTubeApiService youTubeApiService;
+    private final GeminiService geminiService;
 
     public VtuberValidationService(VtuberRepository vtuberRepository,
                                      ExceptVtuberRepository exceptVtuberRepository,
                                      VtuberSongsRepository vtuberSongsRepository,
                                      YouTube youTube,
-                                     YouTubeApiService youTubeApiService) {
+                                     YouTubeApiService youTubeApiService,
+                                     GeminiService geminiService) {
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.vtuberSongsRepository = vtuberSongsRepository;
         this.youTube = youTube;
         this.youTubeApiService = youTubeApiService;
+        this.geminiService = geminiService;
     }
 
     public String getChannelProcessableReason(String channelId) {
@@ -97,6 +100,7 @@ public class VtuberValidationService {
         return null;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public String getKoreanVtuberReason(Channel channel) {
         String channelId = channel.getId();
         String title = channel.getSnippet().getTitle();
@@ -136,6 +140,13 @@ public class VtuberValidationService {
         boolean isVtuber = hasVtuberKeyword || hasVisualCharacteristics || belongsToCompany || hasContentPattern || containsPriorityKeyword;
 
         if (isVtuber) {
+            boolean aiConfirmed = geminiService.isVtuberByAI(title, description);
+            if (!aiConfirmed) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Channel ID: {} -> REJECTED BY AI ({}).", channelId, title);
+                }
+                return "AI 판별 결과 버튜버가 아님";
+            }
             return null;
         } else {
             return "버튜버 특징 미발견";
@@ -167,15 +178,24 @@ public class VtuberValidationService {
                 .anyMatch(company -> description.toLowerCase().contains(company.toLowerCase()));
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private boolean hasVtuberContentPattern(String channelId) {
         try {
-            YouTube.Search.List search = youTube.search().list(List.of("snippet"));
-            search.setChannelId(channelId);
-            search.setOrder("date");
-            search.setMaxResults(10L);
-            search.setType(List.of("video"));
+            com.google.api.services.youtube.YouTube.Channels.List channelRequest = youTube.channels().list(java.util.List.of("contentDetails"));
+            channelRequest.setId(java.util.List.of(channelId));
+            com.google.api.services.youtube.model.ChannelListResponse channelResponse = youTubeApiService.executeRequest(channelRequest);
 
-            SearchListResponse response = youTubeApiService.executeRequest(search);
+            if (channelResponse.getItems() == null || channelResponse.getItems().isEmpty()) {
+                return false;
+            }
+
+            String uploadsPlaylistId = channelResponse.getItems().get(0).getContentDetails().getRelatedPlaylists().getUploads();
+
+            com.google.api.services.youtube.YouTube.PlaylistItems.List playlistRequest = youTube.playlistItems().list(java.util.List.of("snippet"));
+            playlistRequest.setPlaylistId(uploadsPlaylistId);
+            playlistRequest.setMaxResults(10L);
+
+            com.google.api.services.youtube.model.PlaylistItemListResponse response = youTubeApiService.executeRequest(playlistRequest);
             if (response.getItems() == null || response.getItems().isEmpty()) {
                 return false;
             }
@@ -198,7 +218,9 @@ public class VtuberValidationService {
 
             return patternMatches >= 3;
         } catch (Exception e) {
-            logger.warn("채널 {} 콘텐츠 패턴 분석 실패: {}", channelId, e.getMessage());
+            if (logger.isWarnEnabled()) {
+                logger.warn("채널 {} 콘텐츠 패턴 분석 실패: {}", channelId, e.getMessage());
+            }
             return false;
         }
     }
@@ -208,6 +230,7 @@ public class VtuberValidationService {
             "spotify", "melon", "apple music"
     );
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public boolean isSongRelated(Video video) {
         String title = video.getSnippet().getTitle();
         String lowerTitle = title.toLowerCase();
@@ -244,7 +267,17 @@ public class VtuberValidationService {
         boolean finalDecision = isMusicCategory || hasSongKeyword;
 
         if (finalDecision) {
-            logger.info("Validation Check for Video ID: {} -> ACCEPTED. Reasons: {}", videoId, String.join(", ", reasons));
+            boolean isSongByAI = geminiService.isSongByAI(title, description);
+            if (!isSongByAI) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Validation Check for Video ID: {} -> REJECTED BY AI ({}).", videoId, title);
+                }
+                return false;
+            }
+
+            if (logger.isInfoEnabled()) {
+                logger.info("Validation Check for Video ID: {} -> ACCEPTED WITH AI. Reasons: {}", videoId, String.join(", ", reasons));
+            }
         }
 
         return finalDecision;
@@ -254,6 +287,7 @@ public class VtuberValidationService {
         return vtuberSongsRepository.existsByVideoId(videoId);
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public String classifyVideo(Video video) {
         String title = video.getSnippet().getTitle();
         String durationStr = video.getContentDetails().getDuration();
@@ -261,10 +295,16 @@ public class VtuberValidationService {
         try {
             Duration videoDuration = Duration.parse(durationStr);
             if (videoDuration.compareTo(Duration.ofMinutes(8)) > 0) return "ignore";
-            if (videoDuration.compareTo(Duration.ofMinutes(1)) <= 0 || title.toLowerCase().contains("short")) return "shorts";
+
+            if (videoDuration.compareTo(Duration.ofMinutes(1)) <= 0 || title.toLowerCase().contains("short")) {
+                return "ignore";
+            }
+            
             return "videos";
         } catch (Exception e) {
-            logger.error("Error parsing duration '{}' for videoId: {}. Ignoring.", durationStr, video.getId(), e);
+            if (logger.isErrorEnabled()) {
+                logger.error("Error parsing duration '{}' for videoId: {}. Ignoring.", durationStr, video.getId(), e);
+            }
             return "ignore";
         }
     }

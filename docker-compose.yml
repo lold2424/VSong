@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ${REGISTRY}/${BACKEND_IMAGE_NAME}:${IMAGE_TAG}
+    container_name: vsong-backend
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_FORWARD_HEADERS_STRATEGY=framework
+      - SERVER_SERVLET_SESSION_COOKIE_SECURE=true
+      - SERVER_SERVLET_SESSION_COOKIE_SAME_SITE=none
+      - BASE_URL=https://www.vsong.site
+      - OAUTH2_REDIRECT_URL=https://www.vsong.site
+    env_file:
+      - ./.env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - vsong-net
+
+  frontend:
+    image: ${REGISTRY}/${FRONTEND_IMAGE_NAME}:${IMAGE_TAG}
+    container_name: vsong-frontend
+    restart: always
+    environment:
+      - BACKEND_URL=http://backend:8080
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - vsong-net
+
+  nginx:
+    image: ${REGISTRY}/${NGINX_IMAGE_NAME}:${IMAGE_TAG}
+    container_name: vsong-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443" # HTTPS 포트 추가
+    volumes:
+      # 로컬의 nginx.conf 파일을 컨테이너의 설정 파일로 마운트
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      # 프로젝트 내부에 복사된 SSL 인증서 폴더를 컨테이너에 마운트
+      - ./nginx/ssl:/etc/ssl/certs
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - vsong-net
+
+networks:
+  vsong-net:
+    driver: bridge

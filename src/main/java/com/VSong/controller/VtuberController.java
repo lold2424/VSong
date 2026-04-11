@@ -1,10 +1,8 @@
 package com.VSong.controller;
 
-import com.VSong.dto.VtuberRequest;
 import com.VSong.entity.VtuberEntity;
 import com.VSong.entity.VtuberSongsEntity;
 import com.VSong.service.VtuberService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,11 +19,10 @@ public class VtuberController {
         this.vtuberService = vtuberService;
     }
 
-
-    @PostMapping
-    public ResponseEntity<VtuberEntity> createVtuber(@RequestBody VtuberRequest vtuberRequest) {
-        VtuberEntity vtuberEntity = vtuberService.createVtuber(vtuberRequest.getDescription(), vtuberRequest.getGender());
-        return new ResponseEntity<>(vtuberEntity, HttpStatus.CREATED);
+    @GetMapping
+    public ResponseEntity<List<VtuberEntity>> getAllVtubers() {
+        List<VtuberEntity> vtubers = vtuberService.getAllVtubers();
+        return ResponseEntity.ok(vtubers);
     }
 
     @GetMapping("/search")
@@ -37,15 +34,9 @@ public class VtuberController {
             return ResponseEntity.badRequest().build();
         }
 
-        // query 파라미터 검증
         if (query != null && !query.trim().isEmpty()) {
-            // 길이 제한 (예: 최대 100자)
             if (query.length() > 100) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Query parameter exceeds maximum length of 100 characters."));
-            }
-            // 특수문자 필터링 (알파벳, 숫자, 한글만 허용)
-            if (!query.matches("^[a-zA-Z0-9가-힣\s]*$")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Query parameter contains invalid characters. Only alphanumeric and Korean characters are allowed."));
             }
         }
 

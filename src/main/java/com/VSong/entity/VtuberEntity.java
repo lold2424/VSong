@@ -21,11 +21,8 @@ public class VtuberEntity {
     private String channelImg;
     @Column(length = 10)
     private String gender;
-    @Column(length = 10)
-    private String status;
-    @Column(name = "last_processed_page_token")
-    private String lastProcessedPageToken;
-
+            @Column(length = 10)
+            private String status;
     // Getter와 Setter
     public Long getId() {
         return id;
@@ -95,15 +92,6 @@ public class VtuberEntity {
         return status;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getLastProcessedPageToken() {
-        return lastProcessedPageToken;
-    }
-
-    public void setLastProcessedPageToken(String lastProcessedPageToken) {
-        this.lastProcessedPageToken = lastProcessedPageToken;
-    }
-}
+            public void setStatus(String status) {
+                this.status = status;
+            }}

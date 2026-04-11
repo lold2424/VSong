@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -23,13 +24,13 @@ public class YouTubeApiService {
     private final List<Boolean> keyAvailable;
     private int currentKeyIndex = 0;
 
-    private final RateLimiter rateLimiter = RateLimiter.create(5.0); // 5 requests per second
+    private final RateLimiter rateLimiter = RateLimiter.create(5.0);
 
     public YouTubeApiService(@Value("${youtube.api.keys}") List<String> apiKeys) {
         this.apiKeys = new ArrayList<>(apiKeys);
         this.apiKeyUsage = new ArrayList<>();
         this.keyAvailable = new ArrayList<>();
-        for (int i = 0; i < apiKeys.size(); i++) {
+        for (String ignored : apiKeys) {
             this.apiKeyUsage.add(new AtomicInteger(0));
             this.keyAvailable.add(true);
         }
@@ -39,9 +40,9 @@ public class YouTubeApiService {
         return apiKeys.get(currentKeyIndex);
     }
 
-    public void incrementApiUsage() {
-        apiKeyUsage.get(currentKeyIndex).incrementAndGet();
-        if (apiKeyUsage.get(currentKeyIndex).get() >= 9000) { // Threshold before hitting the limit
+    public void incrementApiUsage(int cost) {
+        apiKeyUsage.get(currentKeyIndex).addAndGet(cost);
+        if (apiKeyUsage.get(currentKeyIndex).get() >= 9500) {
             switchApiKey();
         }
     }
@@ -52,7 +53,9 @@ public class YouTubeApiService {
         do {
             currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
             if (keyAvailable.get(currentKeyIndex)) {
-                logger.info("API Key switched to: {}", getCurrentApiKey());
+                if (logger.isInfoEnabled()) {
+                    logger.info("API Key switched to index {}: {}", currentKeyIndex, getCurrentApiKey().substring(0, 10) + "...");
+                }
                 return;
             }
         } while (currentKeyIndex != initialKeyIndex);
@@ -68,17 +71,47 @@ public class YouTubeApiService {
         logger.info("Daily API usage has been reset.");
     }
 
+    public List<Map<String, Object>> getApiKeysStatus() {
+        List<Map<String, Object>> statusList = new ArrayList<>();
+        for (int i = 0; i < apiKeys.size(); i++) {
+            Map<String, Object> status = new java.util.HashMap<>();
+            String key = apiKeys.get(i);
+            status.put("index", i);
+            status.put("keyPrefix", key.substring(0, Math.min(key.length(), 10)) + "...");
+            status.put("usage", apiKeyUsage.get(i).get());
+            status.put("isAvailable", keyAvailable.get(i));
+            status.put("isCurrent", i == currentKeyIndex);
+            statusList.add(status);
+        }
+        return statusList;
+    }
+
+    @SuppressWarnings("PMD.LooseCoupling")
     public <T> T executeRequest(YouTubeRequest<T> request) throws IOException {
         rateLimiter.acquire();
         int attempts = 0;
+
+        int cost = request.getClass().getSimpleName().contains("Search") ? 100 : 1;
+
         while (attempts < apiKeys.size()) {
             try {
                 request.setKey(getCurrentApiKey());
-                incrementApiUsage();
+                incrementApiUsage(cost);
                 return request.execute();
             } catch (GoogleJsonResponseException e) {
-                if (e.getDetails() != null && "quotaExceeded".equals(e.getDetails().getErrors().get(0).getReason())) {
-                    logger.warn("API quota exceeded for key. Switching to the next key and retrying.");
+                String reason = (e.getDetails() != null && !e.getDetails().getErrors().isEmpty()) 
+                        ? e.getDetails().getErrors().get(0).getReason() : "";
+
+                if ("quotaExceeded".equals(reason)) {
+                    if (logger.isWarnEnabled()) {
+                        logger.warn("API quota exceeded for key index {}. Switching to the next key and retrying.", currentKeyIndex);
+                    }
+                    switchApiKey();
+                    attempts++;
+                } else if (e.getStatusCode() == 403 || "accessNotConfigured".equals(reason) || "SERVICE_DISABLED".equals(reason)) {
+                    if (logger.isErrorEnabled()) {
+                        logger.error("API key at index {} is disabled or has no permission (Reason: {}). Switching to the next key.", currentKeyIndex, reason);
+                    }
                     switchApiKey();
                     attempts++;
                 } else {

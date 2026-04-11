@@ -24,7 +24,7 @@ public class GlobalScheduler {
     private final ApiChannelIdService apiChannelIdService;
     private final ThreadPoolExecutor vtuberSyncExecutor;
     private final RelatedChannelService relatedChannelService;
-    private final MainPageService mainPageService; // Added MainPageService
+    private final MainPageService mainPageService;
 
     public GlobalScheduler(FirstUploadService firstUploadService,
                            UpdateVtuberSongsService updateVtuberSongsService,
@@ -52,14 +52,14 @@ public class GlobalScheduler {
     } **/
 
     // RelatedChannelService - 관련 채널 기반 버튜버 탐색
-    @Scheduled(cron = "0 45 23 * * ?", zone = "Asia/Seoul")
+    /** @Scheduled(cron = "0 45 23 * * ?", zone = "Asia/Seoul")
     public void scheduleDiscoverAndSaveFromRelatedChannels() {
         logger.info("Executing scheduled task: discoverAndSaveFromRelatedChannels");
         relatedChannelService.discoverAndSaveFromRelatedChannels();
-    }
+    } **/
 
     // UpdateVtuberSongsService - 최신 노래 수집
-    @Scheduled(cron = "0 55 23 * * ?", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 39 23 * * ?", zone = "Asia/Seoul")
     public void scheduleFetchVtuberSongs() {
         logger.info("Executing scheduled task: fetchVtuberSongs");
         updateVtuberSongsService.fetchVtuberSongs();
@@ -73,14 +73,10 @@ public class GlobalScheduler {
     }
 
     // UpdateVtuberSongsService - 노래 조회수 관리
-    @CacheEvict(value = "mainPage", allEntries = true)
     @Scheduled(cron = "0 1 0 * * ?", zone = "Asia/Seoul")
     public void scheduleUpdateViewCounts() {
         logger.info("Executing scheduled task: updateViewCounts");
         updateVtuberSongsService.updateViewCounts();
-        // Re-populate the cache for "all" gender after eviction
-        logger.info("Re-populating main page cache for 'all' gender after eviction.");
-        mainPageService.getCacheableMainPageData("all");
     }
 
     // UploadVtuberService - 버튜버 신규 채널 업로드

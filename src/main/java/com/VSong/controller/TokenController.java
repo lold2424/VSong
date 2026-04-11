@@ -2,6 +2,7 @@ package com.VSong.controller;
 
 import com.VSong.entity.User;
 import com.VSong.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -19,11 +20,18 @@ public class TokenController {
 
     private final UserRepository userRepository;
 
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String clientId;
+    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
+    private String clientSecret;
+
+
     public TokenController(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     @PostMapping("/refresh")
+    @SuppressWarnings("PMD.LooseCoupling")
     public ResponseEntity<?> refreshAccessToken(@RequestParam String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -38,8 +46,8 @@ public class TokenController {
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("refresh_token", refreshToken);
-        params.add("client_id", "YOUR_CLIENT_ID");
-        params.add("client_secret", "YOUR_CLIENT_SECRET");
+        params.add("client_id", clientId);
+        params.add("client_secret", clientSecret);
         params.add("grant_type", "refresh_token");
 
         HttpHeaders headers = new HttpHeaders();
