@@ -13,10 +13,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Set up Node.js
@@ -106,6 +106,7 @@ jobs:
           echo "spring.task.scheduling.enabled=true" | sudo tee -a $PROPERTIES_FILE
           echo "management.endpoints.web.exposure.include=$MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE" | sudo tee -a $PROPERTIES_FILE
           echo "management.endpoint.health.show-details=$MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS" | sudo tee -a $PROPERTIES_FILE
+          echo "spring.threads.virtual.enabled=true" | sudo tee -a $PROPERTIES_FILE
 
           JAR_SOURCE_FILE=$(find ./v-song-build/backend/ -name "*.jar")
           JAR_DEST_PATH="/home/opc/vsong/backend/VSong.jar"
