@@ -37,22 +37,27 @@ public class VisitorController {
         }
 
         if (!hasVisited) {
-            visitorService.incrementVisitorCount();
+            ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+            LocalDate today = LocalDate.now(seoulZone);
+            
+            visitorService.incrementVisitorCount(today);
 
-            ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
-            ZonedDateTime midnight = now.toLocalDate().plusDays(1).atStartOfDay(now.getZone());
+            ZonedDateTime now = ZonedDateTime.now(seoulZone);
+            ZonedDateTime midnight = now.toLocalDate().plusDays(1).atStartOfDay(seoulZone);
             long secondsUntilMidnight = Duration.between(now, midnight).getSeconds();
 
             Cookie visitorCookie = new Cookie(VISITOR_COOKIE_NAME, "true");
             visitorCookie.setMaxAge((int) secondsUntilMidnight);
             visitorCookie.setPath("/");
+            visitorCookie.setSecure(true);
             response.addCookie(visitorCookie);
         }
     }
 
     @GetMapping("/api/visitors/daily")
     public List<DailyVisitor> getDailyVisitors() {
-        LocalDate endDate = LocalDate.now();
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        LocalDate endDate = LocalDate.now(seoulZone);
         LocalDate startDate = endDate.minusDays(7);
         return visitorService.getDailyVisitorStats(startDate, endDate);
     }

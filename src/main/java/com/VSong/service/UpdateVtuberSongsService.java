@@ -82,7 +82,8 @@ public class UpdateVtuberSongsService {
 
     public void fetchVtuberSongs() {
         logger.info("=== fetchVtuberSongs 실행 시작 ===");
-        LocalDateTime startTime = LocalDateTime.now();
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        LocalDateTime startTime = LocalDateTime.now(seoulZone);
         List<String> allNewSongTitles = new ArrayList<>();
         List<String> allExcludedSongInfo = new ArrayList<>();
         List<String> allFailedSongInfo = new ArrayList<>();
@@ -134,8 +135,8 @@ public class UpdateVtuberSongsService {
 
         logger.info("=== fetchVtuberSongs 실행 종료 ===");
 
-        lastOperationStats.put("lastRunTime", LocalDateTime.now());
-        lastOperationStats.put("durationSeconds", java.time.Duration.between(startTime, LocalDateTime.now()).getSeconds());
+        lastOperationStats.put("lastRunTime", LocalDateTime.now(seoulZone));
+        lastOperationStats.put("durationSeconds", java.time.Duration.between(startTime, LocalDateTime.now(seoulZone)).getSeconds());
         lastOperationStats.put("newSongsCount", allNewSongTitles.size());
         lastOperationStats.put("excludedSongsCount", allExcludedSongInfo.size());
         lastOperationStats.put("failedSongsCount", allFailedSongInfo.size());
@@ -147,7 +148,7 @@ public class UpdateVtuberSongsService {
 
         try {
             SongUpdateLog log = new SongUpdateLog();
-            log.setRunTime(LocalDateTime.now());
+            log.setRunTime(LocalDateTime.now(seoulZone));
             log.setDurationSeconds((Long) lastOperationStats.get("durationSeconds"));
             log.setNewSongsCount(allNewSongTitles.size());
             log.setExcludedSongsCount(allExcludedSongInfo.size());
@@ -163,6 +164,7 @@ public class UpdateVtuberSongsService {
             logger.error("Failed to save song update log to DB: {}", e.getMessage());
         }
     }
+
 
     public void updateSongStatusToExisting() {
         List<VtuberSongsEntity> newSongs = vtuberSongsRepository.findByStatus("new");

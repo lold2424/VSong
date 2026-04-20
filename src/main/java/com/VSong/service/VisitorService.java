@@ -18,8 +18,8 @@ public class VisitorService {
     }
 
     @Transactional
-    public void incrementVisitorCount() {
-        visitorRepository.incrementVisitorCount(LocalDate.now());
+    public void incrementVisitorCount(LocalDate date) {
+        visitorRepository.incrementVisitorCount(date);
     }
 
     @Transactional(readOnly = true)

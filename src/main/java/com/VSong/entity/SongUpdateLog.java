@@ -16,19 +16,19 @@ public class SongUpdateLog {
     private Integer excludedSongsCount;
     private Integer failedSongsCount;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String errorSummaryJson;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String slowestChannelsJson;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String newSongsJson;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String excludedSongsJson;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String failedSongsJson;
 
     public SongUpdateLog() {}

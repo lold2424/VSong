@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -91,10 +92,11 @@ public class UploadVtuberService {
     @SuppressWarnings("PMD.LooseCoupling")
     public void fetchAndSaveVtuberChannels() {
         logger.info("=== fetchAndSaveVtuberChannels 시작 ===");
-        LocalDateTime startTime = LocalDateTime.now();
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        LocalDateTime startTime = LocalDateTime.now(seoulZone);
         java.util.concurrent.atomic.AtomicInteger newCount = new java.util.concurrent.atomic.AtomicInteger(0);
         java.util.concurrent.atomic.AtomicInteger failedCount = new java.util.concurrent.atomic.AtomicInteger(0);
-        
+
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
         for (String query : queries) {
             logger.info("쿼리 실행: {}", query);
@@ -146,9 +148,10 @@ public class UploadVtuberService {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
-        
-        long duration = java.time.Duration.between(startTime, LocalDateTime.now()).getSeconds();
-        lastOperationStats.put("lastRunTime", LocalDateTime.now());
+
+        long duration = java.time.Duration.between(startTime, LocalDateTime.now(seoulZone)).getSeconds();
+
+        lastOperationStats.put("lastRunTime", LocalDateTime.now(seoulZone));
         lastOperationStats.put("durationSeconds", duration);
         lastOperationStats.put("newVtubersCount", newCount.get());
         lastOperationStats.put("updatedVtubersCount", 0);
@@ -156,7 +159,7 @@ public class UploadVtuberService {
         lastOperationStats.put("failedVtubersCount", failedCount.get());
 
         com.VSong.entity.VtuberUpdateLog log = new com.VSong.entity.VtuberUpdateLog();
-        log.setRunTime(LocalDateTime.now());
+        log.setRunTime(LocalDateTime.now(seoulZone));
         log.setDurationSeconds(duration);
         log.setNewVtubersCount(newCount.get());
         log.setUpdatedVtubersCount(0);
@@ -167,6 +170,7 @@ public class UploadVtuberService {
 
         logger.info("=== fetchAndSaveVtuberChannels 종료 ===");
     }
+
 
     @SuppressWarnings("PMD.LooseCoupling")
     public List<String> fetchAllChannelIdsFromApi() {

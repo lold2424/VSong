@@ -28,7 +28,28 @@ const WeeklyStats = () => {
             try {
                 setLoading(true);
                 const response = await axios.get('/api/visitors/daily');
-                setData(response.data);
+                const rawData = response.data;
+
+                const last7Days = Array.from({ length: 7 }, (_, i) => {
+                    const d = new Date();
+                    const kstDate = new Date(d.getTime() + (9 * 60 * 60 * 1000));
+                    kstDate.getUTCDate(); // Side effect to ensure object state
+                    
+                    const targetDate = new Date(kstDate);
+                    targetDate.setUTCDate(targetDate.getUTCDate() - (6 - i));
+                    return targetDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                });
+
+                const paddedData = last7Days.map((date, index) => {
+                    const found = rawData.find((item: any) => item.visitDate === date);
+                    return {
+                        id: found ? found.id : -index,
+                        visitDate: date,
+                        count: found ? found.count : 0
+                    };
+                });
+
+                setData(paddedData);
                 setError(null);
             } catch (err) {
                 setError('Failed to fetch weekly visitor data.');
