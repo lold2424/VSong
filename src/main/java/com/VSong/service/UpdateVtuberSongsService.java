@@ -33,6 +33,7 @@ public class UpdateVtuberSongsService {
     private final SongUpdateLogRepository songUpdateLogRepository;
     private final ObjectMapper objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(UpdateVtuberSongsService.class);
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
     private final Map<String, Object> lastOperationStats = new java.util.concurrent.ConcurrentHashMap<>();
 
     public Map<String, Object> getLastOperationStats() {
@@ -168,7 +169,7 @@ public class UpdateVtuberSongsService {
 
     public void updateSongStatusToExisting() {
         List<VtuberSongsEntity> newSongs = vtuberSongsRepository.findByStatus("new");
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(SEOUL_ZONE);
         int updatedCount = 0;
 
         for (VtuberSongsEntity song : newSongs) {
@@ -224,6 +225,9 @@ public class UpdateVtuberSongsService {
         int weeklyUpdatedCount = 0;
         int weeklyFailedCount = 0;
 
+        LocalDateTime nowSeoul = LocalDateTime.now(SEOUL_ZONE);
+        boolean isMonday = nowSeoul.getDayOfWeek() == DayOfWeek.MONDAY;
+
         int batchSize = 50;
         for (int i = 0; i < videoIds.size(); i += batchSize) {
             List<String> batch = videoIds.subList(i, Math.min(i + batchSize, videoIds.size()));
@@ -246,18 +250,16 @@ public class UpdateVtuberSongsService {
                                     continue;
                                 }
                                 long newViewCount = video.getStatistics().getViewCount().longValue();
-                                long viewIncreaseDay = newViewCount - song.getViewCount();
+                                long viewIncreaseDay = newViewCount - (song.getViewCount() == null ? newViewCount : song.getViewCount());
                                 song.setViewCount(newViewCount);
                                 song.setViewsIncreaseDay(viewIncreaseDay);
-                                song.setUpdateDayTime(LocalDateTime.now());
+                                song.setUpdateDayTime(nowSeoul);
 
-                                song.setViewsIncreaseWeek(song.getViewsIncreaseWeek() + viewIncreaseDay);
-
-                                if (LocalDateTime.now().getDayOfWeek() == DayOfWeek.MONDAY) {
+                                if (isMonday) {
                                     try {
-                                        song.setViewsIncreaseWeek(0L);
-                                        song.setLastWeekViewCount(newViewCount);
-                                        song.setUpdateWeekTime(LocalDateTime.now());
+                                        song.setViewsIncreaseWeek(viewIncreaseDay);
+                                        song.setLastWeekViewCount(newViewCount - viewIncreaseDay);
+                                        song.setUpdateWeekTime(nowSeoul);
                                         weeklyUpdatedCount++;
                                     } catch (Exception e) {
                                         weeklyFailedCount++;
@@ -265,7 +267,11 @@ public class UpdateVtuberSongsService {
                                             logger.error("주간 조회수 초기화 및 기준점 설정 실패 (videoId: {})", song.getVideoId(), e);
                                         }
                                     }
+                                } else {
+                                    long currentWeekIncrease = (song.getViewsIncreaseWeek() == null) ? 0L : song.getViewsIncreaseWeek();
+                                    song.setViewsIncreaseWeek(currentWeekIncrease + viewIncreaseDay);
                                 }
+
                                 vtuberSongsRepository.save(song);
                                 updatedCount++;
                             } else {
@@ -309,7 +315,7 @@ public class UpdateVtuberSongsService {
         if (logger.isInfoEnabled()) {
             logger.info("일일 조회수 업데이트 완료. 업데이트: {}개, 삭제: {}개, 실패: {}개", updatedCount, deletedCount, failedCount);
         }
-        if (LocalDateTime.now().getDayOfWeek() == DayOfWeek.MONDAY) {
+        if (isMonday) {
             if (logger.isInfoEnabled()) {
                 logger.info("주간 조회수 업데이트 요약. 성공: {}개, 실패: {}개", weeklyUpdatedCount, weeklyFailedCount);
             }
@@ -431,9 +437,9 @@ public class UpdateVtuberSongsService {
         song.setVideoId(video.getId());
         song.setTitle(video.getSnippet().getTitle());
         song.setPublishedAt(Instant.ofEpochMilli(video.getSnippet().getPublishedAt().getValue()).atZone(ZoneId.systemDefault()).toLocalDateTime());
-        song.setAddedTime(LocalDateTime.now());
-        song.setUpdateDayTime(LocalDateTime.now());
-        song.setUpdateWeekTime(LocalDateTime.now());
+        song.setAddedTime(LocalDateTime.now(SEOUL_ZONE));
+        song.setUpdateDayTime(LocalDateTime.now(SEOUL_ZONE));
+        song.setUpdateWeekTime(LocalDateTime.now(SEOUL_ZONE));
         song.setVtuberName(channelName);
         song.setViewCount(statistics.getViewCount().longValue());
         song.setViewsIncreaseDay(0L);

@@ -32,8 +32,14 @@ public class MainPageService {
         this.cacheManager = cacheManager;
     }
 
-    @CacheEvict(value = "mainPage", allEntries = true)
     public void refreshMainPageCache() {
+        org.springframework.cache.Cache mainPageCache = cacheManager.getCache("mainPage");
+        if (mainPageCache != null) {
+            mainPageCache.clear();
+            org.slf4j.LoggerFactory.getLogger(MainPageService.class).info("mainPage cache has been cleared successfully.");
+        } else {
+            org.slf4j.LoggerFactory.getLogger(MainPageService.class).warn("Failed to clear mainPage cache: Cache 'mainPage' not found.");
+        }
     }
 
     @Cacheable(value = "mainPage", key = "#gender")

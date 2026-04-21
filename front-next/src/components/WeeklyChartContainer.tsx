@@ -17,7 +17,7 @@ const WeeklyChartContainer: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get<MainApiResponse>("/api/home")
+      .get<MainApiResponse>(`/api/home?t=${new Date().getTime()}`)
       .then((response) => {
         setChartData({
           top10WeeklySongs: response.data.top10WeeklySongs || [],

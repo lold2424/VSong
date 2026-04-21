@@ -3,6 +3,8 @@ import axios from 'axios';
 import VideoCard from '@/components/VideoCard';
 import RecommendationSection from '@/components/RecommendationSection';
 
+export const dynamic = 'force-dynamic';
+
 interface MainPageApiResponse {
     randomSongs: any[];
     top10RecentSongs: any[];
