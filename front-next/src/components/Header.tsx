@@ -5,9 +5,12 @@ import React, { Suspense, useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import AlertModal from "@/components/AlertModal";
 
 const SearchBarContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -25,7 +28,8 @@ const SearchBarContent = () => {
   const handleSearch = () => {
     const trimmedSearchTerm = searchTerm.trim();
     if (trimmedSearchTerm.length < 2) {
-      alert("검색어는 두 글자 이상이 필요합니다.");
+      setModalMessage("검색어는 두 글자 이상이 필요합니다.");
+      setIsModalOpen(true);
       return;
     }
     router.push(
@@ -43,6 +47,12 @@ const SearchBarContent = () => {
 
   return (
     <div className="flex items-center bg-[#3E3D32] rounded-lg px-2.5 py-1">
+      <AlertModal 
+        isOpen={isModalOpen} 
+        title="검색 안내" 
+        message={modalMessage} 
+        onClose={() => setIsModalOpen(false)} 
+      />
       <input
         type="text"
         placeholder="검색"

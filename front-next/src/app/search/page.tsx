@@ -5,6 +5,7 @@ import axios from "axios";
 import { useSearchParams, useRouter } from "next/navigation";
 import VideoCard from "@/components/VideoCard";
 import Image from "next/image";
+import AlertModal from "@/components/AlertModal";
 
 const SearchResultsPage: React.FC = () => {
   const [searchResults, setSearchResults] = useState<{
@@ -14,6 +15,9 @@ const SearchResultsPage: React.FC = () => {
   const [visibleSongs, setVisibleSongs] = useState<any[]>([]);
   const [songPage, setSongPage] = useState(1);
   const [hasMoreSongs, setHasMoreSongs] = useState(true);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -52,6 +56,10 @@ const SearchResultsPage: React.FC = () => {
         })
         .catch((error) => {
           console.error("검색 중 오류 발생:", error);
+          if (axios.isAxiosError(error) && error.response) {
+            setModalMessage(error.response.data.message || "검색 중 오류가 발생했습니다.");
+            setIsModalOpen(true);
+          }
         });
     }
   }, [query, channelId, queryValue]);
@@ -74,6 +82,15 @@ const SearchResultsPage: React.FC = () => {
 
   return (
     <div className="p-5 max-w-6xl mx-auto bg-[#272822] text-[#F8F8F2]">
+      <AlertModal 
+        isOpen={isModalOpen} 
+        title="검색 안내" 
+        message={modalMessage} 
+        onClose={() => {
+          setIsModalOpen(false);
+          router.push("/");
+        }} 
+      />
       <h1 className="text-2xl mb-5 text-[#A6E22E]">‘{queryValue}’에 대한 검색 결과입니다.</h1>
 
       {searchResults?.vtubers && searchResults.vtubers.length > 0 && (

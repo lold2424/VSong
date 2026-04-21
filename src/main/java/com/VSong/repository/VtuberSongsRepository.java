@@ -34,11 +34,11 @@ public interface VtuberSongsRepository extends JpaRepository<VtuberSongsEntity, 
     @Query(value = "SELECT * FROM vtuber_songs WHERE channel_id IN (:channelIds) AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY published_at DESC LIMIT 10", nativeQuery = true)
     List<VtuberSongsEntity> findTop10ByPublishedAtDescAndChannelIds(@Param("channelIds") List<String> channelIds);
 
-    @Query(value = "SELECT * FROM vtuber_songs WHERE title LIKE CONCAT('%', :title, '%') AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY view_count DESC", nativeQuery = true)
-    List<VtuberSongsEntity> findAllByTitleContainingOrderByViewCountDesc(@Param("title") String title);
+    @Query(value = "SELECT * FROM vtuber_songs WHERE MATCH(title) AGAINST(:title IN BOOLEAN MODE) AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY published_at DESC", nativeQuery = true)
+    List<VtuberSongsEntity> findAllByTitleContainingOrderByPublishedAtDesc(@Param("title") String title);
 
-    @Query(value = "SELECT * FROM vtuber_songs WHERE vtuber_name = :vtuberName AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY view_count DESC", nativeQuery = true)
-    List<VtuberSongsEntity> findAllByVtuberNameOrderByViewCountDesc(@Param("vtuberName") String vtuberName);
+    @Query(value = "SELECT * FROM vtuber_songs WHERE vtuber_name = :vtuberName AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY published_at DESC", nativeQuery = true)
+    List<VtuberSongsEntity> findAllByVtuberNameOrderByPublishedAtDesc(@Param("vtuberName") String vtuberName);
 
     @Query(value = "SELECT * FROM vtuber_songs WHERE (title REGEXP :keywords) AND (classification IS NULL OR (classification != 'shorts' AND classification != 'ignore')) ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<VtuberSongsEntity> findByKeywords(@Param("keywords") String keywords, @Param("limit") int limit);

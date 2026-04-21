@@ -48,13 +48,16 @@ public class DiscordService {
     }
 
     public List<SongResponseDto> searchSongsByTitle(String title) {
-        return vtuberSongsRepository.findAllByTitleContainingOrderByViewCountDesc(title).stream()
+        String trimmedTitle = title.trim();
+        String ftTitle = "+" + trimmedTitle + "*";
+
+        return vtuberSongsRepository.findAllByTitleContainingOrderByPublishedAtDesc(ftTitle).stream()
                 .map(SongResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
     public List<SongResponseDto> getSongsByArtist(String vtuberName) {
-        return vtuberSongsRepository.findAllByVtuberNameOrderByViewCountDesc(vtuberName).stream()
+        return vtuberSongsRepository.findAllByVtuberNameOrderByPublishedAtDesc(vtuberName).stream()
                 .map(SongResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }

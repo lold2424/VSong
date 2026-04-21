@@ -4,7 +4,13 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "vtuber_songs")
+@Table(name = "vtuber_songs", indexes = {
+    @Index(name = "idx_video_id", columnList = "videoId", unique = true),
+    @Index(name = "idx_channel_id", columnList = "channelId"),
+    @Index(name = "idx_published_at", columnList = "publishedAt"),
+    @Index(name = "idx_views_increase_day", columnList = "viewsIncreaseDay"),
+    @Index(name = "idx_views_increase_week", columnList = "viewsIncreaseWeek")
+})
 public class VtuberSongsEntity {
 
     @Id
@@ -28,17 +34,17 @@ public class VtuberSongsEntity {
     @Column(length = 50)
     private String classification;
 
-    private Long viewCount; // 조회수
+    private Long viewCount;
 
-    private Long lastWeekViewCount; // 저번 주 조회수
+    private Long lastWeekViewCount;
 
-    private Long viewsIncreaseDay;  // 1일 후 조회수 상승량
+    private Long viewsIncreaseDay;
 
-    private Long viewsIncreaseWeek; // 7일 후 조회수 상승량
+    private Long viewsIncreaseWeek;
 
-    private LocalDateTime updateDayTime;   // 1일 업데이트 시간
+    private LocalDateTime updateDayTime;
 
-    private LocalDateTime updateWeekTime;  // 주간 업데이트 시간
+    private LocalDateTime updateWeekTime;
 
     private String status;
 

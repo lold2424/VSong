@@ -38,16 +38,19 @@ public class VtuberService {
                 List<VtuberEntity> vtubers = List.of(vtuber.get());
                 result.put("vtubers", vtubers);
 
-                List<VtuberSongsEntity> songs = vtuberSongsRepository.findAllByVtuberNameOrderByViewCountDesc(vtuber.get().getName());
+                List<VtuberSongsEntity> songs = vtuberSongsRepository.findAllByVtuberNameOrderByPublishedAtDesc(vtuber.get().getName());
                 result.put("songs", songs);
             } else {
                 result.put("vtubers", Collections.emptyList());
                 result.put("songs", Collections.emptyList());
             }
         } else if (query != null && !query.isEmpty()) {
-            List<VtuberSongsEntity> songsByTitle = vtuberSongsRepository.findAllByTitleContainingOrderByViewCountDesc(query);
+            String trimmedQuery = query.trim();
+            String ftQuery = "+" + trimmedQuery + "*";
 
-            List<VtuberEntity> vtubers = vtuberRepository.findAllByNameContaining(query);
+            List<VtuberSongsEntity> songsByTitle = vtuberSongsRepository.findAllByTitleContainingOrderByPublishedAtDesc(ftQuery);
+
+            List<VtuberEntity> vtubers = vtuberRepository.findAllByNameContaining(trimmedQuery);
 
             Set<VtuberSongsEntity> combinedSongs = new LinkedHashSet<>(songsByTitle);
             for (VtuberEntity vtuber : vtubers) {
@@ -56,7 +59,7 @@ public class VtuberService {
             }
 
             List<VtuberSongsEntity> sortedSongs = new ArrayList<>(combinedSongs);
-            sortedSongs.sort(Comparator.comparing(VtuberSongsEntity::getViewCount).reversed());
+            sortedSongs.sort(Comparator.comparing(VtuberSongsEntity::getPublishedAt).reversed());
 
             result.put("songs", sortedSongs);
             result.put("vtubers", vtubers);

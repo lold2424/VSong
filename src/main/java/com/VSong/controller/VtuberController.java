@@ -31,12 +31,16 @@ public class VtuberController {
             @RequestParam(value = "channelId", required = false) String channelId) {
 
         if ((query == null || query.trim().isEmpty()) && (channelId == null || channelId.trim().isEmpty())) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", "REQUIRED_PARAM", "message", "검색어나 채널 ID를 입력해주세요."));
         }
 
         if (query != null && !query.trim().isEmpty()) {
-            if (query.length() > 100) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Query parameter exceeds maximum length of 100 characters."));
+            String trimmedQuery = query.trim();
+            if (trimmedQuery.length() < 2) {
+                return ResponseEntity.badRequest().body(Map.of("error", "QUERY_TOO_SHORT", "message", "검색어는 최소 2자 이상 입력해주세요."));
+            }
+            if (trimmedQuery.length() > 100) {
+                return ResponseEntity.badRequest().body(Map.of("error", "QUERY_TOO_LONG", "message", "검색어는 100자를 초과할 수 없습니다."));
             }
         }
 
