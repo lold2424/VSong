@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://vsong.com/sitemap.xml',
+    sitemap: 'https://www.vsong.site/sitemap.xml',
   };
 }

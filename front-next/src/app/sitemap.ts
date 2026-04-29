@@ -5,7 +5,7 @@ interface Vtuber {
   channelId: string;
 }
 
-const URL = 'https://vsong.com';
+const URL = 'https://www.vsong.site';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [

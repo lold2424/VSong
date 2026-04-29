@@ -57,7 +57,7 @@ public class UpdateVtuberSongsService {
         this.validationService = validationService;
         this.youTubeApiService = youTubeApiService;
         this.mainPageService = mainPageService;
-        this.cacheManager = cacheManager;
+        this.cacheManager = cacheManager; 
         this.songUpdateLogRepository = songUpdateLogRepository;
         this.songViewHistoryRepository = songViewHistoryRepository;
         this.objectMapper = objectMapper;

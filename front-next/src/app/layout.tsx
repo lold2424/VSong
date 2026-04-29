@@ -9,6 +9,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { WebVitalsReporter } from "@/components/WebVitalsReporter";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.vsong.site"),
   title: {
     default: "VSong | 버튜버 음악 아카이브 & 트렌드",
     template: "%s | VSong",
@@ -20,10 +21,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "VSong | 버튜버 음악 아카이브 & 트렌드",
     description: "버튜버 음악의 모든 순간을 기록합니다. 최신곡과 실시간 트렌드 정보를 제공하는 정교한 아카이브.",
-    url: "https://vsong.site",
+    url: "https://www.vsong.site",
     siteName: "VSong",
     locale: "ko_KR",
     type: "website",
+  },
+  alternates: {
+    canonical: "/",
   },
 };
 
