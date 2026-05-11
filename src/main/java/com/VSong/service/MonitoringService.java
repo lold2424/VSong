@@ -23,6 +23,7 @@ public class MonitoringService {
     private final ServerStatusLogRepository statusLogRepository;
     private final SongUpdateLogRepository songUpdateLogRepository;
     private final DailyVisitorRepository dailyVisitorRepository;
+    private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
 
     @org.springframework.beans.factory.annotation.Value("${spring.profiles.active:local}")
     private String activeProfile;
@@ -30,11 +31,13 @@ public class MonitoringService {
     public MonitoringService(HealthEndpoint healthEndpoint,
                              ServerStatusLogRepository statusLogRepository,
                              SongUpdateLogRepository songUpdateLogRepository,
-                             DailyVisitorRepository dailyVisitorRepository) {
+                             DailyVisitorRepository dailyVisitorRepository,
+                             com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository) {
         this.healthEndpoint = healthEndpoint;
         this.statusLogRepository = statusLogRepository;
         this.songUpdateLogRepository = songUpdateLogRepository;
         this.dailyVisitorRepository = dailyVisitorRepository;
+        this.apiQuotaLogRepository = apiQuotaLogRepository;
     }
 
     @Scheduled(fixedRate = 60000)
@@ -79,6 +82,9 @@ public class MonitoringService {
 
             dailyVisitorRepository.deleteOldVisitors(thresholdDate);
             logger.info("[CLEANUP] Deleted daily visitor logs older than 30 days.");
+
+            apiQuotaLogRepository.deleteByRequestTimeBefore(LocalDateTime.now().minusDays(7));
+            logger.info("[CLEANUP] Deleted API quota logs older than 7 days.");
             
             logger.info("[CLEANUP] Data cleanup completed successfully.");
         } catch (Exception e) {

@@ -322,8 +322,7 @@ public class UpdateVtuberSongsService {
         try {
             YouTube.Videos.List videoRequest = youTube.videos().list(List.of("id", "snippet", "contentDetails", "statistics"));
             videoRequest.setId(videoIds);
-            VideoListResponse videoResponse = youTubeApiService.executeRequest(videoRequest);
-
+            VideoListResponse videoResponse = youTubeApiService.executeRequest(videoRequest, "신규 영상 상세 조회 batch (size: " + videoIds.size() + ") - " + channelName);
             if (videoResponse == null || videoResponse.getItems().isEmpty()) return newSongTitles;
 
             for (Video video : videoResponse.getItems()) {
@@ -384,7 +383,7 @@ public class UpdateVtuberSongsService {
                 playlistItemsRequest.setMaxResults(50L);
                 playlistItemsRequest.setPageToken(pageToken);
 
-                PlaylistItemListResponse playlistItemResult = youTubeApiService.executeRequest(playlistItemsRequest);
+                PlaylistItemListResponse playlistItemResult = youTubeApiService.executeRequest(playlistItemsRequest, "채널 전체 재생목록 항목 조회: " + channelName);
                 if (playlistItemResult == null) break;
                 
                 List<String> videoIds = playlistItemResult.getItems().stream()
@@ -401,7 +400,7 @@ public class UpdateVtuberSongsService {
     private String getUploadsPlaylistId(String channelId) throws IOException {
         YouTube.Channels.List channelRequest = youTube.channels().list(List.of("contentDetails"));
         channelRequest.setId(List.of(channelId));
-        ChannelListResponse channelResult = youTubeApiService.executeRequest(channelRequest);
+        ChannelListResponse channelResult = youTubeApiService.executeRequest(channelRequest, "업로드 재생목록 ID 조회: " + channelId);
         if (channelResult.getItems() != null && !channelResult.getItems().isEmpty()) {
             return channelResult.getItems().get(0).getContentDetails().getRelatedPlaylists().getUploads();
         }
@@ -418,7 +417,7 @@ public class UpdateVtuberSongsService {
             playlistItemsRequest.setPlaylistId(uploadsPlaylistId);
             playlistItemsRequest.setMaxResults(10L);
 
-            PlaylistItemListResponse playlistItemResult = youTubeApiService.executeRequest(playlistItemsRequest);
+            PlaylistItemListResponse playlistItemResult = youTubeApiService.executeRequest(playlistItemsRequest, "채널 최근 노래 검색: " + channelName);
             if (playlistItemResult == null) return;
 
             List<String> videoIds = playlistItemResult.getItems().stream()

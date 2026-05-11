@@ -1,5 +1,7 @@
 package com.VSong.service;
 
+import com.VSong.entity.ApiQuotaLog;
+import com.VSong.repository.ApiQuotaLogRepository;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTubeRequest;
 import com.google.common.util.concurrent.RateLimiter;
@@ -22,14 +24,17 @@ public class YouTubeApiService {
     private final List<String> apiKeys;
     private final List<AtomicInteger> apiKeyUsage;
     private final List<Boolean> keyAvailable;
+    private final ApiQuotaLogRepository apiQuotaLogRepository;
     private int currentKeyIndex = 0;
 
     private final RateLimiter rateLimiter = RateLimiter.create(5.0);
 
-    public YouTubeApiService(@Value("${youtube.api.keys}") List<String> apiKeys) {
+    public YouTubeApiService(@Value("${youtube.api.keys}") List<String> apiKeys,
+                             ApiQuotaLogRepository apiQuotaLogRepository) {
         this.apiKeys = new ArrayList<>(apiKeys);
         this.apiKeyUsage = new ArrayList<>();
         this.keyAvailable = new ArrayList<>();
+        this.apiQuotaLogRepository = apiQuotaLogRepository;
         for (String ignored : apiKeys) {
             this.apiKeyUsage.add(new AtomicInteger(0));
             this.keyAvailable.add(true);
@@ -86,17 +91,33 @@ public class YouTubeApiService {
         return statusList;
     }
 
-    @SuppressWarnings("PMD.LooseCoupling")
     public <T> T executeRequest(YouTubeRequest<T> request) throws IOException {
+        return executeRequest(request, null);
+    }
+
+    @SuppressWarnings("PMD.LooseCoupling")
+    public <T> T executeRequest(YouTubeRequest<T> request, String context) throws IOException {
         rateLimiter.acquire();
         int attempts = 0;
 
-        int cost = request.getClass().getSimpleName().contains("Search") ? 100 : 1;
+        String className = request.getClass().getSimpleName();
+        int cost = className.contains("Search") ? 100 : 1;
+        String apiMethod = request.getClass().getEnclosingClass().getSimpleName() + "." + 
+                          className.substring(0, 1).toLowerCase() + className.substring(1);
 
         while (attempts < apiKeys.size()) {
             try {
-                request.setKey(getCurrentApiKey());
+                String currentKey = getCurrentApiKey();
+                request.setKey(currentKey);
                 incrementApiUsage(cost);
+
+                try {
+                    String keyPrefix = currentKey.substring(0, Math.min(currentKey.length(), 10)) + "...";
+                    apiQuotaLogRepository.save(new ApiQuotaLog(keyPrefix, apiMethod, cost, context));
+                } catch (Exception e) {
+                    logger.error("Failed to save ApiQuotaLog", e);
+                }
+
                 return request.execute();
             } catch (GoogleJsonResponseException e) {
                 String reason = (e.getDetails() != null && !e.getDetails().getErrors().isEmpty()) 

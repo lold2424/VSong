@@ -27,6 +27,7 @@ public class AdminMonitoringController {
     private final com.VSong.repository.SongUpdateLogRepository songUpdateLogRepository;
     private final com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository;
     private final com.VSong.repository.AiRecommendationLogRepository aiRecommendationLogRepository;
+    private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
     private final HealthEndpoint healthEndpoint;
     private final java.util.concurrent.ThreadPoolExecutor vtuberSyncExecutor;
 
@@ -37,6 +38,7 @@ public class AdminMonitoringController {
                                      com.VSong.repository.SongUpdateLogRepository songUpdateLogRepository,
                                      com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository,
                                      com.VSong.repository.AiRecommendationLogRepository aiRecommendationLogRepository,
+                                     com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository,
                                      HealthEndpoint healthEndpoint,
                                      java.util.concurrent.ThreadPoolExecutor vtuberSyncExecutor) {
         this.youtubeApiService = youtubeApiService;
@@ -46,6 +48,7 @@ public class AdminMonitoringController {
         this.songUpdateLogRepository = songUpdateLogRepository;
         this.vtuberUpdateLogRepository = vtuberUpdateLogRepository;
         this.aiRecommendationLogRepository = aiRecommendationLogRepository;
+        this.apiQuotaLogRepository = apiQuotaLogRepository;
         this.healthEndpoint = healthEndpoint;
         this.vtuberSyncExecutor = vtuberSyncExecutor;
     }
@@ -55,6 +58,11 @@ public class AdminMonitoringController {
         Map<String, Object> data = new HashMap<>();
 
         data.put("youtubeApi", youtubeApiService.getApiKeysStatus());
+
+        Map<String, Object> quotaStats = new HashMap<>();
+        quotaStats.put("usageByMethod", apiQuotaLogRepository.getUsageStatsByMethod(java.time.LocalDateTime.now().minusDays(7)));
+        quotaStats.put("recentLogs", apiQuotaLogRepository.findTop100ByOrderByRequestTimeDesc());
+        data.put("youtubeQuotaStats", quotaStats);
 
         data.put("songUpdateStats", updateVtuberSongsService.getLastOperationStats());
         data.put("songUpdateHistory", updateVtuberSongsService.getRecentLogs());
