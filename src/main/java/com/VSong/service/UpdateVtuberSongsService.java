@@ -38,7 +38,6 @@ public class UpdateVtuberSongsService {
     private final ObjectMapper objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(UpdateVtuberSongsService.class);
     private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
-    private final Map<String, Object> lastOperationStats = new java.util.concurrent.ConcurrentHashMap<>();
 
     public UpdateVtuberSongsService(
             YouTube youTube,
@@ -64,23 +63,36 @@ public class UpdateVtuberSongsService {
     }
 
     public Map<String, Object> getLastOperationStats() {
-        if (lastOperationStats.isEmpty()) {
-            SongUpdateLog latestLog = songUpdateLogRepository.findLatestLog();
-            if (latestLog != null) {
-                lastOperationStats.put("lastRunTime", latestLog.getRunTime());
-                lastOperationStats.put("durationSeconds", latestLog.getDurationSeconds());
-                lastOperationStats.put("newSongsCount", latestLog.getNewSongsCount());
-                lastOperationStats.put("excludedSongsCount", latestLog.getExcludedSongsCount());
-                lastOperationStats.put("failedSongsCount", latestLog.getFailedSongsCount());
-                try {
-                    lastOperationStats.put("errorSummary", objectMapper.readValue(latestLog.getErrorSummaryJson(), Map.class));
-                    lastOperationStats.put("slowestChannels", objectMapper.readValue(latestLog.getSlowestChannelsJson(), List.class));
-                } catch (Exception e) {
-                    logger.error("Error reading saved stats from DB", e);
+        Map<String, Object> stats = new HashMap<>();
+        SongUpdateLog latestLog = songUpdateLogRepository.findLatestLog();
+        
+        if (latestLog != null) {
+            stats.put("lastRunTime", latestLog.getRunTime());
+            stats.put("durationSeconds", latestLog.getDurationSeconds());
+            stats.put("newSongsCount", latestLog.getNewSongsCount());
+            stats.put("excludedSongsCount", latestLog.getExcludedSongsCount());
+            stats.put("failedSongsCount", latestLog.getFailedSongsCount());
+            try {
+                if (latestLog.getErrorSummaryJson() != null) {
+                    stats.put("errorSummary", objectMapper.readValue(latestLog.getErrorSummaryJson(), Map.class));
                 }
+                if (latestLog.getSlowestChannelsJson() != null) {
+                    stats.put("slowestChannels", objectMapper.readValue(latestLog.getSlowestChannelsJson(), List.class));
+                }
+                if (latestLog.getNewSongsJson() != null) {
+                    stats.put("newSongs", objectMapper.readValue(latestLog.getNewSongsJson(), List.class));
+                }
+                if (latestLog.getExcludedSongsJson() != null) {
+                    stats.put("excludedSongs", objectMapper.readValue(latestLog.getExcludedSongsJson(), List.class));
+                }
+                if (latestLog.getFailedSongsJson() != null) {
+                    stats.put("failedSongs", objectMapper.readValue(latestLog.getFailedSongsJson(), List.class));
+                }
+            } catch (Exception e) {
+                logger.error("Error reading saved stats from DB", e);
             }
         }
-        return lastOperationStats;
+        return stats;
     }
 
     public List<SongUpdateLog> getRecentLogs() {
@@ -136,21 +148,12 @@ public class UpdateVtuberSongsService {
 
         logger.info("=== fetchVtuberSongs 실행 종료 ===");
 
-        lastOperationStats.put("lastRunTime", LocalDateTime.now(SEOUL_ZONE));
-        lastOperationStats.put("durationSeconds", java.time.Duration.between(startTime, LocalDateTime.now(SEOUL_ZONE)).getSeconds());
-        lastOperationStats.put("newSongsCount", allNewSongTitles.size());
-        lastOperationStats.put("excludedSongsCount", allExcludedSongInfo.size());
-        lastOperationStats.put("failedSongsCount", allFailedSongInfo.size());
-        lastOperationStats.put("errorSummary", errorSummary);
-        lastOperationStats.put("newSongs", new ArrayList<>(allNewSongTitles));
-        lastOperationStats.put("excludedSongs", new ArrayList<>(allExcludedSongInfo));
-        lastOperationStats.put("failedSongs", new ArrayList<>(allFailedSongInfo));
-        lastOperationStats.put("slowestChannels", slowestChannels);
+        long durationSeconds = java.time.Duration.between(startTime, LocalDateTime.now(SEOUL_ZONE)).getSeconds();
 
         try {
             SongUpdateLog log = new SongUpdateLog();
             log.setRunTime(LocalDateTime.now(SEOUL_ZONE));
-            log.setDurationSeconds((Long) lastOperationStats.get("durationSeconds"));
+            log.setDurationSeconds(durationSeconds);
             log.setNewSongsCount(allNewSongTitles.size());
             log.setExcludedSongsCount(allExcludedSongInfo.size());
             log.setFailedSongsCount(allFailedSongInfo.size());
@@ -160,6 +163,7 @@ public class UpdateVtuberSongsService {
             log.setExcludedSongsJson(objectMapper.writeValueAsString(allExcludedSongInfo));
             log.setFailedSongsJson(objectMapper.writeValueAsString(allFailedSongInfo));
             songUpdateLogRepository.save(log);
+            logger.info("Song update log saved to DB successfully.");
         } catch (Exception e) {
             logger.error("Failed to save song update log to DB: {}", e.getMessage());
         }

@@ -54,20 +54,17 @@ public class UploadVtuberService {
     private final Counter searchApiCounter;
     private final Counter channelsApiCounter;
 
-    private final java.util.Map<String, Object> lastOperationStats = new java.util.concurrent.ConcurrentHashMap<>();
-
     public java.util.Map<String, Object> getLastOperationStats() {
-        if (lastOperationStats.isEmpty()) {
-            vtuberUpdateLogRepository.findFirstByOrderByRunTimeDesc().ifPresent(log -> {
-                lastOperationStats.put("lastRunTime", log.getRunTime());
-                lastOperationStats.put("durationSeconds", log.getDurationSeconds());
-                lastOperationStats.put("newVtubersCount", log.getNewVtubersCount());
-                lastOperationStats.put("updatedVtubersCount", log.getUpdatedVtubersCount());
-                lastOperationStats.put("deletedVtubersCount", log.getDeletedVtubersCount());
-                lastOperationStats.put("failedVtubersCount", log.getFailedVtubersCount());
-            });
-        }
-        return lastOperationStats;
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+        vtuberUpdateLogRepository.findFirstByOrderByRunTimeDesc().ifPresent(log -> {
+            stats.put("lastRunTime", log.getRunTime());
+            stats.put("durationSeconds", log.getDurationSeconds());
+            stats.put("newVtubersCount", log.getNewVtubersCount());
+            stats.put("updatedVtubersCount", log.getUpdatedVtubersCount());
+            stats.put("deletedVtubersCount", log.getDeletedVtubersCount());
+            stats.put("failedVtubersCount", log.getFailedVtubersCount());
+        });
+        return stats;
     }
 
     public List<com.VSong.entity.VtuberUpdateLog> getRecentLogs() {
@@ -150,13 +147,6 @@ public class UploadVtuberService {
         }
 
         long duration = java.time.Duration.between(startTime, LocalDateTime.now(seoulZone)).getSeconds();
-
-        lastOperationStats.put("lastRunTime", LocalDateTime.now(seoulZone));
-        lastOperationStats.put("durationSeconds", duration);
-        lastOperationStats.put("newVtubersCount", newCount.get());
-        lastOperationStats.put("updatedVtubersCount", 0);
-        lastOperationStats.put("deletedVtubersCount", 0);
-        lastOperationStats.put("failedVtubersCount", failedCount.get());
 
         com.VSong.entity.VtuberUpdateLog log = new com.VSong.entity.VtuberUpdateLog();
         log.setRunTime(LocalDateTime.now(seoulZone));
