@@ -50,7 +50,9 @@ export default function RootLayout({
                 {children}
               </div>
               <div className="flex-[2] bg-[#272822] border-l border-[#66D9EF] p-5 shadow-md overflow-y-auto overflow-x-hidden box-border">
-                <WeeklyChartContainer />
+                <Suspense fallback={<div className="text-white text-xs">Loading Charts...</div>}>
+                  <WeeklyChartContainer />
+                </Suspense>
               </div>
             </div>
             <footer className="bg-[#1e1f1c] text-[#F8F8F2] pt-16 pb-10 px-8 mt-20 border-t border-[#3E3D32]">
