@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "api_quota_logs")
+@Table(name = "api_quota_logs", indexes = {
+    @Index(name = "idx_request_time", columnList = "requestTime")
+})
 public class ApiQuotaLog {
 
     @Id
