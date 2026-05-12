@@ -18,7 +18,6 @@ const SongLogDetailPage = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          // JSON 문자열 필드들을 파싱
           if (data.newSongsJson) data.newSongs = JSON.parse(data.newSongsJson);
           if (data.excludedSongsJson) data.excludedSongs = JSON.parse(data.excludedSongsJson);
           if (data.failedSongsJson) data.failedSongs = JSON.parse(data.failedSongsJson);

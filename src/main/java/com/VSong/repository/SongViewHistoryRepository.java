@@ -11,6 +11,8 @@ import java.util.List;
 public interface SongViewHistoryRepository extends JpaRepository<SongViewHistory, Long> {
     Optional<SongViewHistory> findByVideoIdAndRecordDate(String videoId, LocalDate recordDate);
     
+    List<SongViewHistory> findByVideoIdAndRecordDateAfterOrderByRecordDateAsc(String videoId, LocalDate date);
+
     void deleteByRecordDateBefore(LocalDate date);
 
     List<SongViewHistory> findByRecordDate(LocalDate recordDate);

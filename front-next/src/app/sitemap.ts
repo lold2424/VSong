@@ -30,7 +30,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    // The API_KEY can be a comma-separated list. Take the first key.
     const apiKey = process.env.API_KEY ? process.env.API_KEY.split(',')[0] : '';
 
     const response = await axios.get<Vtuber[]>(

@@ -18,7 +18,6 @@ const VtuberLogDetailPage = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          // JSON 문자열 필드 파싱
           if (data.logDetailsJson) data.details = JSON.parse(data.logDetailsJson);
           setLog(data);
         } else {

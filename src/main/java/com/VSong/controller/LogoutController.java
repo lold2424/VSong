@@ -12,7 +12,6 @@ public class LogoutController {
 
     @GetMapping("/api/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        // 세션 무효화
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();

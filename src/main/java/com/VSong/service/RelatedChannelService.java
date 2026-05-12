@@ -176,7 +176,6 @@ public class RelatedChannelService {
                 String channelId = channel.getId();
                 String channelTitle = channel.getSnippet().getTitle();
 
-                // Validation using VtuberValidationService
                 String notProcessableReason = validationService.getChannelProcessableReason(channelId);
                 if (notProcessableReason != null) {
                     if (logger.isInfoEnabled()) {
@@ -244,7 +243,6 @@ public class RelatedChannelService {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--remote-allow-origins=*", "--mute-audio");
-        // ... (other options can be kept for performance)
         return new ChromeDriver(options);
     }
 

@@ -7,12 +7,11 @@ const LoginSuccessContent = () => {
     const router = useRouter();
 
     useEffect(() => {
-        // 2초 후에 메인 페이지로 리디렉션
         const timer = setTimeout(() => {
             router.push('/');
         }, 2000);
 
-        return () => clearTimeout(timer); // 컴포넌트 언마운트 시 타이머 제거
+        return () => clearTimeout(timer);
     }, [router]);
 
     return (

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import VideoModal from "./VideoModal"; // 모달 컴포넌트 임포트
+import VideoModal from "./VideoModal";
 import Image from "next/image";
 
 interface VideoCardProps {
@@ -20,7 +20,7 @@ interface VideoCardProps {
 const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false); // 모달 상태 추가
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const enterTimeoutRef = useRef<number | null>(null);
   const leaveTimeoutRef = useRef<number | null>(null);
   const thumbnailUrl = `https://img.youtube.com/vi/${song.videoId}/0.jpg`;
@@ -36,17 +36,17 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
   };
 
   const handleCardClick = () => {
-    setIsModalOpen(true); // 카드 클릭 시 모달 열기
+    setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setIsModalOpen(false); // 모달 닫기
+    setIsModalOpen(false);
   };
 
   const handleVtuberNameClick = (
     event: React.MouseEvent<HTMLParagraphElement>
   ) => {
-    event.stopPropagation(); // 카드 클릭 이벤트 방지
+    event.stopPropagation();
     router.push(`/search?query=${encodeURIComponent(song.vtuberName)}`);
   };
 
@@ -56,7 +56,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
         className="group bg-[#222831] border border-[#393E46] rounded-lg overflow-hidden text-center cursor-pointer relative h-64 transition-transform duration-200 flex justify-center items-center hover:scale-105"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={handleCardClick} // 카드 클릭 시 모달 열기
+        onClick={handleCardClick}
       >
         {!hovered ? (
           <div className="absolute inset-0 w-full h-full flex flex-col justify-center items-center bg-[#393E46] transition-opacity duration-300 text-[#EEEEEE] group-hover:opacity-0">
@@ -75,7 +75,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
             <h3 className="cursor-pointer font-bold text-lg mb-1">{song.title}</h3>
             <p
               className="text-blue-600 cursor-pointer hover:underline"
-              onClick={handleVtuberNameClick} // 채널명 클릭 이벤트
+              onClick={handleVtuberNameClick}
             >
               채널명: {song.vtuberName}
             </p>
@@ -85,7 +85,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
         )}
       </div>
       {isModalOpen && (
-        <VideoModal videoId={song.videoId} onClose={handleCloseModal} /> // 모달 열기
+        <VideoModal videoId={song.videoId} onClose={handleCloseModal} />
       )}
     </>
   );

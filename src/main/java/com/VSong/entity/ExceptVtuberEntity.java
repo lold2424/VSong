@@ -10,7 +10,6 @@ public class ExceptVtuberEntity {
     @Id
     private String channelId;
 
-    // Getter and Setter
     public String getChannelId() {
         return channelId;
     }

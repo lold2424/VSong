@@ -33,7 +33,7 @@ const WeeklyStats = () => {
                 const last7Days = Array.from({ length: 7 }, (_, i) => {
                     const d = new Date();
                     const kstDate = new Date(d.getTime() + (9 * 60 * 60 * 1000));
-                    kstDate.getUTCDate(); // Side effect to ensure object state
+                    kstDate.getUTCDate();
                     
                     const targetDate = new Date(kstDate);
                     targetDate.setUTCDate(targetDate.getUTCDate() - (6 - i));

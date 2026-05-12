@@ -48,9 +48,6 @@ public class VtuberSongsEntity {
 
     private String status;
 
-
-    // Getters and Setters
-
     public Long getId() {
         return id;
     }

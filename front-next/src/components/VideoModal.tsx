@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {getUserPlaylists, addSongToPlaylist, createPlaylist} from '@/utils/apiClient';
+import SongViewChart from './SongViewChart';
 
 interface VideoModalProps {
     videoId: string;
@@ -15,6 +16,7 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
     const [isCreating, setIsCreating] = useState(false);
+    const [showChart, setShowChart] = useState(false);
 
     const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
@@ -111,6 +113,33 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                         ></iframe>
                     </div>
 
+                    <div className="flex flex-col gap-2">
+                        {!showChart ? (
+                            <button 
+                                onClick={() => setShowChart(true)}
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3E3D32] text-[#A6E22E] font-bold rounded-lg border border-[#A6E22E] hover:bg-[#4E4D42] transition-colors w-full"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                이 곡의 최근 조회수 추이 보기
+                            </button>
+                        ) : (
+                            <div className="relative">
+                                <button 
+                                    onClick={() => setShowChart(false)}
+                                    className="absolute top-6 right-6 text-gray-500 hover:text-white z-10 p-1"
+                                    title="차트 닫기"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                                <SongViewChart videoId={videoId} />
+                            </div>
+                        )}
+                    </div>
+
                     {isLoggedIn && (
                         <div className="relative self-end">
                             <button 
@@ -147,7 +176,6 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                                         )}
                                     </div>
                                     
-                                    {/* 새 재생목록 만들기 섹션 */}
                                     <div className="p-3 bg-[#1e1f1c] border-t border-[#3E3D32]">
                                         <div className="flex flex-col gap-2">
                                             <input 

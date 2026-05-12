@@ -83,7 +83,9 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
             <p>차트가 없습니다.</p>
           )}
         </ul>
-        <div className="mt-2.5 text-xs text-[#F8F8F2] opacity-80">기준: {chartType === "weekly" ? "매주 월요일 00시" : "매일 00시"}</div>
+        <div className="mt-2.5 text-[10px] text-[#F8F8F2] opacity-60 italic text-right">
+          갱신: 매일 00:01 (KST) | {chartType === "weekly" ? "최근 7일 상승량" : "어제 대비 상승량"}
+        </div>
 
         {selectedVideoId && (
           <VideoModal videoId={selectedVideoId} onClose={handleCloseModal} />

@@ -72,6 +72,7 @@ const HeaderContent: React.FC = () => {
   const searchParams = useSearchParams();
   const genderFilter = searchParams.get("gender") || "all";
   const { isLoggedIn, user, isLoading, login, logout, checkSession } = useAuth();
+  const pathname = usePathname();
 
   if (isLoading) {
     return <header className="flex justify-between items-center px-5 py-2.5 bg-[#272822] text-[#F8F8F2] shadow-md h-[76px]"></header>;
@@ -122,29 +123,33 @@ const HeaderContent: React.FC = () => {
       
       <SearchBarContent />
 
-      <div className="flex gap-2.5">
-        <Link href="/?gender=male" passHref>
-          <button
-            className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "male" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
-          >
-            남성
-          </button>
-        </Link>
-        <Link href="/?gender=female" passHref>
-          <button
-            className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "female" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
-          >
-            여성
-          </button>
-        </Link>
-        <Link href="/" passHref>
-          <button
-            className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "all" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
-          >
-            전체
-          </button>
-        </Link>
-      </div>
+      {pathname === "/" ? (
+        <div className="flex gap-2.5">
+          <Link href="/?gender=male" passHref>
+            <button
+              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "male" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
+            >
+              남성
+            </button>
+          </Link>
+          <Link href="/?gender=female" passHref>
+            <button
+              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "female" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
+            >
+              여성
+            </button>
+          </Link>
+          <Link href="/" passHref>
+            <button
+              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "all" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
+            >
+              전체
+            </button>
+          </Link>
+        </div>
+      ) : (
+        <div className="w-[214px]"></div>
+      )}
     </header>
   );
 };

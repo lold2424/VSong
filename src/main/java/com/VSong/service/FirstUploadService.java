@@ -103,9 +103,7 @@ public class FirstUploadService {
         }
     }
 
-    @SuppressWarnings("PMD.LooseCoupling")
     private boolean processVideo(Video video, VtuberEntity vtuber) {
-        // 통합된 검증 로직 사용
         if (!validationService.isSongRelated(video)) {
             return false;
         }

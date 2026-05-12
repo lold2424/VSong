@@ -4,10 +4,10 @@ import com.VSong.entity.VtuberSongsEntity;
 import java.util.List;
 
 public class MainPageResponse {
-    private List<VtuberSongsEntity> randomSongs; // 랜덤 노래
-    private List<VtuberSongsEntity> top10WeeklySongs; // 주간 인기 영상
-    private List<VtuberSongsEntity> top10DailySongs; // 일간 인기 영상
-    private List<VtuberSongsEntity> top10RecentSongs; // 최신 영상
+    private List<VtuberSongsEntity> randomSongs;
+    private List<VtuberSongsEntity> top10WeeklySongs;
+    private List<VtuberSongsEntity> top10DailySongs;
+    private List<VtuberSongsEntity> top10RecentSongs;
 
     public MainPageResponse(List<VtuberSongsEntity> randomSongs, 
                             List<VtuberSongsEntity> top10WeeklySongs, 

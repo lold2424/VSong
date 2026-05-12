@@ -27,14 +27,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // 세션 만료 모달 상태
+
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchUserInfo = useCallback(async () => {
     console.log("[AuthContext] fetchUserInfo 호출됨...");
     try {
-      // apiClient를 사용하는 fetchUserInfoApi 호출 (인터셉터 작동)
       const data = await fetchUserInfoApi();
       console.log("[AuthContext] 유저 정보 로드 성공:", data?.email);
       if (data && data.name) {
@@ -43,17 +41,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       console.log("[AuthContext] 유저 정보 로드 중 오류 (비로그인 또는 세션 만료):", error.response?.status);
-      // 401 오류는 인터셉터에서 모달을 띄우므로 여기서는 상태만 초기화
       setUser(null);
       setIsLoggedIn(false);
     } finally {
       setIsLoading(false);
     }
-  }, [isLoggedIn]); // isLoggedIn 상태를 의존성에 추가하여 인터셉터 내부의 클로저 이슈 방지
+  }, [isLoggedIn]);
 
   useEffect(() => {
     console.log("[AuthContext] 전역 인터셉터 설정됨 (isLoggedIn:", isLoggedIn, ")");
-    // 모든 API 요청을 감시하는 전역 인터셉터
     const interceptor = apiClient.interceptors.response.use(
       response => response,
       error => {
@@ -62,14 +58,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (status === 401) {
           console.log("[AuthContext] 401 Unauthorized 감지됨!");
-          // 이미 로그인된 상태(isLoggedIn === true)였는데 401 에러가 났다면 세션 만료임
           if (isLoggedIn) {
             console.log("[AuthContext] 세션 만료 모달 활성화 시도...");
             setIsModalOpen(true);
           } else {
             console.log("[AuthContext] 로그인되지 않은 상태에서의 401이므로 모달을 띄우지 않음.");
           }
-          // 상태 초기화
           setIsLoggedIn(false);
           setUser(null);
         }
@@ -86,7 +80,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     fetchUserInfo();
 
-    // 사용자가 탭을 다시 활성화했을 때만 세션 유효성 체크 (리소스 절약)
     const handleVisibilityChange = () => {
       console.log("[AuthContext] Visibility 변경 감지:", document.visibilityState);
       if (document.visibilityState === 'visible' && isLoggedIn) {

@@ -39,3 +39,8 @@ export const logoutApi = async () => {
     const response = await apiClient.post('/logout');
     return response.data;
 };
+
+export const getSongHistory = async (videoId: string) => {
+    const response = await apiClient.get(`/v1/songs/${videoId}/history`);
+    return response.data;
+};

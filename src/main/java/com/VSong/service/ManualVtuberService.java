@@ -43,11 +43,9 @@ public class ManualVtuberService {
             logger.info("수동 버튜버 채널 추가 요청: {}", channelId);
         }
 
-        // 1. 이미 DB에 존재하는지 확인
         if (vtuberRepository.existsByChannelId(channelId)) {
             return "이미 존재하는 버튜버 채널입니다: " + channelId;
         }
-        // 2. 제외 목록에 있는지 확인
         if (exceptVtuberRepository.existsById(channelId)) {
             return "제외 목록에 있는 채널입니다: " + channelId;
         }
@@ -68,12 +66,6 @@ public class ManualVtuberService {
 
         String channelTitle = youtubeChannel.getSnippet().getTitle();
 
-        // 3. VtuberValidationService를 통한 유효성 검사
-
-
-
-
-        // 4. DB에 저장
         try {
             saveNewVtuber(youtubeChannel);
             if (logger.isInfoEnabled()) {
@@ -88,7 +80,6 @@ public class ManualVtuberService {
         }
     }
 
-    @SuppressWarnings("PMD.LooseCoupling")
     private Channel fetchChannelDetails(String channelId) throws IOException {
         YouTube.Channels.List channelRequest = youTube.channels().list(List.of("snippet", "statistics"));
         channelRequest.setId(List.of(channelId));
@@ -103,7 +94,6 @@ public class ManualVtuberService {
         return channels.get(0);
     }
 
-    @SuppressWarnings("PMD.LooseCoupling")
     private void saveNewVtuber(Channel channel) {
         VtuberEntity vtuber = new VtuberEntity();
         vtuber.setChannelId(channel.getId());

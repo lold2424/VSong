@@ -23,7 +23,7 @@ public class VtuberEntity {
     private String gender;
             @Column(length = 10)
             private String status;
-    // Getter와 Setter
+
     public Long getId() {
         return id;
     }

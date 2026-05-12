@@ -24,7 +24,7 @@ public class ApiQuotaLog {
     private Integer cost;
 
     @Column(columnDefinition = "TEXT")
-    private String context; // 관련 채널명이나 영상 ID 등 부가 정보
+    private String context;
 
     public ApiQuotaLog() {
     }

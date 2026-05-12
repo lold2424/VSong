@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import WeeklyChart from "./WeeklyChart";
+import { useSearchParams } from "next/navigation";
 
 interface MainApiResponse {
   top10WeeklySongs: any[];
@@ -10,6 +11,9 @@ interface MainApiResponse {
 }
 
 const WeeklyChartContainer: React.FC = () => {
+  const searchParams = useSearchParams();
+  const gender = searchParams.get("gender") || "all";
+  
   const [chartData, setChartData] = useState<MainApiResponse>({
     top10WeeklySongs: [],
     top10DailySongs: [],
@@ -17,7 +21,12 @@ const WeeklyChartContainer: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get<MainApiResponse>(`/api/home?t=${new Date().getTime()}`)
+      .get<MainApiResponse>(`/api/home`, {
+        params: { 
+          gender,
+          t: new Date().getTime() 
+        }
+      })
       .then((response) => {
         setChartData({
           top10WeeklySongs: response.data.top10WeeklySongs || [],
@@ -27,7 +36,7 @@ const WeeklyChartContainer: React.FC = () => {
       .catch((error) => {
         console.error("차트 데이터를 가져오는 중 오류 발생:", error);
       });
-  }, []);
+  }, [gender]);
 
   return (
     <WeeklyChart
