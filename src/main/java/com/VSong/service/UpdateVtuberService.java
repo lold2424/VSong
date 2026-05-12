@@ -28,6 +28,7 @@ public class UpdateVtuberService {
     private final VtuberService vtuberService;
     private final YouTubeApiService youTubeApiService;
     private final com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository;
+    private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
     private static final Logger logger = LoggerFactory.getLogger(UpdateVtuberService.class);
 
     public UpdateVtuberService(YouTube youTube,
@@ -35,13 +36,15 @@ public class UpdateVtuberService {
                                ExceptVtuberRepository exceptVtuberRepository,
                                VtuberService vtuberService,
                                YouTubeApiService youTubeApiService,
-                               com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository) {
+                               com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository,
+                               com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.vtuberService = vtuberService;
         this.youTubeApiService = youTubeApiService;
         this.vtuberUpdateLogRepository = vtuberUpdateLogRepository;
+        this.apiQuotaLogRepository = apiQuotaLogRepository;
     }
 
     public void syncVtuberData(ThreadPoolExecutor executor) {
@@ -99,13 +102,17 @@ public class UpdateVtuberService {
         }
 
         long duration = java.time.Duration.between(startTime, java.time.LocalDateTime.now()).getSeconds();
+        Integer usedQuota = apiQuotaLogRepository.sumCostByRequestTimeBetween(startTime, java.time.LocalDateTime.now());
+        if (usedQuota == null) usedQuota = 0;
+
         com.VSong.entity.VtuberUpdateLog log = new com.VSong.entity.VtuberUpdateLog();
-        log.setRunTime(java.time.LocalDateTime.now());
+        log.setRunTime(startTime);
         log.setDurationSeconds(duration);
         log.setNewVtubersCount(0);
         log.setUpdatedVtubersCount(updatedCount.get());
         log.setDeletedVtubersCount(deletedCount);
         log.setFailedVtubersCount(failedCount.get());
+        log.setUsedQuota(usedQuota);
         log.setLogSummary("VTuber data synchronization run completed.");
         vtuberUpdateLogRepository.save(log);
 

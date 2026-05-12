@@ -32,6 +32,7 @@ public class UploadVtuberService {
     private final VtuberValidationService validationService;
     private final YouTubeApiService youTubeApiService;
     private final com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository;
+    private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
 
     private final List<String> queries = Arrays.asList(
             "버튜버", "Vtuber", "버츄얼 유튜버", "버츄버",
@@ -63,6 +64,7 @@ public class UploadVtuberService {
             stats.put("updatedVtubersCount", log.getUpdatedVtubersCount());
             stats.put("deletedVtubersCount", log.getDeletedVtubersCount());
             stats.put("failedVtubersCount", log.getFailedVtubersCount());
+            stats.put("usedQuota", log.getUsedQuota());
         });
         return stats;
     }
@@ -76,12 +78,14 @@ public class UploadVtuberService {
                                VtuberValidationService validationService,
                                YouTubeApiService youTubeApiService,
                                MeterRegistry meterRegistry,
-                               com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository) {
+                               com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository,
+                               com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
         this.validationService = validationService;
         this.youTubeApiService = youTubeApiService;
         this.vtuberUpdateLogRepository = vtuberUpdateLogRepository;
+        this.apiQuotaLogRepository = apiQuotaLogRepository;
         this.searchApiCounter = meterRegistry.counter("youtube.api.search");
         this.channelsApiCounter = meterRegistry.counter("youtube.api.channels");
     }
@@ -147,14 +151,17 @@ public class UploadVtuberService {
         }
 
         long duration = java.time.Duration.between(startTime, LocalDateTime.now(seoulZone)).getSeconds();
+        Integer usedQuota = apiQuotaLogRepository.sumCostByRequestTimeBetween(startTime, LocalDateTime.now(seoulZone));
+        if (usedQuota == null) usedQuota = 0;
 
         com.VSong.entity.VtuberUpdateLog log = new com.VSong.entity.VtuberUpdateLog();
-        log.setRunTime(LocalDateTime.now(seoulZone));
+        log.setRunTime(startTime);
         log.setDurationSeconds(duration);
         log.setNewVtubersCount(newCount.get());
         log.setUpdatedVtubersCount(0);
         log.setDeletedVtubersCount(0);
         log.setFailedVtubersCount(failedCount.get());
+        log.setUsedQuota(usedQuota);
         log.setLogSummary("New VTuber discovery run completed.");
         vtuberUpdateLogRepository.save(log);
 

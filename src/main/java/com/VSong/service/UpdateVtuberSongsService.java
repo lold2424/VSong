@@ -35,6 +35,7 @@ public class UpdateVtuberSongsService {
     private final CacheManager cacheManager;
     private final SongUpdateLogRepository songUpdateLogRepository;
     private final SongViewHistoryRepository songViewHistoryRepository;
+    private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
     private final ObjectMapper objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(UpdateVtuberSongsService.class);
     private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
@@ -49,6 +50,7 @@ public class UpdateVtuberSongsService {
             CacheManager cacheManager,
             SongUpdateLogRepository songUpdateLogRepository,
             SongViewHistoryRepository songViewHistoryRepository,
+            com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository,
             ObjectMapper objectMapper) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
@@ -59,6 +61,7 @@ public class UpdateVtuberSongsService {
         this.cacheManager = cacheManager; 
         this.songUpdateLogRepository = songUpdateLogRepository;
         this.songViewHistoryRepository = songViewHistoryRepository;
+        this.apiQuotaLogRepository = apiQuotaLogRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -72,6 +75,7 @@ public class UpdateVtuberSongsService {
             stats.put("newSongsCount", latestLog.getNewSongsCount());
             stats.put("excludedSongsCount", latestLog.getExcludedSongsCount());
             stats.put("failedSongsCount", latestLog.getFailedSongsCount());
+            stats.put("usedQuota", latestLog.getUsedQuota());
             try {
                 if (latestLog.getErrorSummaryJson() != null) {
                     stats.put("errorSummary", objectMapper.readValue(latestLog.getErrorSummaryJson(), Map.class));
@@ -148,15 +152,19 @@ public class UpdateVtuberSongsService {
 
         logger.info("=== fetchVtuberSongs 실행 종료 ===");
 
-        long durationSeconds = java.time.Duration.between(startTime, LocalDateTime.now(SEOUL_ZONE)).getSeconds();
+        LocalDateTime endTime = LocalDateTime.now(SEOUL_ZONE);
+        long durationSeconds = java.time.Duration.between(startTime, endTime).getSeconds();
+        Integer usedQuota = apiQuotaLogRepository.sumCostByRequestTimeBetween(startTime, endTime);
+        if (usedQuota == null) usedQuota = 0;
 
         try {
             SongUpdateLog log = new SongUpdateLog();
-            log.setRunTime(LocalDateTime.now(SEOUL_ZONE));
+            log.setRunTime(startTime);
             log.setDurationSeconds(durationSeconds);
             log.setNewSongsCount(allNewSongTitles.size());
             log.setExcludedSongsCount(allExcludedSongInfo.size());
             log.setFailedSongsCount(allFailedSongInfo.size());
+            log.setUsedQuota(usedQuota);
             log.setErrorSummaryJson(objectMapper.writeValueAsString(errorSummary));
             log.setSlowestChannelsJson(objectMapper.writeValueAsString(slowestChannels));
             log.setNewSongsJson(objectMapper.writeValueAsString(allNewSongTitles));

@@ -16,6 +16,7 @@ public class VtuberUpdateLog {
     private Integer updatedVtubersCount;
     private Integer deletedVtubersCount;
     private Integer failedVtubersCount;
+    private Integer usedQuota;
 
     @Column(columnDefinition = "TEXT")
     private String logSummary;
@@ -45,6 +46,9 @@ public class VtuberUpdateLog {
 
     public Integer getFailedVtubersCount() { return failedVtubersCount; }
     public void setFailedVtubersCount(Integer failedVtubersCount) { this.failedVtubersCount = failedVtubersCount; }
+
+    public Integer getUsedQuota() { return usedQuota; }
+    public void setUsedQuota(Integer usedQuota) { this.usedQuota = usedQuota; }
 
     public String getLogSummary() { return logSummary; }
     public void setLogSummary(String logSummary) { this.logSummary = logSummary; }

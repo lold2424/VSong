@@ -46,7 +46,7 @@ const VtuberLogDetailPage = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <div className="bg-gray-900 p-4 rounded-md">
           <p className="text-xs text-gray-400 uppercase">실행 시간</p>
           <p className="font-mono text-sm">{new Date(log.runTime).toLocaleString()}</p>
@@ -54,6 +54,10 @@ const VtuberLogDetailPage = () => {
         <div className="bg-gray-900 p-4 rounded-md">
           <p className="text-xs text-gray-400 uppercase">소요 시간</p>
           <p className="text-xl font-bold">{log.durationSeconds}s</p>
+        </div>
+        <div className="bg-gray-900 p-4 rounded-md">
+          <p className="text-xs text-gray-400 uppercase">소모 할당량</p>
+          <p className="text-xl font-bold text-yellow-500">{log.usedQuota?.toLocaleString() ?? 0}</p>
         </div>
         <div className="bg-gray-900 p-4 rounded-md">
           <p className="text-xs text-gray-400 uppercase">신규 / 갱신 / 삭제</p>

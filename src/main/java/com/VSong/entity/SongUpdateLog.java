@@ -15,6 +15,7 @@ public class SongUpdateLog {
     private Integer newSongsCount;
     private Integer excludedSongsCount;
     private Integer failedSongsCount;
+    private Integer usedQuota;
 
     @Column(columnDefinition = "LONGTEXT")
     private String errorSummaryJson;
@@ -50,6 +51,9 @@ public class SongUpdateLog {
 
     public Integer getFailedSongsCount() { return failedSongsCount; }
     public void setFailedSongsCount(Integer failedSongsCount) { this.failedSongsCount = failedSongsCount; }
+
+    public Integer getUsedQuota() { return usedQuota; }
+    public void setUsedQuota(Integer usedQuota) { this.usedQuota = usedQuota; }
 
     public String getErrorSummaryJson() { return errorSummaryJson; }
     public void setErrorSummaryJson(String errorSummaryJson) { this.errorSummaryJson = errorSummaryJson; }
