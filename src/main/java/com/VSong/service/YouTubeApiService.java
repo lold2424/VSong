@@ -64,7 +64,7 @@ public class YouTubeApiService {
                 logger.info("API Key index {} ({}) usage: {}", i, prefix, currentUsage);
             }
         }
-        
+
         for (int i = 0; i < keyAvailable.size(); i++) {
             if (keyAvailable.get(i)) {
                 currentKeyIndex = i;

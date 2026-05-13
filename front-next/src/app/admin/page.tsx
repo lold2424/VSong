@@ -267,6 +267,42 @@ const AdminPage = () => {
                 </div>
               </div>
 
+              <div className="bg-gray-900 p-4 rounded-md">
+                <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase text-yellow-400">최근 조회수 업데이트 요약</h3>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">실행 시간:</span>
+                    <span className="text-[10px]">{monitoringData.viewUpdateStats.lastRunTime ? new Date(monitoringData.viewUpdateStats.lastRunTime).toLocaleString() : '기록 없음'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">업데이트:</span>
+                    <span className="text-yellow-400 font-bold">{monitoringData.viewUpdateStats.updatedCount || 0}개</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">전체 노래:</span>
+                    <span className="text-gray-300 font-bold">{monitoringData.viewUpdateStats.totalSongsCount || 0}개</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-900 p-4 rounded-md">
+                <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase text-yellow-400">최근 조회수 업데이트 요약</h3>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">실행 시간:</span>
+                    <span className="text-[10px]">{monitoringData.viewUpdateStats.lastRunTime ? new Date(monitoringData.viewUpdateStats.lastRunTime).toLocaleString() : '기록 없음'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">업데이트:</span>
+                    <span className="text-yellow-400 font-bold">{monitoringData.viewUpdateStats.updatedCount || 0}개</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">전체 노래:</span>
+                    <span className="text-gray-300 font-bold">{monitoringData.viewUpdateStats.totalSongsCount || 0}개</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-gray-900 p-4 rounded-md border-l-2 border-indigo-500">
                 <h3 className="text-xs font-bold text-indigo-400 mb-2 uppercase">AI 추천 통계</h3>
                 <div className="space-y-1">
@@ -337,6 +373,37 @@ const AdminPage = () => {
                           <td className="py-2 text-gray-500 max-w-[200px] truncate" title={log.success ? log.resultKeywords : log.errorMessage}>
                             {log.success ? log.resultKeywords : log.errorMessage}
                           </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+
+              <details className="text-xs bg-gray-900 rounded-md p-3 border border-gray-800">
+                <summary className="cursor-pointer text-gray-300 hover:text-white transition font-bold flex justify-between items-center">
+                  <span>과거 조회수 업데이트 상세 이력 (최근 10건)</span>
+                  <span className="text-[10px] bg-gray-800 px-2 py-0.5 rounded">클릭하여 펼치기</span>
+                </summary>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full text-[10px] text-left">
+                    <thead>
+                      <tr className="text-gray-500 border-b border-gray-800">
+                        <th className="pb-2">실행 시간</th>
+                        <th className="pb-2 text-right">소요</th>
+                        <th className="pb-2 text-right text-yellow-400">성공</th>
+                        <th className="pb-2 text-right text-orange-400">삭제</th>
+                        <th className="pb-2 text-right text-red-500">실패</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monitoringData.viewUpdateHistory?.map((log: any) => (
+                        <tr key={log.id} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/50 transition">
+                          <td className="py-2 text-gray-400">{new Date(log.runTime).toLocaleString()}</td>
+                          <td className="py-2 text-right text-gray-500">{log.durationSeconds}s</td>
+                          <td className="py-2 text-right font-bold text-yellow-400">{log.updatedCount}</td>
+                          <td className="py-2 text-right text-orange-400">{log.deletedCount}</td>
+                          <td className="py-2 text-right text-red-400">{log.failedCount}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -468,7 +535,8 @@ const AdminPage = () => {
                     <div key={idx} className="bg-gray-800 p-2 rounded border-l-2 border-red-500 flex justify-between items-center">
                       <div>
                         <p className="text-xs font-bold truncate max-w-[120px]">{item.name}</p>
-                        <p className="text-[10px] text-gray-500">{item.type}</p>
+                        <p className="text-[9px] text-gray-500">{item.type} {item.addedCount > 0 && `(+${item.addedCount}곡)`}</p>
+                        {item.reason && <p className="text-[9px] text-red-400/80 mt-0.5">{item.reason}</p>}
                       </div>
                       <span className="text-xs font-mono text-red-300">{(item.durationMs / 1000).toFixed(1)}s</span>
                     </div>

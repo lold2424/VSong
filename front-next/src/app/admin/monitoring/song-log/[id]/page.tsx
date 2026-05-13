@@ -138,7 +138,8 @@ const SongLogDetailPage = () => {
                   <div key={idx} className="bg-gray-800 p-3 rounded border-l-2 border-red-500 flex justify-between items-center">
                     <div>
                       <p className="text-xs font-bold truncate max-w-[150px]">{item.name}</p>
-                      <p className="text-[10px] text-gray-500">{item.type}</p>
+                      <p className="text-[10px] text-gray-500">{item.type} {item.addedCount > 0 && `(+${item.addedCount}곡)`}</p>
+                      {item.reason && <p className="text-[10px] text-red-400 mt-1">{item.reason}</p>}
                     </div>
                     <span className="text-xs font-mono text-red-300">{(item.durationMs / 1000).toFixed(1)}s</span>
                   </div>

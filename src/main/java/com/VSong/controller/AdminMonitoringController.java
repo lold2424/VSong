@@ -67,6 +67,9 @@ public class AdminMonitoringController {
         data.put("songUpdateStats", updateVtuberSongsService.getLastOperationStats());
         data.put("songUpdateHistory", updateVtuberSongsService.getRecentLogs());
 
+        data.put("viewUpdateStats", updateVtuberSongsService.getLastViewUpdateStats());
+        data.put("viewUpdateHistory", updateVtuberSongsService.getRecentViewUpdateLogs());
+
         data.put("vtuberUpdateStats", uploadVtuberService.getLastOperationStats());
         data.put("vtuberUpdateHistory", uploadVtuberService.getRecentLogs());
 

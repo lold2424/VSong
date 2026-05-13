@@ -3,9 +3,11 @@ package com.VSong.service;
 import com.VSong.entity.VtuberEntity;
 import com.VSong.entity.VtuberSongsEntity;
 import com.VSong.entity.SongViewHistory;
+import com.VSong.entity.ViewUpdateLog;
 import com.VSong.repository.VtuberRepository;
 import com.VSong.repository.VtuberSongsRepository;
 import com.VSong.repository.SongViewHistoryRepository;
+import com.VSong.repository.ViewUpdateLogRepository;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
 import org.slf4j.Logger;
@@ -34,6 +36,7 @@ public class UpdateVtuberSongsService {
     private final MainPageService mainPageService;
     private final CacheManager cacheManager;
     private final SongUpdateLogRepository songUpdateLogRepository;
+    private final ViewUpdateLogRepository viewUpdateLogRepository;
     private final SongViewHistoryRepository songViewHistoryRepository;
     private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
     private final ObjectMapper objectMapper;
@@ -47,8 +50,9 @@ public class UpdateVtuberSongsService {
             VtuberValidationService validationService,
             YouTubeApiService youTubeApiService,
             MainPageService mainPageService,
-            CacheManager cacheManager,
+            CacheManager cacheManager, 
             SongUpdateLogRepository songUpdateLogRepository,
+            ViewUpdateLogRepository viewUpdateLogRepository,
             SongViewHistoryRepository songViewHistoryRepository,
             com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository,
             ObjectMapper objectMapper) {
@@ -60,9 +64,29 @@ public class UpdateVtuberSongsService {
         this.mainPageService = mainPageService;
         this.cacheManager = cacheManager; 
         this.songUpdateLogRepository = songUpdateLogRepository;
+        this.viewUpdateLogRepository = viewUpdateLogRepository;
         this.songViewHistoryRepository = songViewHistoryRepository;
         this.apiQuotaLogRepository = apiQuotaLogRepository;
         this.objectMapper = objectMapper;
+    }
+
+    public Map<String, Object> getLastViewUpdateStats() {
+        Map<String, Object> stats = new HashMap<>();
+        ViewUpdateLog latestLog = viewUpdateLogRepository.findLatestLog();
+        if (latestLog != null) {
+            stats.put("lastRunTime", latestLog.getRunTime());
+            stats.put("durationSeconds", latestLog.getDurationSeconds());
+            stats.put("totalSongsCount", latestLog.getTotalSongsCount());
+            stats.put("updatedCount", latestLog.getUpdatedCount());
+            stats.put("deletedCount", latestLog.getDeletedCount());
+            stats.put("failedCount", latestLog.getFailedCount());
+            stats.put("usedQuota", latestLog.getUsedQuota());
+        }
+        return stats;
+    }
+
+    public List<ViewUpdateLog> getRecentViewUpdateLogs() {
+        return viewUpdateLogRepository.findRecentLogs();
     }
 
     public Map<String, Object> getLastOperationStats() {
@@ -116,36 +140,58 @@ public class UpdateVtuberSongsService {
         List<VtuberEntity> existingVtubers = vtuberRepository.findByStatus("existing");
 
         for (VtuberEntity vtuber : newVtubers) {
+            logger.info("[수집 시작] 신규 채널: {}", vtuber.getName());
             long channelStartTime = System.currentTimeMillis();
+            int beforeSize = allNewSongTitles.size();
             fetchAllSongsFromPlaylist(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo, allFailedSongInfo, errorSummary);
+            int addedCount = allNewSongTitles.size() - beforeSize;
             long duration = System.currentTimeMillis() - channelStartTime;
             
             Map<String, Object> log = new HashMap<>();
             log.put("name", vtuber.getName());
             log.put("durationMs", duration);
             log.put("type", "NEW");
+            log.put("addedCount", addedCount);
+            log.put("reason", "신규 등록 채널 전체 재생목록 전수 조사");
             performanceLogs.add(log);
 
             vtuber.setStatus("existing");
             vtuberRepository.save(vtuber);
+            logger.info("[수집 종료] 채널: {}, 추가된 곡: {}개, 소요시간: {}ms", vtuber.getName(), addedCount, duration);
         }
 
         for (VtuberEntity vtuber : existingVtubers) {
+            logger.info("[수집 시작] 기존 채널: {}", vtuber.getName());
             long channelStartTime = System.currentTimeMillis();
+            int beforeSize = allNewSongTitles.size();
             fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo, allFailedSongInfo, errorSummary);
+            int addedCount = allNewSongTitles.size() - beforeSize;
             long duration = System.currentTimeMillis() - channelStartTime;
 
             Map<String, Object> log = new HashMap<>();
             log.put("name", vtuber.getName());
             log.put("durationMs", duration);
             log.put("type", "EXISTING");
+            log.put("addedCount", addedCount);
+
+            if (duration > 5000) {
+                if (addedCount > 3) {
+                    log.put("reason", "다수의 신규 후보곡 발견으로 인한 AI 판별 부하");
+                } else {
+                    log.put("reason", "YouTube/Gemini API 응답 지연 또는 네트워크 불안정");
+                }
+            } else {
+                log.put("reason", "정상 처리");
+            }
+            
             performanceLogs.add(log);
+            logger.info("[수집 종료] 채널: {}, 추가된 곡: {}개, 소요시간: {}ms", vtuber.getName(), addedCount, duration);
         }
 
         mainPageService.refreshMainPageCache();
 
         performanceLogs.sort((a, b) -> Long.compare((long) b.get("durationMs"), (long) a.get("durationMs")));
-        int slowestCount = (int) Math.ceil(performanceLogs.size() * 0.2);
+        int slowestCount = (int) Math.ceil(performanceLogs.size() * 0.1); 
         List<Map<String, Object>> slowestChannels = performanceLogs.stream()
                 .limit(slowestCount)
                 .collect(Collectors.toList());
@@ -209,6 +255,8 @@ public class UpdateVtuberSongsService {
     @SuppressWarnings("PMD.LooseCoupling")
     @Transactional
     public void updateViewCounts() {
+        logger.info("=== updateViewCounts 실행 시작 ===");
+        LocalDateTime startTime = LocalDateTime.now(SEOUL_ZONE);
         List<VtuberSongsEntity> songs = vtuberSongsRepository.findAll();
         if (logger.isInfoEnabled()) {
             logger.info("조회수 업데이트를 위해 {}개의 노래를 찾았습니다.", songs.size());
@@ -302,6 +350,26 @@ public class UpdateVtuberSongsService {
             logger.error("스냅샷 데이터 정리 중 오류 발생", e);
         }
 
+        LocalDateTime endTime = LocalDateTime.now(SEOUL_ZONE);
+        long durationSeconds = java.time.Duration.between(startTime, endTime).getSeconds();
+        Integer usedQuota = apiQuotaLogRepository.sumCostByRequestTimeBetween(startTime, endTime);
+        if (usedQuota == null) usedQuota = 0;
+
+        try {
+            ViewUpdateLog log = new ViewUpdateLog();
+            log.setRunTime(startTime);
+            log.setDurationSeconds(durationSeconds);
+            log.setTotalSongsCount(songs.size());
+            log.setUpdatedCount(updatedCount);
+            log.setDeletedCount(deletedCount);
+            log.setFailedCount(failedCount);
+            log.setUsedQuota(usedQuota);
+            viewUpdateLogRepository.save(log);
+            logger.info("View update log saved to DB successfully.");
+        } catch (Exception e) {
+            logger.error("Failed to save view update log to DB: {}", e.getMessage());
+        }
+
         if (logger.isInfoEnabled()) {
             logger.info("조회수 업데이트 완료 (Rolling 7-Day 적용). 업데이트: {}개, 삭제: {}개, 실패: {}개", updatedCount, deletedCount, failedCount);
         }
@@ -381,6 +449,7 @@ public class UpdateVtuberSongsService {
         song.setStatus("new");
         song.setClassification(classification);
         vtuberSongsRepository.save(song);
+        logger.info("  [곡 추가 성공] 제목: {}", video.getSnippet().getTitle());
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
