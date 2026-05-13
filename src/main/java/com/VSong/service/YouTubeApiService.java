@@ -10,7 +10,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,13 +45,41 @@ public class YouTubeApiService {
         }
     }
 
+    @PostConstruct
+    public void init() {
+        logger.info("Initializing YouTube API usage from database...");
+        LocalDateTime todayStart = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+        
+        for (int i = 0; i < apiKeys.size(); i++) {
+            String key = apiKeys.get(i);
+            String prefix = key.substring(0, Math.min(key.length(), 10)) + "...";
+            Integer usage = apiQuotaLogRepository.sumCostByKeyPrefixAndRequestTimeAfter(prefix, todayStart);
+            int currentUsage = (usage != null) ? usage : 0;
+            
+            apiKeyUsage.get(i).set(currentUsage);
+            if (currentUsage >= 9800) {
+                keyAvailable.set(i, false);
+                logger.warn("API Key index {} ({}) is already exhausted (Usage: {})", i, prefix, currentUsage);
+            } else {
+                logger.info("API Key index {} ({}) usage: {}", i, prefix, currentUsage);
+            }
+        }
+        
+        for (int i = 0; i < keyAvailable.size(); i++) {
+            if (keyAvailable.get(i)) {
+                currentKeyIndex = i;
+                break;
+            }
+        }
+    }
+
     public String getCurrentApiKey() {
         return apiKeys.get(currentKeyIndex);
     }
 
     public void incrementApiUsage(int cost) {
         apiKeyUsage.get(currentKeyIndex).addAndGet(cost);
-        if (apiKeyUsage.get(currentKeyIndex).get() >= 9500) {
+        if (apiKeyUsage.get(currentKeyIndex).get() >= 9800 && keyAvailable.get(currentKeyIndex)) {
             switchApiKey();
         }
     }

@@ -22,5 +22,8 @@ public interface ApiQuotaLogRepository extends JpaRepository<ApiQuotaLog, Long> 
     @Query("SELECT SUM(l.cost) FROM ApiQuotaLog l WHERE l.requestTime BETWEEN :start AND :end")
     Integer sumCostByRequestTimeBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
+    @Query("SELECT SUM(l.cost) FROM ApiQuotaLog l WHERE l.apiKeyPrefix = :prefix AND l.requestTime >= :since")
+    Integer sumCostByKeyPrefixAndRequestTimeAfter(@Param("prefix") String prefix, @Param("since") LocalDateTime since);
+
     void deleteByRequestTimeBefore(LocalDateTime expiryDate);
 }
