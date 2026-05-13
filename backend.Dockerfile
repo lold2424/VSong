@@ -8,4 +8,4 @@ ARG JAR_FILE=build/libs/*.jar
 COPY ${JAR_FILE} app.jar
 
 # 환경 변수를 통해 가상 스레드 설정을 주입할 수 있도록 설정
-ENTRYPOINT ["java", "-Dspring.threads.virtual.enabled=${SPRING_THREADS_VIRTUAL_ENABLED:-false}", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-Dspring.threads.virtual.enabled=${SPRING_THREADS_VIRTUAL_ENABLED:-false}", "-jar", "app.jar"]

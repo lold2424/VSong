@@ -6,6 +6,7 @@ services:
     container_name: vsong-backend
     restart: always
     environment:
+      - TZ=Asia/Seoul
       - SPRING_PROFILES_ACTIVE=prod
       - SERVER_FORWARD_HEADERS_STRATEGY=framework
       - SERVER_SERVLET_SESSION_COOKIE_SECURE=true
