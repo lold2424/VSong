@@ -63,7 +63,7 @@ const PrivacyPolicyPage: React.FC = () => {
             <section>
                 <h2 className="text-xl font-bold mb-4 text-[#66D9EF]">6. 문의처</h2>
                 <p>
-                    본 방침과 관련하여 문의사항이 있으신 경우 서비스 내 관리자 또는 프로젝트 저장소(GitHub)를 통해 연락 주시기 바랍니다.
+                    본 방침이나 서비스 이용과 관련하여 문의사항이 있으신 경우, 화면 하단의 <strong>'건의사항 보내기'</strong> 기능을 통해 의견이나 연락을 남겨주시면 관리자가 확인후 답변드리겠습니다.
                 </p>
             </section>
         </div>

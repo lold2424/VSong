@@ -44,3 +44,13 @@ export const getSongHistory = async (videoId: string) => {
     const response = await apiClient.get(`/v1/songs/${videoId}/history`);
     return response.data;
 };
+
+export const submitSuggestion = async (content: string, userEmail?: string, userName?: string) => {
+    const response = await apiClient.post('/suggestions', { content, userEmail, userName });
+    return response.data;
+};
+
+export const getAdminSuggestions = async () => {
+    const response = await apiClient.get('/suggestions/admin/list');
+    return response.data;
+};

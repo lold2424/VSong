@@ -553,10 +553,15 @@ const AdminPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* 방문자 통계 섹션 */}
         <div className="bg-gray-700 p-6 rounded-md">
-        <h2 className="text-xl font-semibold mb-4">사이트 통계</h2>
-          <Link href="/admin/visitors" className="block w-full bg-blue-500 text-white font-bold py-3 px-4 rounded hover:bg-blue-600 transition text-center">
-            방문자 통계 보기
-          </Link>
+        <h2 className="text-xl font-semibold mb-4">사이트 통계 및 피드백</h2>
+          <div className="grid grid-cols-1 gap-3">
+            <Link href="/admin/visitors" className="block w-full bg-blue-500 text-white font-bold py-3 px-4 rounded hover:bg-blue-600 transition text-center">
+              방문자 통계 보기
+            </Link>
+            <Link href="/admin/suggestions" className="block w-full bg-[#A6E22E] text-gray-900 font-bold py-3 px-4 rounded hover:bg-lime-400 transition text-center">
+              건의사항 목록 확인
+            </Link>
+          </div>
         </div>
 
         {/* 버튜버 추가 섹션 */}
