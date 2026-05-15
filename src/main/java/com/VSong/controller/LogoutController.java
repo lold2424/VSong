@@ -10,6 +10,9 @@ import jakarta.servlet.http.HttpSession;
 @RestController
 public class LogoutController {
 
+    @org.springframework.beans.factory.annotation.Value("${oauth2.success.redirect-url}")
+    private String redirectUrl;
+
     @GetMapping("/api/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) throws Exception {
         HttpSession session = request.getSession(false);
@@ -19,6 +22,6 @@ public class LogoutController {
 
         request.logout();
 
-        response.sendRedirect("http://localhost:3000?logout=success");
+        response.sendRedirect(redirectUrl + "?logout=success");
     }
 }

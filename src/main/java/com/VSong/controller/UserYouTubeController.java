@@ -43,8 +43,6 @@ public class UserYouTubeController {
 
     @GetMapping("/recommend")
     public ResponseEntity<?> getRecommendations(@AuthenticationPrincipal OAuth2User oAuth2User) {
-        if (oAuth2User == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-        
         String email = oAuth2User.getAttribute("email");
         User user = userRepository.findByEmail(email).orElseThrow();
         
@@ -70,8 +68,6 @@ public class UserYouTubeController {
 
     @PostMapping("/recommend/refresh")
     public ResponseEntity<?> refreshRecommendations(@AuthenticationPrincipal OAuth2User oAuth2User) {
-        if (oAuth2User == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-        
         String email = oAuth2User.getAttribute("email");
         User user = userRepository.findByEmail(email).orElseThrow();
 
@@ -105,8 +101,6 @@ public class UserYouTubeController {
 
     @GetMapping("/playlists")
     public ResponseEntity<?> getUserPlaylists(@AuthenticationPrincipal OAuth2User oAuth2User) {
-        if (oAuth2User == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-        
         String email = oAuth2User.getAttribute("email");
         User user = userRepository.findByEmail(email).orElseThrow();
         
@@ -121,8 +115,6 @@ public class UserYouTubeController {
     @PostMapping("/playlists/create")
     public ResponseEntity<?> createPlaylist(@AuthenticationPrincipal OAuth2User oAuth2User,
                                             @RequestBody Map<String, String> request) {
-        if (oAuth2User == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-        
         String email = oAuth2User.getAttribute("email");
         User user = userRepository.findByEmail(email).orElseThrow();
         
@@ -143,8 +135,6 @@ public class UserYouTubeController {
     @PostMapping("/playlists/add")
     public ResponseEntity<?> addSongToPlaylist(@AuthenticationPrincipal OAuth2User oAuth2User,
                                                @RequestBody Map<String, String> request) {
-        if (oAuth2User == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-        
         String email = oAuth2User.getAttribute("email");
         User user = userRepository.findByEmail(email).orElseThrow();
         
