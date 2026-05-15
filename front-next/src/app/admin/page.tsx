@@ -116,7 +116,7 @@ const AdminPage = () => {
       } else {
         setAddVtuberMessage(`오류: ${resultText}`);
       }
-    } catch (error) {
+    } catch {
       setAddVtuberMessage('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setIsSubmittingVtuber(false);
@@ -140,7 +140,7 @@ const AdminPage = () => {
       } else {
         setCacheMessage(`오류: ${resultText}`);
       }
-    } catch (error) {
+    } catch {
       setCacheMessage('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setIsRefreshingCache(false);

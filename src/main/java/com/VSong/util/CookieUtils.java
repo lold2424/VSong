@@ -26,8 +26,6 @@ public class CookieUtils {
     }
 
     public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
-        boolean isSecure = value != null && !value.isEmpty();
-        
         org.springframework.http.ResponseCookie.ResponseCookieBuilder cookieBuilder = org.springframework.http.ResponseCookie.from(name, value)
                 .path("/")
                 .httpOnly(true)

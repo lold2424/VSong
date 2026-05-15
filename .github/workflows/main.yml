@@ -168,6 +168,7 @@ jobs:
           echo "OAUTH2_REDIRECT_URL=${{ secrets.BASE_URL }}" >> .env
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
           echo "GEMINI_API_URL=${{ secrets.GEMINI_API_URL }}" >> .env
+          echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" >> .env
           echo "SPRING_THREADS_VIRTUAL_ENABLED=true" >> .env
 
       - name: Copy SSL certificates

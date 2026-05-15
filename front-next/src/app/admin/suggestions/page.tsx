@@ -23,7 +23,7 @@ export default function AdminSuggestionsPage() {
       try {
         const data = await getAdminSuggestions();
         setSuggestions(data);
-      } catch (err) {
+      } catch {
         setError('건의사항 목록을 불러오는 중 오류가 발생했습니다.');
       } finally {
         setIsLoading(false);

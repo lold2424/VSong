@@ -143,7 +143,7 @@ public class UpdateVtuberSongsService {
             logger.info("[수집 시작] 신규 채널: {}", vtuber.getName());
             long channelStartTime = System.currentTimeMillis();
             int beforeSize = allNewSongTitles.size();
-            fetchAllSongsFromPlaylist(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo, allFailedSongInfo, errorSummary);
+            fetchAllSongsFromPlaylist(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allFailedSongInfo);
             int addedCount = allNewSongTitles.size() - beforeSize;
             long duration = System.currentTimeMillis() - channelStartTime;
             
@@ -164,7 +164,7 @@ public class UpdateVtuberSongsService {
             logger.info("[수집 시작] 기존 채널: {}", vtuber.getName());
             long channelStartTime = System.currentTimeMillis();
             int beforeSize = allNewSongTitles.size();
-            fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allExcludedSongInfo, allFailedSongInfo, errorSummary);
+            fetchRecentSongsFromSearch(vtuber.getChannelId(), vtuber.getName(), allNewSongTitles, allFailedSongInfo);
             int addedCount = allNewSongTitles.size() - beforeSize;
             long duration = System.currentTimeMillis() - channelStartTime;
 
@@ -226,7 +226,6 @@ public class UpdateVtuberSongsService {
     public void updateSongStatusToExisting() {
         List<VtuberSongsEntity> newSongs = vtuberSongsRepository.findByStatus("new");
         LocalDateTime now = LocalDateTime.now(SEOUL_ZONE);
-        int updatedCount = 0;
 
         for (VtuberSongsEntity song : newSongs) {
             long pubToAddedHours = java.time.Duration.between(song.getPublishedAt(), song.getAddedTime()).toHours();
@@ -247,7 +246,6 @@ public class UpdateVtuberSongsService {
                 song.setStatus("existing");
                 song.setUpdateDayTime(now);
                 vtuberSongsRepository.save(song);
-                updatedCount++;
             }
         }
     }
@@ -376,26 +374,8 @@ public class UpdateVtuberSongsService {
         mainPageService.refreshMainPageCache();
     }
 
-    private void summarizeError(String message, Map<String, Integer> errorSummary) {
-        String category = "OTHER_ERROR";
-        if (message.contains("403 Forbidden") || message.contains("accessNotConfigured") || message.contains("SERVICE_DISABLED")) {
-            category = "API_FORBIDDEN";
-        } else if (message.contains("quotaExceeded")) {
-            category = "API_QUOTA_EXCEEDED";
-        } else if (message.contains("업로드 재생목록 ID 조회 실패")) {
-            category = "CHANNEL_NOT_FOUND";
-        } else if (message.contains("IOException") || message.contains("시스템 오류")) {
-            category = "NETWORK_OR_SYSTEM_ERROR";
-        } else if (message.contains("DB 저장 오류")) {
-            category = "DATABASE_ERROR";
-        } else if (message.contains("재생목록 항목 조회 실패") || message.contains("응답 없음")) {
-            category = "API_RESPONSE_ERROR";
-        }
-        errorSummary.put(category, errorSummary.getOrDefault(category, 0) + 1);
-    }
-
     @SuppressWarnings("PMD.LooseCoupling")
-    private List<String> fetchAndProcessVideos(List<String> videoIds, String channelName, List<String> excludedSongInfo, List<String> allFailedSongInfo, Map<String, Integer> errorSummary) {
+    private List<String> fetchAndProcessVideos(List<String> videoIds, String channelName, List<String> allFailedSongInfo) {
         List<String> newSongTitles = new ArrayList<>();
         if (videoIds == null || videoIds.isEmpty()) return newSongTitles;
 
@@ -453,7 +433,7 @@ public class UpdateVtuberSongsService {
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    private void fetchAllSongsFromPlaylist(String channelId, String channelName, List<String> allNewSongTitles, List<String> excludedSongInfo, List<String> allFailedSongInfo, Map<String, Integer> errorSummary) {
+    private void fetchAllSongsFromPlaylist(String channelId, String channelName, List<String> allNewSongTitles, List<String> allFailedSongInfo) {
         try {
             String uploadsPlaylistId = getUploadsPlaylistId(channelId);
             if (uploadsPlaylistId == null) return;
@@ -470,7 +450,7 @@ public class UpdateVtuberSongsService {
                 List<String> videoIds = playlistItemResult.getItems().stream()
                         .map(item -> item.getContentDetails().getVideoId())
                         .collect(Collectors.toList());
-                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, excludedSongInfo, allFailedSongInfo, errorSummary));
+                allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, allFailedSongInfo));
                 pageToken = playlistItemResult.getNextPageToken();
             } while (pageToken != null);
         } catch (Exception e) {
@@ -489,7 +469,7 @@ public class UpdateVtuberSongsService {
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    private void fetchRecentSongsFromSearch(String channelId, String channelName, List<String> allNewSongTitles, List<String> excludedSongInfo, List<String> allFailedSongInfo, Map<String, Integer> errorSummary) {
+    private void fetchRecentSongsFromSearch(String channelId, String channelName, List<String> allNewSongTitles, List<String> allFailedSongInfo) {
         try {
             String uploadsPlaylistId = getUploadsPlaylistId(channelId);
             if (uploadsPlaylistId == null) return;
@@ -504,7 +484,7 @@ public class UpdateVtuberSongsService {
             List<String> videoIds = playlistItemResult.getItems().stream()
                     .map(item -> item.getContentDetails().getVideoId())
                     .collect(Collectors.toList());
-            allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, excludedSongInfo, allFailedSongInfo, errorSummary));
+            allNewSongTitles.addAll(fetchAndProcessVideos(videoIds, channelName, allFailedSongInfo));
         } catch (Exception e) {
             logger.error("최근 노래 검색 중 오류 발생", e);
         }

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
-import axios from 'axios';
 import { apiClient, fetchUserInfoApi, logoutApi } from '@/utils/apiClient';
 import AlertModal from '@/components/AlertModal';
 

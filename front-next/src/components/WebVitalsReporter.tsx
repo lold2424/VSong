@@ -9,13 +9,13 @@ export function WebVitalsReporter() {
     const trackVisit = async () => {
       try {
         await apiClient.post('/track-visit');
-      } catch (error) {
+      } catch {
       }
     };
 
     trackVisit();
 
-    reportWebVitals(metric => {
+    reportWebVitals(() => {
     });
   }, []);
 
