@@ -43,6 +43,9 @@ const AdminPage = () => {
     try {
       const response = await fetch('/api/admin/monitoring/run-song-update', {
         method: 'POST',
+        headers: {
+          'X-XSRF-TOKEN': getCsrfToken(),
+        },
         credentials: 'include',
       });
       const data = await response.json();
@@ -66,6 +69,9 @@ const AdminPage = () => {
     try {
       const response = await fetch('/api/admin/monitoring/run-vtuber-update', {
         method: 'POST',
+        headers: {
+          'X-XSRF-TOKEN': getCsrfToken(),
+        },
         credentials: 'include',
       });
       const data = await response.json();
@@ -88,6 +94,23 @@ const AdminPage = () => {
     }
   }, [user]);
 
+  const getCsrfToken = () => {
+    if (typeof document === 'undefined') return '';
+    const name = 'XSRF-TOKEN=';
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) === 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return '';
+  };
+
   const handleAddVtuber = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!channelId.trim()) {
@@ -103,6 +126,7 @@ const AdminPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-XSRF-TOKEN': getCsrfToken(),
         },
         body: JSON.stringify({ channelId }),
         credentials: 'include',
@@ -130,6 +154,9 @@ const AdminPage = () => {
     try {
       const response = await fetch('/api/admin/cache/refresh-main-page', {
         method: 'POST',
+        headers: {
+          'X-XSRF-TOKEN': getCsrfToken(),
+        },
         credentials: 'include',
       });
 
