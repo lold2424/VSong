@@ -180,8 +180,20 @@ jobs:
           sudo cp /etc/letsencrypt/ssl-dhparams.pem ./nginx/ssl/ssl-dhparams.pem
           sudo chown -R ubuntu:ubuntu ./nginx/ssl
 
+      - name: Pre-deployment Port Check & Clean up
+        run: |
+          if sudo lsof -i :80; then
+            echo "Port 80 is occupied. Attempting to stop conflicting services..."
+            sudo systemctl stop nginx || true
+          fi
+          docker compose down --remove-orphans
+
       - name: Deploy with Docker Compose
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
           docker compose pull
-          docker compose up -d --force-recreate
+          docker compose up -d
+
+      - name: Post-deployment Clean up
+        run: |
+          docker image prune -f
