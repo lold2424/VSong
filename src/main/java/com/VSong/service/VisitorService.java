@@ -12,9 +12,25 @@ import java.util.List;
 public class VisitorService {
 
     private final DailyVisitorRepository visitorRepository;
+    private final com.VSong.repository.VisitorLogRepository visitorLogRepository;
 
-    public VisitorService(DailyVisitorRepository visitorRepository) {
+    public VisitorService(DailyVisitorRepository visitorRepository,
+                          com.VSong.repository.VisitorLogRepository visitorLogRepository) {
         this.visitorRepository = visitorRepository;
+        this.visitorLogRepository = visitorLogRepository;
+    }
+
+    @Transactional
+    public void trackVisitor(String ip, LocalDate date) {
+        if (!visitorLogRepository.existsByIpAndVisitDate(ip, date)) {
+            visitorRepository.incrementVisitorCount(date);
+            
+            com.VSong.entity.VisitorLog log = new com.VSong.entity.VisitorLog();
+            log.setIp(ip);
+            log.setVisitDate(date);
+            log.setLastVisitTime(java.time.LocalDateTime.now());
+            visitorLogRepository.save(log);
+        }
     }
 
     @Transactional

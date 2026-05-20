@@ -29,19 +29,22 @@ public class VisitorController {
 
     @PostMapping("/api/track-visit")
     public void trackVisit(HttpServletRequest request, HttpServletResponse response) {
-        Cookie[] cookies = request.getCookies();
-        boolean hasVisited = false;
-        if (cookies != null) {
-            hasVisited = Arrays.stream(cookies)
-                               .anyMatch(c -> VISITOR_COOKIE_NAME.equals(c.getName()));
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        } else {
+            ip = ip.split(",")[0].trim();
         }
 
-        if (!hasVisited) {
-            ZoneId seoulZone = ZoneId.of("Asia/Seoul");
-            LocalDate today = LocalDate.now(seoulZone);
-            
-            visitorService.incrementVisitorCount(today);
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        LocalDate today = LocalDate.now(seoulZone);
+        
+        visitorService.trackVisitor(ip, today);
 
+        Cookie[] cookies = request.getCookies();
+        boolean hasVisited = cookies != null && Arrays.stream(cookies).anyMatch(c -> VISITOR_COOKIE_NAME.equals(c.getName()));
+
+        if (!hasVisited) {
             ZonedDateTime now = ZonedDateTime.now(seoulZone);
             ZonedDateTime midnight = now.toLocalDate().plusDays(1).atStartOfDay(seoulZone);
             long secondsUntilMidnight = Duration.between(now, midnight).getSeconds();
