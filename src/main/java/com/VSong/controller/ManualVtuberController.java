@@ -18,7 +18,7 @@ public class ManualVtuberController {
     @PostMapping("/vtuber")
     public ResponseEntity<String> addVtuber(@RequestBody AddVtuberRequest request) {
         if (request == null || request.getChannelId() == null || request.getChannelId().isBlank()) {
-            return ResponseEntity.badRequest().body("채널 ID를 입력해주세요.");
+            return ResponseEntity.badRequest().body("채널 ID, 유튜브 핸들, 또는 URL을 입력해주세요.");
         }
         String result = manualVtuberService.addVtuberChannel(request.getChannelId());
         if (result.startsWith("버튜버 채널이 성공적으로 추가되었습니다")) {

@@ -38,30 +38,32 @@ public class ManualVtuberService {
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    public String addVtuberChannel(String channelId) {
+    public String addVtuberChannel(String input) {
         if (logger.isInfoEnabled()) {
-            logger.info("수동 버튜버 채널 추가 요청: {}", channelId);
-        }
-
-        if (vtuberRepository.existsByChannelId(channelId)) {
-            return "이미 존재하는 버튜버 채널입니다: " + channelId;
-        }
-        if (exceptVtuberRepository.existsById(channelId)) {
-            return "제외 목록에 있는 채널입니다: " + channelId;
+            logger.info("수동 버튜버 채널 추가 요청: {}", input);
         }
 
         Channel youtubeChannel;
         try {
-            youtubeChannel = fetchChannelDetails(channelId);
+            youtubeChannel = fetchChannelDetails(input);
         } catch (IOException e) {
             if (logger.isErrorEnabled()) {
-                logger.error("YouTube API 호출 중 오류 발생 (채널 ID: {}): {}", channelId, e.getMessage());
+                logger.error("YouTube API 호출 중 오류 발생 (입력값: {}): {}", input, e.getMessage());
             }
             return "YouTube API 호출 중 오류가 발생했습니다: " + e.getMessage();
         }
 
         if (youtubeChannel == null) {
-            return "채널 정보를 찾을 수 없습니다: " + channelId;
+            return "채널 정보를 찾을 수 없습니다: " + input;
+        }
+
+        String actualChannelId = youtubeChannel.getId();
+
+        if (vtuberRepository.existsByChannelId(actualChannelId)) {
+            return "이미 존재하는 버튜버 채널입니다: " + actualChannelId;
+        }
+        if (exceptVtuberRepository.existsById(actualChannelId)) {
+            return "제외 목록에 있는 채널입니다: " + actualChannelId;
         }
 
         String channelTitle = youtubeChannel.getSnippet().getTitle();
@@ -69,20 +71,31 @@ public class ManualVtuberService {
         try {
             saveNewVtuber(youtubeChannel);
             if (logger.isInfoEnabled()) {
-                logger.info("수동으로 버튜버 채널 저장 완료: {} ({})", channelTitle, channelId);
+                logger.info("수동으로 버튜버 채널 저장 완료: {} ({})", channelTitle, actualChannelId);
             }
             return "버튜버 채널이 성공적으로 추가되었습니다: " + channelTitle;
         } catch (Exception e) {
             if (logger.isErrorEnabled()) {
-                logger.error("버튜버 채널 저장 중 오류 발생 (채널 ID: {}): {}", channelId, e.getMessage());
+                logger.error("버튜버 채널 저장 중 오류 발생 (채널 ID: {}): {}", actualChannelId, e.getMessage());
             }
             return "버튜버 채널 저장 중 오류가 발생했습니다: " + e.getMessage();
         }
     }
 
-    private Channel fetchChannelDetails(String channelId) throws IOException {
+    private Channel fetchChannelDetails(String input) throws IOException {
         YouTube.Channels.List channelRequest = youTube.channels().list(List.of("snippet", "statistics"));
-        channelRequest.setId(List.of(channelId));
+        
+        String target = input.trim();
+        if (target.contains("@")) {
+            String handle = target.substring(target.indexOf("@"));
+            handle = handle.split("[/?#]")[0];
+            channelRequest.setForHandle(handle);
+        } else if (target.startsWith("UC")) {
+            channelRequest.setId(List.of(target));
+        } else {
+            channelRequest.setForHandle("@" + target);
+        }
+
         channelRequest.setFields("items(id,snippet/title,snippet/description,snippet/thumbnails/default/url,statistics/subscriberCount)");
 
         ChannelListResponse channelResponse = youTubeApiService.executeRequest(channelRequest);
