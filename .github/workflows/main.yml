@@ -182,11 +182,28 @@ jobs:
 
       - name: Pre-deployment Port Check & Clean up
         run: |
-          if sudo lsof -i :80; then
-            echo "Port 80 is occupied. Attempting to stop conflicting services..."
-            sudo systemctl stop nginx || true
-          fi
+          echo "Stopping conflicting services..."
+          sudo systemctl stop nginx || true
+          
+          echo "Stopping existing docker containers..."
           docker compose down --remove-orphans
+          
+          echo "Waiting for port 80 to be fully released..."
+          PORT_FREE=false
+          for i in {1..10}; do
+            if ! sudo lsof -i :80 > /dev/null; then
+              echo "Port 80 is now free."
+              PORT_FREE=true
+              break
+            fi
+            echo "Waiting for port 80 to be released... ($i/10)"
+            sleep 1
+          done
+          
+          if [ "$PORT_FREE" != "true" ]; then
+            echo "Warning: Port 80 is still occupied after 10s. Checking owner:"
+            sudo lsof -i :80 || true
+          fi
 
       - name: Deploy with Docker Compose
         run: |
