@@ -24,11 +24,19 @@ public class SuggestionEntity {
     @Column(nullable = false)
     private String status;
 
+    @Column(nullable = false)
+    private String type;
+
+    private String ipAddress;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (status == null) {
             status = "PENDING";
+        }
+        if (type == null) {
+            type = "GENERAL";
         }
     }
 
@@ -78,5 +86,21 @@ public class SuggestionEntity {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 }
