@@ -51,4 +51,9 @@ public interface VtuberSongsRepository extends JpaRepository<VtuberSongsEntity, 
     @Modifying
     @Query("DELETE FROM VtuberSongsEntity v WHERE v.channelId = :channelId")
     void deleteByChannelId(@Param("channelId") String channelId);
+
+    @Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("DELETE FROM VtuberSongsEntity v WHERE v.videoId = :videoId")
+    void deleteByVideoId(@Param("videoId") String videoId);
 }

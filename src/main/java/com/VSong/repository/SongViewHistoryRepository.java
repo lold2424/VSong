@@ -22,5 +22,10 @@ public interface SongViewHistoryRepository extends JpaRepository<SongViewHistory
     @Query("DELETE FROM SongViewHistory s WHERE s.recordDate < :date")
     void deleteByRecordDateBefore(@Param("date") LocalDate date);
 
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM SongViewHistory s WHERE s.videoId = :videoId")
+    void deleteByVideoId(@Param("videoId") String videoId);
+
     List<SongViewHistory> findByRecordDate(LocalDate recordDate);
 }

@@ -62,19 +62,29 @@ public class AdminMonitoringController {
     public org.springframework.data.domain.Page<com.VSong.entity.SongProcessLog> getIngestionLogs(
             @org.springframework.web.bind.annotation.RequestParam(required = false) String videoId,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String title,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String decision,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "50") int size) {
-        
+
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
-        
+
         if (videoId != null && !videoId.isEmpty()) {
-            List<SongProcessLog> logs = songProcessLogRepository.findByVideoIdOrderByProcessedAtDesc(videoId);
+            List<com.VSong.entity.SongProcessLog> logs = songProcessLogRepository.findByVideoIdOrderByProcessedAtDesc(videoId);
             return new org.springframework.data.domain.PageImpl<>(logs, pageable, logs.size());
-        } else if (title != null && !title.isEmpty()) {
-            return songProcessLogRepository.findByTitleContainingOrderByProcessedAtDesc(title, pageable);
-        } else {
-            return songProcessLogRepository.findAllByOrderByProcessedAtDesc(pageable);
         }
+
+        if (decision != null && !decision.isEmpty()) {
+            if (title != null && !title.isEmpty()) {
+                return songProcessLogRepository.findByDecisionAndTitleContainingOrderByProcessedAtDesc(decision, title, pageable);
+            }
+            return songProcessLogRepository.findByDecisionOrderByProcessedAtDesc(decision, pageable);
+        }
+
+        if (title != null && !title.isEmpty()) {
+            return songProcessLogRepository.findByTitleContainingOrderByProcessedAtDesc(title, pageable);
+        }
+
+        return songProcessLogRepository.findAllByOrderByProcessedAtDesc(pageable);
     }
 
     @GetMapping("/dashboard")

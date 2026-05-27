@@ -24,12 +24,13 @@ public class VtuberValidationService {
     private static final Logger logger = LoggerFactory.getLogger(VtuberValidationService.class);
 
     private static final int MIN_SUBSCRIBERS = 3000;
-    private static final List<String> SONG_KEYWORDS = List.of("music", "song", "cover", "original", "official", "mv", "뮤직", "노래", "커버");
+    private static final List<String> SONG_KEYWORDS = List.of("music", "song", "cover", "original", "official", "뮤직", "노래", "커버");
     private static final List<String> EXCLUDE_TITLE_KEYWORDS = Arrays.asList(
             "응원", "통계", "번역", "다시보기", "게임", "저장", "일상", "브이로그", "보관", "잼민",
             "TV", "코인", "주식", "Tj", "tv", "팬계정", "창고", "박스", "팬", "클립", "키리누키",
             "vlog", "유튜버", "youtube", "YOUTUBE", "유튜브", "코딩", "코드", "로블록스", "덕질",
-            "음식", "기도", "교회", "여행", "VOD", "풀영상", "teaser"
+            "음식", "기도", "교회", "여행", "VOD", "풀영상", "teaser", "결혼", "수술", "가입조건", 
+            "비율", "등급", "월드컵", "뽑기", "확률", "강화", "후기", "리뷰", "뉴스", "설명"
     );
     private static final List<String> EXCLUDE_DESCRIPTION_KEYWORDS = Arrays.asList(
             "팬클립", "팬영상", "팬채널", "저장소", "브이로그", "학년", "초등학", "중학", "고등학",
