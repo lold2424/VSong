@@ -18,6 +18,7 @@ const AdminPage = () => {
   const [isLoadingMonitoring, setIsLoadingMonitoring] = useState(false);
   const [isUpdatingSongs, setIsUpdatingSongs] = useState(false);
   const [isUpdatingVtubers, setIsUpdatingVtubers] = useState(false);
+  const [isCleaningTitles, setIsCleaningTitles] = useState(false);
 
   const fetchMonitoringData = async () => {
     setIsLoadingMonitoring(true);
@@ -59,6 +60,32 @@ const AdminPage = () => {
       alert('네트워크 오류가 발생했습니다.');
     } finally {
       setIsUpdatingSongs(false);
+    }
+  };
+
+  const handleCleanTitles = async () => {
+    if (!confirm('미정제된 모든 노래 제목을 AI로 정제하시겠습니까? (노래 수에 따라 시간이 소요될 수 있습니다)')) return;
+    
+    setIsCleaningTitles(true);
+    try {
+      const response = await fetch('/api/admin/vtubers/clean-titles', {
+        method: 'POST',
+        headers: {
+          'X-XSRF-TOKEN': getCsrfToken(),
+        },
+        credentials: 'include',
+      });
+      const resultText = await response.text();
+      if (response.ok) {
+        alert(resultText || '제목 정제 작업이 완료되었습니다.');
+      } else {
+        alert('제목 정제 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to clean titles', error);
+      alert('네트워크 오류가 발생했습니다.');
+    } finally {
+      setIsCleaningTitles(false);
     }
   };
 
@@ -212,6 +239,13 @@ const AdminPage = () => {
               disabled={isUpdatingSongs}
             >
               {isUpdatingSongs ? '수집 진행 중...' : '노래 수집 즉시 실행'}
+            </button>
+            <button 
+              onClick={handleCleanTitles} 
+              className="text-xs bg-purple-600 text-white hover:bg-purple-500 px-3 py-1 rounded transition font-bold disabled:bg-gray-500"
+              disabled={isCleaningTitles}
+            >
+              {isCleaningTitles ? '정제 진행 중...' : '노래 제목 일괄 정제'}
             </button>
             <button 
               onClick={fetchMonitoringData} 

@@ -171,4 +171,42 @@ public class GeminiService {
             return List.of("J-POP", "애니메이션", "버튜버", "커버곡", "오리지널");
         }
     }
+
+    public String getCleanTitleByAI(String rawTitle) {
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            return rawTitle;
+        }
+
+        try {
+            String prompt = String.format(
+                "다음 유튜브 영상 제목을 분석해서 핵심 노래 정보를 정제해줘.\n" +
+                "1. **커버곡**인 경우: '원곡 제목 - 원곡 가수' 형식으로 응답해. (예: Henceforth - Orangestar)\n" +
+                "2. **버튜버의 오리지널 곡**인 경우: '노래 제목 - Original' 형식으로 응답해. (예: 나의 꿈 - Original)\n" +
+                "3. [4K], 【】, [], MV 등 장식용 태그와 버튜버 이름은 결과에서 **완전히 제외**해.\n" +
+                "결과는 반드시 한 줄로만 응답해.\n" +
+                "원본 제목: %s", rawTitle);
+
+            Map<String, Object> requestBody = new HashMap<>();
+            Map<String, Object> content = new HashMap<>();
+            content.put("parts", List.of(Map.of("text", prompt)));
+            requestBody.put("contents", List.of(content));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            String response = restTemplate.postForObject(apiUrl + apiKey, entity, String.class);
+            JsonNode root = objectMapper.readTree(response);
+            String aiAnswer = root.path("candidates").get(0)
+                                  .path("content").path("parts").get(0)
+                                  .path("text").asText().trim();
+
+            logger.info("Gemini AI 제목 정제 결과: {} -> {}", rawTitle, aiAnswer);
+            return aiAnswer;
+
+        } catch (Exception e) {
+            logger.error("Gemini AI 제목 정제 중 오류 발생: {}", e.getMessage());
+            return rawTitle;
+        }
+    }
 }

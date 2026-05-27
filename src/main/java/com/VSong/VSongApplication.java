@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @EnableCaching
+@org.springframework.scheduling.annotation.EnableAsync
 public class VSongApplication {
 
     public static void main(String[] args) {

@@ -39,6 +39,7 @@ public class UpdateVtuberSongsService {
     private final ViewUpdateLogRepository viewUpdateLogRepository;
     private final SongViewHistoryRepository songViewHistoryRepository;
     private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
+    private final GeminiService geminiService;
     private final ObjectMapper objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(UpdateVtuberSongsService.class);
     private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
@@ -55,6 +56,7 @@ public class UpdateVtuberSongsService {
             ViewUpdateLogRepository viewUpdateLogRepository,
             SongViewHistoryRepository songViewHistoryRepository,
             com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository,
+            GeminiService geminiService,
             ObjectMapper objectMapper) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
@@ -67,7 +69,38 @@ public class UpdateVtuberSongsService {
         this.viewUpdateLogRepository = viewUpdateLogRepository;
         this.songViewHistoryRepository = songViewHistoryRepository;
         this.apiQuotaLogRepository = apiQuotaLogRepository;
+        this.geminiService = geminiService;
         this.objectMapper = objectMapper;
+    }
+
+    @org.springframework.scheduling.annotation.Async
+    @Transactional
+    public void cleanAllExistingTitles() {
+        logger.info("=== 기존 노래 제목 일괄 정제 시작 (Background) ===");
+        List<VtuberSongsEntity> songs = vtuberSongsRepository.findAll();
+        int count = 0;
+        for (VtuberSongsEntity song : songs) {
+            if (song.getParsedTitle() == null || song.getParsedTitle().isEmpty() || song.getSongType() == null) {
+                String aiResponse = geminiService.getCleanTitleByAI(song.getTitle());
+                
+                if (aiResponse.toLowerCase().endsWith(" - original")) {
+                    song.setSongType("ORIGINAL");
+                    song.setParsedTitle(aiResponse.replaceFirst("(?i) - original$", ""));
+                } else {
+                    song.setSongType("COVER");
+                    song.setParsedTitle(aiResponse);
+                }
+                
+                vtuberSongsRepository.save(song);
+                count++;
+                
+                if (count % 10 == 0) {
+                    logger.info("정제 진행 중... ({}개 완료)", count);
+                }
+            }
+        }
+        logger.info("=== 기존 노래 제목 일괄 정제 종료 (총 {}개 처리) ===", count);
+        mainPageService.refreshMainPageCache();
     }
 
     public Map<String, Object> getLastViewUpdateStats() {
@@ -414,9 +447,21 @@ public class UpdateVtuberSongsService {
     @SuppressWarnings("PMD.LooseCoupling")
     private void saveNewSong(Video video, VideoStatistics statistics, String channelName, String classification) {
         VtuberSongsEntity song = new VtuberSongsEntity();
+        String rawTitle = video.getSnippet().getTitle();
+
+        String aiResponse = geminiService.getCleanTitleByAI(rawTitle);
+        
+        if (aiResponse.toLowerCase().endsWith(" - original")) {
+            song.setSongType("ORIGINAL");
+            song.setParsedTitle(aiResponse.replaceFirst("(?i) - original$", ""));
+        } else {
+            song.setSongType("COVER");
+            song.setParsedTitle(aiResponse);
+        }
+        
         song.setChannelId(video.getSnippet().getChannelId());
         song.setVideoId(video.getId());
-        song.setTitle(video.getSnippet().getTitle());
+        song.setTitle(rawTitle);
         song.setPublishedAt(Instant.ofEpochMilli(video.getSnippet().getPublishedAt().getValue()).atZone(ZoneId.systemDefault()).toLocalDateTime());
         song.setAddedTime(LocalDateTime.now(SEOUL_ZONE));
         song.setUpdateDayTime(LocalDateTime.now(SEOUL_ZONE));
@@ -429,7 +474,7 @@ public class UpdateVtuberSongsService {
         song.setStatus("new");
         song.setClassification(classification);
         vtuberSongsRepository.save(song);
-        logger.info("  [곡 추가 성공] 제목: {}", video.getSnippet().getTitle());
+        logger.info("  [곡 추가 성공] 제목: {} (정제됨: {}, 타입: {})", rawTitle, song.getParsedTitle(), song.getSongType());
     }
 
     @SuppressWarnings("PMD.LooseCoupling")

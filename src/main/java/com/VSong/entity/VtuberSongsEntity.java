@@ -48,6 +48,12 @@ public class VtuberSongsEntity {
 
     private String status;
 
+    @Column(name = "parsed_title")
+    private String parsedTitle;
+
+    @Column(name = "song_type")
+    private String songType; // "COVER", "ORIGINAL"
+
     public Long getId() {
         return id;
     }
@@ -78,6 +84,22 @@ public class VtuberSongsEntity {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getParsedTitle() {
+        return parsedTitle;
+    }
+
+    public void setParsedTitle(String parsedTitle) {
+        this.parsedTitle = parsedTitle;
+    }
+
+    public String getSongType() {
+        return songType;
+    }
+
+    public void setSongType(String songType) {
+        this.songType = songType;
     }
 
     public String getDescription() {
