@@ -427,7 +427,7 @@ public class UpdateVtuberSongsService {
                 String classification = validationService.classifyVideo(video);
                 if ("ignore".equals(classification)) continue;
 
-                if (!validationService.isSongRelated(video)) continue;
+                if (!validationService.isSongRelated(video, channelName)) continue;
 
                 if (video.getStatistics() == null || video.getStatistics().getViewCount() == null) continue;
 

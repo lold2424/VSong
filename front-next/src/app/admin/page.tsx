@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import IngestionLogTracker from '@/components/admin/IngestionLogTracker';
 
 const AdminPage = () => {
   const { user, isLoading } = useAuth();
@@ -668,6 +669,8 @@ const AdminPage = () => {
           <p className="mt-4 text-center p-3 rounded bg-gray-600">{cacheMessage}</p>
         )}
       </div>
+
+      <IngestionLogTracker />
     </div>
   );
 };

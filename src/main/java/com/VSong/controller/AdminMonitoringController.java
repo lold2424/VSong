@@ -1,5 +1,6 @@
 package com.VSong.controller;
 
+import com.VSong.entity.SongProcessLog;
 import com.VSong.service.UpdateVtuberSongsService;
 import com.VSong.service.YouTubeApiService;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -30,6 +32,7 @@ public class AdminMonitoringController {
     private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
     private final HealthEndpoint healthEndpoint;
     private final java.util.concurrent.ThreadPoolExecutor vtuberSyncExecutor;
+    private final com.VSong.repository.SongProcessLogRepository songProcessLogRepository;
 
     public AdminMonitoringController(YouTubeApiService youtubeApiService,
                                      UpdateVtuberSongsService updateVtuberSongsService,
@@ -40,7 +43,8 @@ public class AdminMonitoringController {
                                      com.VSong.repository.AiRecommendationLogRepository aiRecommendationLogRepository,
                                      com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository,
                                      HealthEndpoint healthEndpoint,
-                                     java.util.concurrent.ThreadPoolExecutor vtuberSyncExecutor) {
+                                     java.util.concurrent.ThreadPoolExecutor vtuberSyncExecutor,
+                                     com.VSong.repository.SongProcessLogRepository songProcessLogRepository) {
         this.youtubeApiService = youtubeApiService;
         this.updateVtuberSongsService = updateVtuberSongsService;
         this.uploadVtuberService = uploadVtuberService;
@@ -51,6 +55,26 @@ public class AdminMonitoringController {
         this.apiQuotaLogRepository = apiQuotaLogRepository;
         this.healthEndpoint = healthEndpoint;
         this.vtuberSyncExecutor = vtuberSyncExecutor;
+        this.songProcessLogRepository = songProcessLogRepository;
+    }
+
+    @GetMapping("/ingestion-logs")
+    public org.springframework.data.domain.Page<com.VSong.entity.SongProcessLog> getIngestionLogs(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String videoId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String title,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "50") int size) {
+        
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        
+        if (videoId != null && !videoId.isEmpty()) {
+            List<SongProcessLog> logs = songProcessLogRepository.findByVideoIdOrderByProcessedAtDesc(videoId);
+            return new org.springframework.data.domain.PageImpl<>(logs, pageable, logs.size());
+        } else if (title != null && !title.isEmpty()) {
+            return songProcessLogRepository.findByTitleContainingOrderByProcessedAtDesc(title, pageable);
+        } else {
+            return songProcessLogRepository.findAllByOrderByProcessedAtDesc(pageable);
+        }
     }
 
     @GetMapping("/dashboard")

@@ -75,19 +75,22 @@ public class VtuberValidationService {
     private final YouTube youTube;
     private final YouTubeApiService youTubeApiService;
     private final GeminiService geminiService;
+    private final com.VSong.repository.SongProcessLogRepository songProcessLogRepository;
 
     public VtuberValidationService(VtuberRepository vtuberRepository,
                                      ExceptVtuberRepository exceptVtuberRepository,
                                      VtuberSongsRepository vtuberSongsRepository,
                                      YouTube youTube,
                                      YouTubeApiService youTubeApiService,
-                                     GeminiService geminiService) {
+                                     GeminiService geminiService,
+                                     com.VSong.repository.SongProcessLogRepository songProcessLogRepository) {
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.vtuberSongsRepository = vtuberSongsRepository;
         this.youTube = youTube;
         this.youTubeApiService = youTubeApiService;
         this.geminiService = geminiService;
+        this.songProcessLogRepository = songProcessLogRepository;
     }
 
     public String getChannelProcessableReason(String channelId) {
@@ -230,8 +233,12 @@ public class VtuberValidationService {
             "spotify", "melon", "apple music"
     );
 
-    @SuppressWarnings("PMD.LooseCoupling")
     public boolean isSongRelated(Video video) {
+        return isSongRelated(video, "Unknown");
+    }
+
+    @SuppressWarnings("PMD.LooseCoupling")
+    public boolean isSongRelated(Video video, String vtuberName) {
         String title = video.getSnippet().getTitle();
         String lowerTitle = title.toLowerCase();
         String description = video.getSnippet().getDescription();
@@ -239,9 +246,23 @@ public class VtuberValidationService {
         String videoId = video.getId();
         String categoryId = video.getSnippet().getCategoryId();
 
+        com.VSong.entity.SongProcessLog processLog = new com.VSong.entity.SongProcessLog();
+        processLog.setVideoId(videoId);
+        processLog.setTitle(title);
+        processLog.setVtuberName(vtuberName);
+        processLog.setProcessedAt(java.time.LocalDateTime.now());
+
         boolean titleHasExcludeKeyword = EXCLUDE_TITLE_KEYWORDS.stream().anyMatch(lowerTitle::contains);
         boolean descriptionHasExcludeKeyword = EXCLUDE_DESCRIPTION_KEYWORDS.stream().anyMatch(lowerDescription::contains);
+        
         if (titleHasExcludeKeyword || descriptionHasExcludeKeyword) {
+            String matched = titleHasExcludeKeyword ? 
+                EXCLUDE_TITLE_KEYWORDS.stream().filter(lowerTitle::contains).findFirst().orElse("?") :
+                EXCLUDE_DESCRIPTION_KEYWORDS.stream().filter(lowerDescription::contains).findFirst().orElse("?");
+            
+            processLog.setDecision("REJECTED");
+            processLog.setReason("Exclude keyword found: " + matched);
+            songProcessLogRepository.save(processLog);
             return false;
         }
 
@@ -263,24 +284,27 @@ public class VtuberValidationService {
         }
 
         boolean hasSongKeyword = titleMatchedKeyword != null || descriptionMatchedKeyword != null;
+        boolean initialDecision = isMusicCategory || hasSongKeyword;
 
-        boolean finalDecision = isMusicCategory || hasSongKeyword;
-
-        if (finalDecision) {
+        if (initialDecision) {
             boolean isSongByAI = geminiService.isSongByAI(title, description);
             if (!isSongByAI) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Validation Check for Video ID: {} -> REJECTED BY AI ({}).", videoId, title);
-                }
+                processLog.setDecision("REJECTED");
+                processLog.setReason("Rejected by AI. Initial reasons: " + String.join(", ", reasons));
+                songProcessLogRepository.save(processLog);
                 return false;
             }
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Validation Check for Video ID: {} -> ACCEPTED WITH AI. Reasons: {}", videoId, String.join(", ", reasons));
-            }
+            processLog.setDecision("ACCEPTED");
+            processLog.setReason("Accepted with AI. Reasons: " + String.join(", ", reasons));
+            songProcessLogRepository.save(processLog);
+            return true;
         }
 
-        return finalDecision;
+        processLog.setDecision("REJECTED");
+        processLog.setReason("No song-related keywords or category found");
+        songProcessLogRepository.save(processLog);
+        return false;
     }
 
     public boolean isSongAlreadyExists(String videoId) {
