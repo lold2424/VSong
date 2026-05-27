@@ -1,6 +1,7 @@
 package com.VSong.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,11 +11,8 @@ import jakarta.servlet.http.HttpSession;
 @RestController
 public class LogoutController {
 
-    @org.springframework.beans.factory.annotation.Value("${oauth2.success.redirect-url}")
-    private String redirectUrl;
-
-    @GetMapping("/api/logout")
-    public void logout(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    @PostMapping("/api/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) throws Exception {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
@@ -22,6 +20,6 @@ public class LogoutController {
 
         request.logout();
 
-        response.sendRedirect(redirectUrl + "?logout=success");
+        return ResponseEntity.ok("Logged out successfully");
     }
 }

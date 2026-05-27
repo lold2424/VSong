@@ -347,24 +347,6 @@ const AdminPage = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-900 p-4 rounded-md">
-                <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase text-yellow-400">최근 조회수 업데이트 요약</h3>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">실행 시간:</span>
-                    <span className="text-[10px]">{monitoringData.viewUpdateStats.lastRunTime ? new Date(monitoringData.viewUpdateStats.lastRunTime).toLocaleString() : '기록 없음'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">업데이트:</span>
-                    <span className="text-yellow-400 font-bold">{monitoringData.viewUpdateStats.updatedCount || 0}개</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">전체 노래:</span>
-                    <span className="text-gray-300 font-bold">{monitoringData.viewUpdateStats.totalSongsCount || 0}개</span>
-                  </div>
-                </div>
-              </div>
-
               <div className="bg-gray-900 p-4 rounded-md border-l-2 border-indigo-500">
                 <h3 className="text-xs font-bold text-indigo-400 mb-2 uppercase">AI 추천 통계</h3>
                 <div className="space-y-1">
