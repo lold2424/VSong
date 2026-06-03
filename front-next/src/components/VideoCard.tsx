@@ -22,6 +22,7 @@ interface VideoCardProps {
 const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const enterTimeoutRef = useRef<number | null>(null);
   const leaveTimeoutRef = useRef<number | null>(null);
@@ -50,6 +51,14 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
     leaveTimeoutRef.current = window.setTimeout(() => setHovered(false), 250);
   };
 
+  const handleFocus = () => {
+    setFocused(true);
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
+  };
+
   const handleCardClick = () => {
     setIsModalOpen(true);
   };
@@ -72,12 +81,16 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
     router.push(`/search?query=${encodeURIComponent(song.vtuberName)}`);
   };
 
+  const isShowDetail = hovered || focused;
+
   return (
     <>
       <article
         className="group bg-[#222831] border border-[#393E46] rounded-lg overflow-hidden text-center cursor-pointer relative h-64 transition-transform duration-200 flex justify-center items-center hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A6E22E] focus-visible:z-10"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -85,8 +98,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
         aria-haspopup="dialog"
         aria-label={`${displayTitle} - ${song.vtuberName}의 노래 듣기`}
       >
-        {!hovered ? (
-          <div className="absolute inset-0 w-full h-full flex flex-col justify-center items-center bg-[#393E46] transition-opacity duration-300 text-[#EEEEEE] group-hover:opacity-0 group-focus:opacity-0">
+        {!isShowDetail ? (
+          <div className="absolute inset-0 w-full h-full flex flex-col justify-center items-center bg-[#393E46] transition-opacity duration-300 text-[#EEEEEE]">
             <Image
               src={thumbnailUrl}
               alt=""
@@ -99,7 +112,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
             <h3 className="px-2 text-sm font-bold line-clamp-2">{displayTitle}</h3>
           </div>
         ) : (
-          <div className="absolute inset-0 w-full h-full flex flex-col justify-center items-center bg-[#00ADB5] text-[#222831] p-2.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus:opacity-100">
+          <div className="absolute inset-0 w-full h-full flex flex-col justify-center items-center bg-[#00ADB5] text-[#222831] p-2.5 transition-opacity duration-300">
             <h3 className="font-bold text-lg mb-1 leading-tight">{displayTitle}</h3>
             <p
               className="text-blue-900 font-bold cursor-pointer hover:underline mb-1"
