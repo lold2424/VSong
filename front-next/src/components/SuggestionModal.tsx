@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { submitSuggestion } from '@/utils/apiClient';
 
@@ -14,6 +14,56 @@ const SuggestionModal: React.FC<SuggestionModalProps> = ({ isOpen, onClose }) =>
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      // 모달이 열리면 본문 스크롤 방지
+      document.body.style.overflow = 'hidden';
+      
+      // 첫 번째 포커스 가능 요소에 포커스
+      const focusableElements = modalRef.current?.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusableElements && focusableElements.length > 0) {
+        (focusableElements[0] as HTMLElement).focus();
+      }
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+
+        if (e.key === 'Tab') {
+          if (!modalRef.current) return;
+          
+          const focusableContent = modalRef.current.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          const firstElement = focusableContent[0] as HTMLElement;
+          const lastElement = focusableContent[focusableContent.length - 1] as HTMLElement;
+
+          if (e.shiftKey) { // Shift + Tab
+            if (document.activeElement === firstElement) {
+              e.preventDefault();
+              lastElement.focus();
+            }
+          } else { // Tab
+            if (document.activeElement === lastElement) {
+              e.preventDefault();
+              firstElement.focus();
+            }
+          }
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -42,13 +92,14 @@ const SuggestionModal: React.FC<SuggestionModalProps> = ({ isOpen, onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#272822] border border-[#3E3D32] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div ref={modalRef} className="bg-[#272822] border border-[#3E3D32] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="p-6 border-b border-[#3E3D32] flex justify-between items-center bg-[#1e1f1c]">
-          <h2 className="text-2xl font-bold text-[#A6E22E]">건의사항 보내기</h2>
+          <h2 id="modal-title" className="text-2xl font-bold text-[#A6E22E]">건의사항 보내기</h2>
           <button 
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-[#A6E22E] rounded outline-none"
+            aria-label="닫기"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -63,7 +114,9 @@ const SuggestionModal: React.FC<SuggestionModalProps> = ({ isOpen, onClose }) =>
           </p>
 
           <div className="relative">
+            <label htmlFor="suggestion-content" className="sr-only">건의 내용 입력</label>
             <textarea
+              id="suggestion-content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="여기에 내용을 입력해주세요..."

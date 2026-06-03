@@ -44,11 +44,14 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <WebVitalsReporter /> {/* Add the WebVitalsReporter here */}
+          <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[2000] focus:px-4 focus:py-2 focus:bg-[#A6E22E] focus:text-black focus:font-bold focus:rounded-lg focus:shadow-2xl">
+            본문 바로가기
+          </a>
           <div className="flex flex-col min-h-screen overflow-x-hidden bg-[#272822]">
             <Suspense fallback={<div>Loading...</div>}>
               <Header />
             </Suspense>
-            <div className="flex flex-grow overflow-x-hidden w-full box-border min-h-[calc(100vh-140px)] pt-5">
+            <main id="main-content" className="flex flex-grow overflow-x-hidden w-full box-border min-h-[calc(100vh-140px)] pt-5 outline-none" tabIndex={-1}>
               <div className="flex-[8] p-5 bg-[#272822] overflow-y-auto box-border">
                 {children}
               </div>
@@ -57,7 +60,7 @@ export default function RootLayout({
                   <WeeklyChartContainer />
                 </Suspense>
               </div>
-            </div>
+            </main>
             <footer className="bg-[#1e1f1c] text-[#F8F8F2] pt-16 pb-10 px-8 mt-20 border-t border-[#3E3D32]">
               <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
                 {/* Brand Column */}

@@ -51,6 +51,7 @@ public class VtuberService {
             List<VtuberSongsEntity> songsByTitle = vtuberSongsRepository.findAllByTitleContainingOrderByPublishedAtDesc(ftQuery);
 
             List<VtuberEntity> vtubers = vtuberRepository.findAllByNameContaining(trimmedQuery);
+            vtubers.sort(Comparator.comparing(VtuberEntity::getSubscribers, Comparator.nullsFirst(Comparator.naturalOrder())).reversed());
 
             Set<VtuberSongsEntity> combinedSongs = new LinkedHashSet<>(songsByTitle);
             for (VtuberEntity vtuber : vtubers) {

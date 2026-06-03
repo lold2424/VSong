@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {getUserPlaylists, addSongToPlaylist, createPlaylist} from '@/utils/apiClient';
 import SongViewChart from './SongViewChart';
@@ -17,18 +17,7 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
     const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [showChart, setShowChart] = useState(false);
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-            onClose();
-        }
-    };
-
-    const handleBackgroundClick = (event: React.MouseEvent<HTMLDivElement>) => {
-        if ((event.target as HTMLDivElement).classList.contains('video-modal')) {
-            onClose();
-        }
-    };
+    const modalRef = useRef<HTMLDivElement>(null);
 
     const handleTogglePlaylistSelector = async () => {
         if (!showPlaylistSelector && playlists.length === 0) {
@@ -83,20 +72,72 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
             setIsCreating(false);
         }
     };
+
     useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        
+        // 첫 번째 요소(닫기 버튼)에 포커스
+        const focusableElements = modalRef.current?.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), iframe'
+        );
+        if (focusableElements && focusableElements.length > 0) {
+            (focusableElements[0] as HTMLElement).focus();
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+
+            if (event.key === 'Tab') {
+                if (!modalRef.current) return;
+                
+                const focusableContent = modalRef.current.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), iframe'
+                );
+                const firstElement = focusableContent[0] as HTMLElement;
+                const lastElement = focusableContent[focusableContent.length - 1] as HTMLElement;
+
+                if (event.shiftKey) { // Shift + Tab
+                    if (document.activeElement === firstElement) {
+                        event.preventDefault();
+                        lastElement.focus();
+                    }
+                } else { // Tab
+                    if (document.activeElement === lastElement) {
+                        event.preventDefault();
+                        firstElement.focus();
+                    }
+                }
+            }
+        };
+
         window.addEventListener('keydown', handleKeyDown);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = 'unset';
         };
-    }, []);
+    }, [onClose]);
+
+    const handleBackgroundClick = (event: React.MouseEvent<HTMLDivElement>) => {
+        if ((event.target as HTMLDivElement).classList.contains('video-modal')) {
+            onClose();
+        }
+    };
 
     return (
-        <div className="video-modal fixed inset-0 w-full h-full bg-black bg-opacity-80 flex justify-center items-center z-[1000]" onClick={handleBackgroundClick}>
-            <div className="relative w-full max-w-6xl p-8">
+        <div 
+            className="video-modal fixed inset-0 w-full h-full bg-black bg-opacity-80 flex justify-center items-center z-[1000]" 
+            onClick={handleBackgroundClick}
+            role="dialog"
+            aria-modal="true"
+            aria-label="영상 재생 레이어"
+        >
+            <div ref={modalRef} className="relative w-full max-w-6xl p-8 outline-none">
                 <button
                     onClick={onClose}
-                    className="absolute top-0 right-2 text-white text-4xl font-bold z-10 leading-none hover:text-gray-300 transition-colors"
-                    aria-label="Close"
+                    className="absolute top-0 right-2 text-white text-4xl font-bold z-10 leading-none hover:text-gray-300 transition-colors focus-visible:ring-2 focus-visible:ring-[#A6E22E] rounded outline-none"
+                    aria-label="닫기"
                 >
                     &times;
                 </button>
@@ -117,7 +158,7 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                         {!showChart ? (
                             <button 
                                 onClick={() => setShowChart(true)}
-                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3E3D32] text-[#A6E22E] font-bold rounded-lg border border-[#A6E22E] hover:bg-[#4E4D42] transition-colors w-full"
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3E3D32] text-[#A6E22E] font-bold rounded-lg border border-[#A6E22E] hover:bg-[#4E4D42] transition-colors w-full focus-visible:ring-2 focus-visible:ring-[#A6E22E] outline-none"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -128,11 +169,11 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                             <div className="relative">
                                 <button 
                                     onClick={() => setShowChart(false)}
-                                    className="absolute top-6 right-6 text-gray-500 hover:text-white z-10 p-1"
+                                    className="absolute top-6 right-6 text-gray-500 hover:text-white z-10 p-1 focus-visible:ring-2 focus-visible:ring-[#A6E22E] rounded outline-none"
                                     title="차트 닫기"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                                     </svg>
                                 </button>
                                 <SongViewChart videoId={videoId} />
@@ -144,7 +185,7 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                         <div className="relative self-end">
                             <button 
                                 onClick={handleTogglePlaylistSelector}
-                                className="flex items-center gap-2 px-4 py-2 bg-[#A6E22E] text-black font-bold rounded-lg hover:bg-[#bfef5a] transition-colors"
+                                className="flex items-center gap-2 px-4 py-2 bg-[#A6E22E] text-black font-bold rounded-lg hover:bg-[#bfef5a] transition-colors focus-visible:ring-2 focus-visible:ring-[#A6E22E] outline-none"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
@@ -168,7 +209,7 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                                                     key={playlist.id}
                                                     onClick={() => handleAddToPlaylist(playlist.id)}
                                                     disabled={isAdding || isCreating}
-                                                    className="w-full text-left px-4 py-3 text-[#F8F8F2] text-sm hover:bg-[#3E3D32] transition-colors border-b border-[#3E3D32] last:border-0 truncate"
+                                                    className="w-full text-left px-4 py-3 text-[#F8F8F2] text-sm hover:bg-[#3E3D32] transition-colors border-b border-[#3E3D32] last:border-0 truncate focus-visible:bg-[#3E3D32] outline-none"
                                                 >
                                                     {playlist.snippet.title}
                                                 </button>
@@ -178,7 +219,9 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                                     
                                     <div className="p-3 bg-[#1e1f1c] border-t border-[#3E3D32]">
                                         <div className="flex flex-col gap-2">
+                                            <label htmlFor="new-playlist-name" className="sr-only">새 재생목록 이름</label>
                                             <input 
+                                                id="new-playlist-name"
                                                 type="text"
                                                 value={newPlaylistTitle}
                                                 onChange={(e) => setNewPlaylistTitle(e.target.value)}
@@ -189,7 +232,7 @@ const VideoModal: React.FC<VideoModalProps> = ({ videoId, onClose }) => {
                                             <button
                                                 onClick={handleCreateAndAdd}
                                                 disabled={isCreating || !newPlaylistTitle.trim()}
-                                                className="w-full py-2 bg-[#3E3D32] text-[#A6E22E] text-xs font-bold rounded hover:bg-[#4E4D42] transition-colors disabled:opacity-50"
+                                                className="w-full py-2 bg-[#3E3D32] text-[#A6E22E] text-xs font-bold rounded hover:bg-[#4E4D42] transition-colors disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-[#A6E22E] outline-none"
                                             >
                                                 {isCreating ? '생성 중...' : '목록 생성 후 노래 추가'}
                                             </button>

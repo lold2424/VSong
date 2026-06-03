@@ -53,7 +53,9 @@ const SearchBarContent = () => {
         message={modalMessage} 
         onClose={() => setIsModalOpen(false)} 
       />
+      <label htmlFor="top-search" className="sr-only">검색어 입력</label>
       <input
+        id="top-search"
         type="text"
         placeholder="검색"
         value={searchTerm}
