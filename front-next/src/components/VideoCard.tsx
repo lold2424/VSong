@@ -58,8 +58,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
     setIsModalOpen(false);
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleCardClick();
+    }
+  };
+
   const handleVtuberNameClick = (
-    event: React.MouseEvent<HTMLParagraphElement>
+    event: React.MouseEvent<HTMLParagraphElement> | React.KeyboardEvent<HTMLParagraphElement>
   ) => {
     event.stopPropagation();
     router.push(`/search?query=${encodeURIComponent(song.vtuberName)}`);
@@ -68,10 +75,14 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
   return (
     <>
       <div
-        className="group bg-[#222831] border border-[#393E46] rounded-lg overflow-hidden text-center cursor-pointer relative h-64 transition-transform duration-200 flex justify-center items-center hover:scale-105"
+        className="group bg-[#222831] border border-[#393E46] rounded-lg overflow-hidden text-center cursor-pointer relative h-64 transition-transform duration-200 flex justify-center items-center hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A6E22E] focus-visible:z-10"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleCardClick}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={`${displayTitle} 영상 보기`}
       >
         {!hovered ? (
           <div className="absolute inset-0 w-full h-full flex flex-col justify-center items-center bg-[#393E46] transition-opacity duration-300 text-[#EEEEEE] group-hover:opacity-0">
@@ -89,13 +100,13 @@ const VideoCard: React.FC<VideoCardProps> = ({ song, isPriority = false }) => {
           <div className="absolute inset-0 w-full h-full flex flex-col justify-center items-center bg-[#00ADB5] text-[#222831] p-2.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             <h3 className="cursor-pointer font-bold text-lg mb-1">{displayTitle}</h3>
             <p
-              className="text-blue-600 cursor-pointer hover:underline"
+              className="text-blue-900 font-bold cursor-pointer hover:underline"
               onClick={handleVtuberNameClick}
             >
               채널명: {song.vtuberName}
             </p>
-            <p className="opacity-80">조회수: {song.viewCount.toLocaleString()}</p>
-            <p className="opacity-80">게시일: {new Date(song.publishedAt).toLocaleDateString()}</p>
+            <p className="opacity-90 font-medium">조회수: {song.viewCount.toLocaleString()}</p>
+            <p className="opacity-90 font-medium">게시일: {new Date(song.publishedAt).toLocaleDateString()}</p>
           </div>
         )}
       </div>

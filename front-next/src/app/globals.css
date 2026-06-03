@@ -24,3 +24,31 @@
 html, body {
   height: 100%;
 }
+
+/* Custom Scrollbar */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #272822;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #3E3D32;
+    border-radius: 5px;
+    border: 2px solid #272822;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #A6E22E;
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #3E3D32 #272822;
+  }
+}

@@ -59,9 +59,9 @@ const SearchBarContent = () => {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         onKeyDown={handleKeyPress}
-        className="border-none bg-transparent outline-none text-[#F8F8F2] text-sm p-1 w-50 placeholder:text-[#F8F8F2] placeholder:opacity-70"
+        className="border-none bg-transparent outline-none focus-visible:ring-1 focus-visible:ring-[#A6E22E] rounded text-[#F8F8F2] text-sm p-1 w-50 placeholder:text-[#F8F8F2] placeholder:opacity-70"
       />
-      <button className="bg-transparent border-none cursor-pointer ml-1.5" onClick={handleSearch}>
+      <button className="bg-transparent border-none cursor-pointer ml-1.5 focus-visible:ring-2 focus-visible:ring-[#A6E22E] rounded-md outline-none" onClick={handleSearch}>
         <Image src="/images/SearchBar.png" alt="Search" width={20} height={20} className="filter invert" />
       </button>
     </div>
@@ -127,21 +127,21 @@ const HeaderContent: React.FC = () => {
         <div className="flex gap-2.5">
           <Link href="/?gender=male" passHref>
             <button
-              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "male" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
+              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "male" ? "text-[#272222] bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
             >
               남성
             </button>
           </Link>
           <Link href="/?gender=female" passHref>
             <button
-              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "female" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
+              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "female" ? "text-[#272222] bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
             >
               여성
             </button>
           </Link>
           <Link href="/" passHref>
             <button
-              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "all" ? "text-white bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
+              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "all" ? "text-[#272222] bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
             >
               전체
             </button>

@@ -82,7 +82,7 @@ export default function RootLayout({
 
                 {/* Description Column */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest">About Project</h4>
+                  <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">About Project</h4>
                   <p className="text-xs leading-relaxed text-gray-400">
                     V-Song은 버추얼 유튜버들의 음악 데이터를 수집하고 분석하는 아카이브 플랫폼입니다. <br /><br />
                     신곡 탐색부터 주간 조회수 트렌드까지, 데이터 기반의 신뢰할 수 있는 정보를 제공하여 버튜버 음악 생태계의 성장을 기록합니다.
@@ -91,7 +91,7 @@ export default function RootLayout({
 
                 {/* Meta & Links Column */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest">Resources</h4>
+                  <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">Resources</h4>
                   <div className="flex flex-col gap-2 text-xs">
                     <SuggestionModalTrigger />
                     <Link href="/privacy" className="hover:text-[#A6E22E] transition-colors">개인정보처리방침 (Privacy Policy)</Link>
