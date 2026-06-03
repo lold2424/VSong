@@ -129,21 +129,21 @@ const HeaderContent: React.FC = () => {
         <div className="flex gap-2.5">
           <Link href="/?gender=male" passHref>
             <button
-              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "male" ? "text-[#272222] bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
+              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "male" ? "text-black bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-black hover:border-[#A6E22E]`}
             >
               남성
             </button>
           </Link>
           <Link href="/?gender=female" passHref>
             <button
-              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "female" ? "text-[#272222] bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
+              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "female" ? "text-black bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-black hover:border-[#A6E22E]`}
             >
               여성
             </button>
           </Link>
           <Link href="/" passHref>
             <button
-              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "all" ? "text-[#272222] bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-white hover:border-[#A6E22E]`}
+              className={`px-5 py-2.5 text-sm rounded-full border-2 border-[#3E3D32] cursor-pointer font-bold transition-colors duration-300 text-[#A6E22E] bg-[#3E3D32] outline-none ${genderFilter === "all" ? "text-black bg-[#A6E22E]" : ""} hover:bg-[#A6E22E] hover:text-black hover:border-[#A6E22E]`}
             >
               전체
             </button>
