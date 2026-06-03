@@ -88,11 +88,33 @@ export default async function Page({ params }: Props) {
     notFound();
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MusicGroup",
+    "name": vtuberDetail.name,
+    "url": `https://www.vsong.site/vtuber/${channelId}`,
+    "image": vtuberDetail.channelImg,
+    "description": `${vtuberDetail.name}의 노래 아카이브. 구독자 ${vtuberDetail.subscribers.toLocaleString()}명.`,
+    "track": songs.map((song) => ({
+      "@type": "MusicRecording",
+      "name": song.title,
+      "url": `https://www.youtube.com/watch?v=${song.videoId}`,
+      "datePublished": song.publishedAt,
+      "interactionCount": song.viewCount
+    }))
+  };
+
   return (
-    <VtuberDetailClient
-      vtuberDetail={vtuberDetail}
-      songs={songs}
-      channelId={channelId}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <VtuberDetailClient
+        vtuberDetail={vtuberDetail}
+        songs={songs}
+        channelId={channelId}
+      />
+    </>
   );
 }

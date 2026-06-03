@@ -34,8 +34,25 @@ export default async function Page({ searchParams }: { searchParams: { [key: str
     const gender = searchParams.gender || 'all';
     const data = await fetchMainPageData(gender);
 
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "VSong",
+        "url": "https://www.vsong.site",
+        "description": "버튜버 음악의 모든 순간을 기록합니다. 실시간 수집되는 버추얼 유튜버들의 최신곡과 주간 인기 트렌드를 VSong에서 만나보세요.",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://www.vsong.site/search?query={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    };
+
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             <RecommendationSection />
             
             <section aria-labelledby="recent-songs-title" className="mb-12">

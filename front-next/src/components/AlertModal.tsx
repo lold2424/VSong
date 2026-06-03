@@ -14,8 +14,12 @@ const AlertModal: React.FC<AlertModalProps> = ({ isOpen, title, message, onClose
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black bg-opacity-80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#272822] border-2 border-[#A6E22E] rounded-2xl p-6 w-full max-w-sm shadow-[0_0_20px_rgba(166,226,46,0.2)] animate-in zoom-in-95 duration-200">
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black bg-opacity-80 backdrop-blur-sm animate-in fade-in duration-200"
+      role="alert"
+      aria-live="assertive"
+    >
+      <div className="bg-[#272822] border-2 border-[#A6E22E] rounded-2xl p-6 w-full max-w-sm shadow-[0_0_20px_rgba(166,226,46,0.2)] animate-in zoom-in-95 duration-200" role="document">
         <div className="flex items-center gap-3 mb-4">
           <div className="bg-[#3E3D32] p-2 rounded-lg">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#A6E22E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">

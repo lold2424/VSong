@@ -65,7 +65,14 @@ const SongViewChart: React.FC<SongViewChartProps> = ({ videoId }) => {
         </svg>
         일간 조회수 상승 추이 (최근 7일)
       </h4>
-      <div className="h-48 w-full">
+      
+      {/* Accessibility: Summary for screen readers */}
+      <div className="sr-only" aria-live="polite">
+        최근 7일간의 조회수 상승 추이 차트입니다. 
+        {data.length > 0 && `현재 가장 최근 기록된 일간 상승량은 ${data[data.length - 1].increase.toLocaleString()}회입니다.`}
+      </div>
+
+      <div className="h-48 w-full" aria-hidden="true">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3E3D32" vertical={false} />
