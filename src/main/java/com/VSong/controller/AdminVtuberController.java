@@ -55,4 +55,17 @@ public class AdminVtuberController {
         
         return ResponseEntity.ok("노래와 관련된 모든 데이터가 성공적으로 삭제되었습니다.");
     }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{channelId}")
+    public ResponseEntity<String> deleteVtuber(@org.springframework.web.bind.annotation.PathVariable String channelId) {
+        vtuberService.deleteVtuberAndRelatedSongs(channelId);
+        return ResponseEntity.ok("버튜버와 관련된 모든 데이터가 삭제되었으며, 제외 목록(Blacklist)에 등록되었습니다.");
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/{channelId}/gender")
+    public ResponseEntity<String> updateVtuberGender(@org.springframework.web.bind.annotation.PathVariable String channelId, @RequestBody java.util.Map<String, String> requestBody) {
+        String gender = requestBody.get("gender");
+        vtuberService.updateVtuberGender(channelId, gender);
+        return ResponseEntity.ok("성별이 성공적으로 업데이트되었습니다.");
+    }
 }

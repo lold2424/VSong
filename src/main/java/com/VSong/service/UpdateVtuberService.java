@@ -26,6 +26,7 @@ public class UpdateVtuberService {
     private final VtuberRepository vtuberRepository;
     private final ExceptVtuberRepository exceptVtuberRepository;
     private final VtuberService vtuberService;
+    private final VtuberValidationService validationService;
     private final YouTubeApiService youTubeApiService;
     private final com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository;
     private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
@@ -35,6 +36,7 @@ public class UpdateVtuberService {
                                VtuberRepository vtuberRepository,
                                ExceptVtuberRepository exceptVtuberRepository,
                                VtuberService vtuberService,
+                               VtuberValidationService validationService,
                                YouTubeApiService youTubeApiService,
                                com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository,
                                com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository) {
@@ -42,6 +44,7 @@ public class UpdateVtuberService {
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.vtuberService = vtuberService;
+        this.validationService = validationService;
         this.youTubeApiService = youTubeApiService;
         this.vtuberUpdateLogRepository = vtuberUpdateLogRepository;
         this.apiQuotaLogRepository = apiQuotaLogRepository;
@@ -143,6 +146,15 @@ public class UpdateVtuberService {
 
             for (Channel channel : channels) {
                 String channelId = channel.getId();
+
+                String processableReason = validationService.getChannelProcessableReason(channelId);
+                if ("제외 목록에 포함된 채널".equals(processableReason)) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("제외 목록에 포함되어 동기화에서 제외된 채널: {} (ID: {})", channel.getSnippet().getTitle(), channelId);
+                    }
+                    continue;
+                }
+
                 existingApiChannelIds.add(channelId);
 
                 VtuberEntity vtuber = vtuberRepository.findByChannelId(channelId)

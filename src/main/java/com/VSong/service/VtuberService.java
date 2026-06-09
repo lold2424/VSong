@@ -15,11 +15,18 @@ import java.util.*;
 public class VtuberService {
     private final VtuberRepository vtuberRepository;
     private final VtuberSongsRepository vtuberSongsRepository;
+    private final com.VSong.repository.ExceptVtuberRepository exceptVtuberRepository;
+    private final com.VSong.repository.VtuberProcessLogRepository vtuberProcessLogRepository;
     private static final Logger logger = LoggerFactory.getLogger(VtuberService.class);
 
-    public VtuberService(VtuberRepository vtuberRepository, VtuberSongsRepository vtuberSongsRepository) {
+    public VtuberService(VtuberRepository vtuberRepository, 
+                         VtuberSongsRepository vtuberSongsRepository,
+                         com.VSong.repository.ExceptVtuberRepository exceptVtuberRepository,
+                         com.VSong.repository.VtuberProcessLogRepository vtuberProcessLogRepository) {
         this.vtuberRepository = vtuberRepository;
         this.vtuberSongsRepository = vtuberSongsRepository;
+        this.exceptVtuberRepository = exceptVtuberRepository;
+        this.vtuberProcessLogRepository = vtuberProcessLogRepository;
     }
 
     public VtuberEntity createVtuber(String description, String gender) {
@@ -100,11 +107,37 @@ public class VtuberService {
     }
 
     @Transactional
+    public void updateVtuberGender(String channelId, String gender) {
+        Optional<VtuberEntity> vtuberOpt = vtuberRepository.findByChannelId(channelId);
+        if (vtuberOpt.isPresent()) {
+            VtuberEntity vtuber = vtuberOpt.get();
+            vtuber.setGender(gender);
+            vtuberRepository.save(vtuber);
+            logger.info("채널 ID {}의 성별을 {}로 업데이트 완료", channelId, gender);
+        } else {
+            logger.warn("성별 업데이트 실패: 채널 ID {}를 찾을 수 없습니다.", channelId);
+        }
+    }
+
+    @Transactional
     public void deleteVtuberAndRelatedSongs(String channelId) {
+        Optional<VtuberEntity> vtuberOpt = vtuberRepository.findByChannelId(channelId);
+        String vtuberName = vtuberOpt.isPresent() ? vtuberOpt.get().getName() : "Unknown";
+
         vtuberSongsRepository.deleteByChannelId(channelId);
         logger.info("vtuber_songs 테이블에서 채널 ID {} 관련 데이터 삭제 완료", channelId);
 
         vtuberRepository.deleteByChannelId(channelId);
         logger.info("vtubers 테이블에서 채널 ID {} 삭제 완료", channelId);
+
+        vtuberProcessLogRepository.save(new com.VSong.entity.VtuberProcessLog(channelId, vtuberName, "DELETED", "관리자에 의해 삭제 및 제외 처리됨"));
+
+        if (!exceptVtuberRepository.existsByChannelId(channelId)) {
+            com.VSong.entity.ExceptVtuberEntity exceptVtuber = new com.VSong.entity.ExceptVtuberEntity();
+            exceptVtuber.setChannelId(channelId);
+            exceptVtuberRepository.save(exceptVtuber);
+            logger.info("채널 ID {}를 제외 목록(except_vtubers)에 추가 완료", channelId);
+        }
     }
 }
+

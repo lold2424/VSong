@@ -33,6 +33,7 @@ public class AdminMonitoringController {
     private final HealthEndpoint healthEndpoint;
     private final java.util.concurrent.ThreadPoolExecutor vtuberSyncExecutor;
     private final com.VSong.repository.SongProcessLogRepository songProcessLogRepository;
+    private final com.VSong.repository.VtuberProcessLogRepository vtuberProcessLogRepository;
 
     public AdminMonitoringController(YouTubeApiService youtubeApiService,
                                      UpdateVtuberSongsService updateVtuberSongsService,
@@ -44,7 +45,8 @@ public class AdminMonitoringController {
                                      com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository,
                                      HealthEndpoint healthEndpoint,
                                      java.util.concurrent.ThreadPoolExecutor vtuberSyncExecutor,
-                                     com.VSong.repository.SongProcessLogRepository songProcessLogRepository) {
+                                     com.VSong.repository.SongProcessLogRepository songProcessLogRepository,
+                                     com.VSong.repository.VtuberProcessLogRepository vtuberProcessLogRepository) {
         this.youtubeApiService = youtubeApiService;
         this.updateVtuberSongsService = updateVtuberSongsService;
         this.uploadVtuberService = uploadVtuberService;
@@ -56,6 +58,7 @@ public class AdminMonitoringController {
         this.healthEndpoint = healthEndpoint;
         this.vtuberSyncExecutor = vtuberSyncExecutor;
         this.songProcessLogRepository = songProcessLogRepository;
+        this.vtuberProcessLogRepository = vtuberProcessLogRepository;
     }
 
     @GetMapping("/ingestion-logs")
@@ -73,18 +76,46 @@ public class AdminMonitoringController {
             return new org.springframework.data.domain.PageImpl<>(logs, pageable, logs.size());
         }
 
-        if (decision != null && !decision.isEmpty()) {
-            if (title != null && !title.isEmpty()) {
-                return songProcessLogRepository.findByDecisionAndTitleContainingOrderByProcessedAtDesc(decision, title, pageable);
-            }
-            return songProcessLogRepository.findByDecisionOrderByProcessedAtDesc(decision, pageable);
-        }
+        boolean hasDecision = decision != null && !decision.isEmpty();
+        boolean hasTitle = title != null && !title.isEmpty();
 
-        if (title != null && !title.isEmpty()) {
+        if (hasDecision && hasTitle) {
+            return songProcessLogRepository.findByDecisionAndTitleContainingOrderByProcessedAtDesc(decision, title, pageable);
+        } else if (hasDecision) {
+            return songProcessLogRepository.findByDecisionOrderByProcessedAtDesc(decision, pageable);
+        } else if (hasTitle) {
             return songProcessLogRepository.findByTitleContainingOrderByProcessedAtDesc(title, pageable);
         }
 
         return songProcessLogRepository.findAllByOrderByProcessedAtDesc(pageable);
+    }
+
+    @GetMapping("/vtuber-process-logs")
+    public org.springframework.data.domain.Page<com.VSong.entity.VtuberProcessLog> getVtuberProcessLogs(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String channelId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String channelTitle,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String decision,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "50") int size) {
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+
+        if (channelId != null && !channelId.isEmpty()) {
+            return vtuberProcessLogRepository.findByChannelIdOrderByProcessedAtDesc(channelId, pageable);
+        }
+
+        boolean hasDecision = decision != null && !decision.isEmpty();
+        boolean hasTitle = channelTitle != null && !channelTitle.isEmpty();
+
+        if (hasDecision && hasTitle) {
+            return vtuberProcessLogRepository.findByDecisionAndChannelTitleContainingOrderByProcessedAtDesc(decision, channelTitle, pageable);
+        } else if (hasDecision) {
+            return vtuberProcessLogRepository.findByDecisionOrderByProcessedAtDesc(decision, pageable);
+        } else if (hasTitle) {
+            return vtuberProcessLogRepository.findByChannelTitleContainingOrderByProcessedAtDesc(channelTitle, pageable);
+        }
+
+        return vtuberProcessLogRepository.findAllByOrderByProcessedAtDesc(pageable);
     }
 
     @GetMapping("/dashboard")

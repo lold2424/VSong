@@ -3,14 +3,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import IngestionLogTracker from '@/components/admin/IngestionLogTracker';
 
 const AdminPage = () => {
   const { user, isLoading } = useAuth();
-
-  const [channelId, setChannelId] = useState('');
-  const [addVtuberMessage, setAddVtuberMessage] = useState('');
-  const [isSubmittingVtuber, setIsSubmittingVtuber] = useState(false);
 
   const [cacheMessage, setCacheMessage] = useState('');
   const [isRefreshingCache, setIsRefreshingCache] = useState(false);
@@ -139,42 +134,6 @@ const AdminPage = () => {
     return '';
   };
 
-  const handleAddVtuber = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!channelId.trim()) {
-      setAddVtuberMessage('채널 ID를 입력해주세요.');
-      return;
-    }
-
-    setIsSubmittingVtuber(true);
-    setAddVtuberMessage('');
-
-    try {
-      const response = await fetch('/api/admin/vtuber', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-XSRF-TOKEN': getCsrfToken(),
-        },
-        body: JSON.stringify({ channelId }),
-        credentials: 'include',
-      });
-
-      const resultText = await response.text();
-
-      if (response.ok) {
-        setAddVtuberMessage(`성공: ${resultText}`);
-        setChannelId('');
-      } else {
-        setAddVtuberMessage(`오류: ${resultText}`);
-      }
-    } catch {
-      setAddVtuberMessage('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-    } finally {
-      setIsSubmittingVtuber(false);
-    }
-  };
-
   const handleCacheRefresh = async () => {
     setIsRefreshingCache(true);
     setCacheMessage('');
@@ -248,6 +207,12 @@ const AdminPage = () => {
             >
               {isCleaningTitles ? '정제 진행 중...' : '노래 제목 일괄 정제'}
             </button>
+            <Link 
+              href="/admin/vtubers" 
+              className="text-xs bg-blue-600 text-white hover:bg-blue-500 px-3 py-1 rounded transition font-bold text-center h-[26px] flex items-center justify-center"
+            >
+              버튜버 통합 관리
+            </Link>
             <button 
               onClick={fetchMonitoringData} 
               className="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded transition"
@@ -594,43 +559,21 @@ const AdminPage = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="space-y-8">
         {/* 방문자 통계 섹션 */}
         <div className="bg-gray-700 p-6 rounded-md">
-        <h2 className="text-xl font-semibold mb-4">사이트 통계 및 피드백</h2>
-          <div className="grid grid-cols-1 gap-3">
+          <h2 className="text-xl font-semibold mb-4 text-[#66D9EF]">사이트 통계 및 피드백</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link href="/admin/visitors" className="block w-full bg-blue-500 text-white font-bold py-3 px-4 rounded hover:bg-blue-600 transition text-center">
               방문자 통계 보기
             </Link>
             <Link href="/admin/suggestions" className="block w-full bg-[#A6E22E] text-gray-900 font-bold py-3 px-4 rounded hover:bg-lime-400 transition text-center">
               건의사항 목록 확인
             </Link>
+            <Link href="/admin/history" className="block w-full bg-indigo-500 text-white font-bold py-3 px-4 rounded hover:bg-indigo-400 transition text-center">
+              수집 상세 히스토리
+            </Link>
           </div>
-        </div>
-
-        {/* 버튜버 추가 섹션 */}
-        <div className="bg-gray-700 p-6 rounded-md">
-          <h2 className="text-xl font-semibold mb-4">버튜버 수동 추가</h2>
-          <form onSubmit={handleAddVtuber} className="flex flex-col gap-4">
-            <input
-              type="text"
-              value={channelId}
-              onChange={(e) => setChannelId(e.target.value)}
-              placeholder="YouTube 채널 ID"
-              className="p-3 bg-gray-900 rounded border border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#A6E22E] transition text-sm"
-              disabled={isSubmittingVtuber}
-            />
-            <button
-              type="submit"
-              className="bg-[#A6E22E] text-gray-900 font-bold py-3 rounded hover:bg-lime-400 transition disabled:bg-gray-500"
-              disabled={isSubmittingVtuber}
-            >
-              {isSubmittingVtuber ? '추가 중...' : '버튜버 추가'}
-            </button>
-          </form>
-          {addVtuberMessage && (
-            <p className="mt-4 text-xs text-center p-3 rounded bg-gray-600">{addVtuberMessage}</p>
-          )}
         </div>
       </div>
 
@@ -651,8 +594,6 @@ const AdminPage = () => {
           <p className="mt-4 text-center p-3 rounded bg-gray-600">{cacheMessage}</p>
         )}
       </div>
-
-      <IngestionLogTracker />
     </div>
   );
 };

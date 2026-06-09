@@ -24,23 +24,26 @@ public class ManualVtuberService {
     private final VtuberValidationService validationService;
     private final YouTube youTube;
     private final YouTubeApiService youTubeApiService;
+    private final com.VSong.repository.VtuberProcessLogRepository vtuberProcessLogRepository;
 
     public ManualVtuberService(VtuberRepository vtuberRepository,
                                ExceptVtuberRepository exceptVtuberRepository,
                                VtuberValidationService validationService,
                                YouTube youTube,
-                               YouTubeApiService youTubeApiService) {
+                               YouTubeApiService youTubeApiService,
+                               com.VSong.repository.VtuberProcessLogRepository vtuberProcessLogRepository) {
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
         this.validationService = validationService;
         this.youTube = youTube;
         this.youTubeApiService = youTubeApiService;
+        this.vtuberProcessLogRepository = vtuberProcessLogRepository;
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    public String addVtuberChannel(String input) {
+    public String addVtuberChannel(String input, String gender) {
         if (logger.isInfoEnabled()) {
-            logger.info("수동 버튜버 채널 추가 요청: {}", input);
+            logger.info("수동 버튜버 채널 추가 요청: {}, 성별: {}", input, gender);
         }
 
         Channel youtubeChannel;
@@ -69,7 +72,8 @@ public class ManualVtuberService {
         String channelTitle = youtubeChannel.getSnippet().getTitle();
 
         try {
-            saveNewVtuber(youtubeChannel);
+            saveNewVtuber(youtubeChannel, gender);
+            vtuberProcessLogRepository.save(new com.VSong.entity.VtuberProcessLog(actualChannelId, channelTitle, "MANUAL_ADDED", "관리자에 의해 수동 추가됨"));
             if (logger.isInfoEnabled()) {
                 logger.info("수동으로 버튜버 채널 저장 완료: {} ({})", channelTitle, actualChannelId);
             }
@@ -107,7 +111,7 @@ public class ManualVtuberService {
         return channels.get(0);
     }
 
-    private void saveNewVtuber(Channel channel) {
+    private void saveNewVtuber(Channel channel, String gender) {
         VtuberEntity vtuber = new VtuberEntity();
         vtuber.setChannelId(channel.getId());
         vtuber.setName(channel.getSnippet().getTitle());
@@ -122,6 +126,9 @@ public class ManualVtuberService {
             vtuber.setChannelImg(channel.getSnippet().getThumbnails().getDefault().getUrl());
         }
         vtuber.setStatus("new");
+        if (gender != null && !gender.isBlank()) {
+            vtuber.setGender(gender);
+        }
         vtuberRepository.save(vtuber);
     }
 }

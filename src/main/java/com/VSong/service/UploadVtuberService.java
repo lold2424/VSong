@@ -33,6 +33,8 @@ public class UploadVtuberService {
     private final YouTubeApiService youTubeApiService;
     private final com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository;
     private final com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository;
+    private final com.VSong.repository.VtuberProcessLogRepository vtuberProcessLogRepository;
+    private final com.VSong.repository.ExceptVtuberRepository exceptVtuberRepository;
 
     private final List<String> queries = Arrays.asList(
             "버튜버", "Vtuber", "버츄얼 유튜버", "버츄버",
@@ -75,17 +77,21 @@ public class UploadVtuberService {
 
     public UploadVtuberService(YouTube youTube,
                                VtuberRepository vtuberRepository,
+                               com.VSong.repository.ExceptVtuberRepository exceptVtuberRepository,
                                VtuberValidationService validationService,
                                YouTubeApiService youTubeApiService,
                                MeterRegistry meterRegistry,
                                com.VSong.repository.VtuberUpdateLogRepository vtuberUpdateLogRepository,
-                               com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository) {
+                               com.VSong.repository.ApiQuotaLogRepository apiQuotaLogRepository,
+                               com.VSong.repository.VtuberProcessLogRepository vtuberProcessLogRepository) {
         this.youTube = youTube;
         this.vtuberRepository = vtuberRepository;
+        this.exceptVtuberRepository = exceptVtuberRepository;
         this.validationService = validationService;
         this.youTubeApiService = youTubeApiService;
         this.vtuberUpdateLogRepository = vtuberUpdateLogRepository;
         this.apiQuotaLogRepository = apiQuotaLogRepository;
+        this.vtuberProcessLogRepository = vtuberProcessLogRepository;
         this.searchApiCounter = meterRegistry.counter("youtube.api.search");
         this.channelsApiCounter = meterRegistry.counter("youtube.api.channels");
     }
@@ -233,6 +239,7 @@ public class UploadVtuberService {
 
                 String processableReason = validationService.getChannelProcessableReason(channelId);
                 if (processableReason != null) {
+                    vtuberProcessLogRepository.save(new com.VSong.entity.VtuberProcessLog(channelId, channelTitle, "REJECTED", processableReason));
                     if (logger.isInfoEnabled()) {
                         logger.info("걸러진 채널: {} (ID: {}) - 이유: {}", channelTitle, channelId, processableReason);
                     }
@@ -241,6 +248,7 @@ public class UploadVtuberService {
 
                 String koreanVtuberReason = validationService.getKoreanVtuberReason(channel);
                 if (koreanVtuberReason != null) {
+                    vtuberProcessLogRepository.save(new com.VSong.entity.VtuberProcessLog(channelId, channelTitle, "REJECTED", koreanVtuberReason));
                     if (logger.isInfoEnabled()) {
                         logger.info("걸러진 채널: {} (ID: {}) - 이유: {}", channelTitle, channelId, koreanVtuberReason);
                     }
@@ -263,6 +271,9 @@ public class UploadVtuberService {
                 vtuber.setStatus("new");
                 vtuberRepository.save(vtuber);
                 addedCount++;
+                
+                vtuberProcessLogRepository.save(new com.VSong.entity.VtuberProcessLog(channelId, channelTitle, "ACCEPTED", "자동 수집 및 저장 완료"));
+                
                 if (logger.isInfoEnabled()) {
                     logger.info("새로운 VTuber 저장: {} (ID: {})", vtuber.getName(), channelId);
                 }
