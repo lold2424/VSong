@@ -11,12 +11,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -30,21 +27,20 @@ public class RelatedChannelService {
 
     private final VtuberRepository vtuberRepository;
     private final ExceptVtuberRepository exceptVtuberRepository;
-    private final VtuberValidationService validationService; // 주입
+    private final VtuberValidationService validationService;
     private final YouTube youTube;
-    private final List<String> apiKeys;
-    private int currentKeyIndex = 0;
+    private final YouTubeApiService youTubeApiService;
 
     public RelatedChannelService(VtuberRepository vtuberRepository,
                                  ExceptVtuberRepository exceptVtuberRepository,
-                                 VtuberValidationService validationService, // 주입
+                                 VtuberValidationService validationService,
                                  YouTube youTube,
-                                 @Value("${youtube.api.keys}") String apiKeys) {
+                                 YouTubeApiService youTubeApiService) {
         this.vtuberRepository = vtuberRepository;
         this.exceptVtuberRepository = exceptVtuberRepository;
-        this.validationService = validationService; // 주입
+        this.validationService = validationService;
         this.youTube = youTube;
-        this.apiKeys = Arrays.asList(apiKeys.split(","));
+        this.youTubeApiService = youTubeApiService;
     }
 
     public void discoverAndSaveFromRelatedChannels() {
@@ -62,7 +58,9 @@ public class RelatedChannelService {
             int end = Math.min(i + batchSize, existingVtuberIds.size());
             List<String> batch = existingVtuberIds.subList(i, end);
 
-            logger.info("배치 {}/{} 처리 중...", (i/batchSize) + 1, (existingVtuberIds.size() + batchSize - 1) / batchSize);
+            if (logger.isInfoEnabled()) {
+                logger.info("배치 {}/{} 처리 중...", (i / batchSize) + 1, (existingVtuberIds.size() + batchSize - 1) / batchSize);
+            }
 
             Set<String> batchResults = processBatchSequentially(batch, allKnownIds);
             allDiscoveredChannelIds.addAll(batchResults);
@@ -76,7 +74,9 @@ public class RelatedChannelService {
             }
         }
 
-        logger.info("총 {}개의 새로운 관련 채널 ID를 발견했습니다.", allDiscoveredChannelIds.size());
+        if (logger.isInfoEnabled()) {
+            logger.info("총 {}개의 새로운 관련 채널 ID를 발견했습니다.", allDiscoveredChannelIds.size());
+        }
 
         if (!allDiscoveredChannelIds.isEmpty()) {
             processDiscoveredChannels(allDiscoveredChannelIds);
@@ -92,7 +92,9 @@ public class RelatedChannelService {
         try {
             for (String channelId : batch) {
                 String url = "https://www.youtube.com/channel/" + channelId + "/channels";
-                logger.info("채널 탐색 중: " + channelId);
+                if (logger.isInfoEnabled()) {
+                    logger.info("채널 탐색 중: {}", url);
+                }
 
                 try {
                     driver.get(url);
@@ -116,7 +118,9 @@ public class RelatedChannelService {
                                     if (discoveredId != null && !allKnownIds.contains(discoveredId)) {
                                         if (!isYouTubeOfficialChannel(discoveredId, element.getText())) {
                                             discoveredIds.add(discoveredId);
-                                            logger.info("새로운 관련 채널 발견: {}", discoveredId);
+                                            if (logger.isInfoEnabled()) {
+                                                logger.info("새로운 관련 채널 발견: {}", discoveredId);
+                                            }
                                         }
                                     }
                                 }
@@ -125,10 +129,12 @@ public class RelatedChannelService {
                         }
                     }
                     if (!foundAny) {
-                        logger.warn("채널 {} - 어떤 관련 채널도 찾을 수 없음", channelId);
+                        if (logger.isWarnEnabled()) {
+                            logger.warn("채널 {} - 어떤 관련 채널도 찾을 수 없음", channelId);
+                        }
                     }
                 } catch (Exception e) {
-                    logger.error("채널 페이지 스크래핑 중 오류 발생: " + url, e);
+                    logger.error("채널 페이지 스크래핑 중 오류 발생: {}", url, e);
                 }
             }
         } finally {
@@ -143,15 +149,17 @@ public class RelatedChannelService {
         return discoveredIds;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void processDiscoveredChannels(Set<String> channelIds) {
-        logger.info("새로 발견된 채널 정보 처리 시작. 대상: {}개", channelIds.size());
+        if (logger.isInfoEnabled()) {
+            logger.info("새로 발견된 채널 정보 처리 시작. 대상: {}개", channelIds.size());
+        }
         try {
             YouTube.Channels.List channelRequest = youTube.channels().list(List.of("snippet", "statistics"));
             channelRequest.setId(new java.util.ArrayList<>(channelIds));
             channelRequest.setFields("items(id,snippet/title,snippet/description,snippet/thumbnails/default/url,statistics/subscriberCount)");
-            channelRequest.setKey(getCurrentApiKey());
 
-            ChannelListResponse channelResponse = channelRequest.execute();
+            ChannelListResponse channelResponse = youTubeApiService.executeRequest(channelRequest);
             List<Channel> channels = channelResponse.getItems();
 
             if (channels == null || channels.isEmpty()) {
@@ -159,7 +167,9 @@ public class RelatedChannelService {
                 return;
             }
 
-            logger.info("API로부터 {}개 채널 정보 조회 완료", channels.size());
+            if (logger.isInfoEnabled()) {
+                logger.info("API로부터 {}개 채널 정보 조회 완료", channels.size());
+            }
 
             int savedCount = 0;
             for (Channel channel : channels) {
@@ -169,28 +179,36 @@ public class RelatedChannelService {
                 // Validation using VtuberValidationService
                 String notProcessableReason = validationService.getChannelProcessableReason(channelId);
                 if (notProcessableReason != null) {
-                    logger.info("처리 불가 채널: {} ({}) - 이유: {}", channelTitle, channelId, notProcessableReason);
+                    if (logger.isInfoEnabled()) {
+                        logger.info("처리 불가 채널: {} ({}) - 이유: {}", channelTitle, channelId, notProcessableReason);
+                    }
                     continue;
                 }
 
                 String notVtuberReason = validationService.getKoreanVtuberReason(channel);
                 if (notVtuberReason != null) {
-                    logger.info("버튜버 아님으로 필터링: {} ({}) - 이유: {}", channelTitle, channelId, notVtuberReason);
+                    if (logger.isInfoEnabled()) {
+                        logger.info("버튜버 아님으로 필터링: {} ({}) - 이유: {}", channelTitle, channelId, notVtuberReason);
+                    }
                     continue;
                 }
 
-                logger.info("저장 조건 만족 - 새 버튜버 저장: {}", channelTitle);
+                if (logger.isInfoEnabled()) {
+                    logger.info("저장 조건 만족 - 새 버튜버 저장: {}", channelTitle);
+                }
                 saveNewVtuber(channel);
                 savedCount++;
             }
-            logger.info("채널 처리 완료 - 저장: {}개, 총 처리: {}개", savedCount, channels.size());
+            if (logger.isInfoEnabled()) {
+                logger.info("채널 처리 완료 - 저장: {}개, 총 처리: {}개", savedCount, channels.size());
+            }
 
         } catch (IOException e) {
-            logger.error("YouTube API 호출 중 오류 발생", e);
-            rotateApiKey();
+            logger.error("YouTube API 호출 중 오류 발생. 모든 키의 할당량이 소진되었을 수 있습니다.", e);
         }
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private void saveNewVtuber(Channel channel) {
         VtuberEntity vtuber = new VtuberEntity();
         vtuber.setChannelId(channel.getId());
@@ -207,7 +225,9 @@ public class RelatedChannelService {
         }
         vtuber.setStatus("new");
         vtuberRepository.save(vtuber);
-        logger.info("새로운 버튜버 저장 완료: {}", vtuber.getName());
+        if (logger.isInfoEnabled()) {
+            logger.info("새로운 버튜버 저장 완료: {}", vtuber.getName());
+        }
     }
 
     private String extractChannelId(String href) {
@@ -226,15 +246,6 @@ public class RelatedChannelService {
         options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--remote-allow-origins=*", "--mute-audio");
         // ... (other options can be kept for performance)
         return new ChromeDriver(options);
-    }
-
-    private String getCurrentApiKey() {
-        return apiKeys.get(currentKeyIndex);
-    }
-
-    private synchronized void rotateApiKey() {
-        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size();
-        logger.warn("API 키를 다음 키로 전환했습니다.");
     }
 
     private final List<String> youtubeOfficialChannels = Arrays.asList(

@@ -1,118 +1,185 @@
-name: VSong CI/CD to OCI
+name: VSong CI/CD with Docker Compose
 
 on:
   push:
     branches:
       - main
       - deploy
+      - dev
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: ${{ github.repository_owner }}/vsong/backend
+  FRONTEND_IMAGE_NAME: ${{ github.repository_owner }}/vsong/frontend
+  NGINX_IMAGE_NAME: ${{ github.repository_owner }}/vsong/nginx
 
 jobs:
-  build:
+  build-backend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build -x test
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend.Dockerfile
+          push: true
+          platforms: linux/arm64
+          tags: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+          build-args: |
+            JAR_FILE=build/libs/*.jar
+          cache-from: type=gha,scope=${{ github.ref_name }}-backend
+          cache-to: type=gha,scope=${{ github.ref_name }}-backend,mode=max
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: front-next/package-lock.json
 
-      - name: Build Frontend
-        working-directory: ./src/front
+      - name: Install dependencies and build
+        working-directory: front-next
         run: |
-          npm install
-          npm run build
+          npm ci
+          NEXT_PUBLIC_API_URL=${{ secrets.BASE_URL }} npm run build
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Build Backend with Gradle
-        run: ./gradlew build -x test
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Package Artifacts
-        run: |
-          mkdir -p artifacts/frontend artifacts/backend
-          cp -r ./src/front/dist/* artifacts/frontend/
-          find ./build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} artifacts/backend/ \;
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
         with:
-          name: v-song-build
-          path: artifacts/
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: frontend.Dockerfile
+          push: true
+          platforms: linux/arm64
+          tags: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ github.ref_name }}-frontend
+          cache-to: type=gha,scope=${{ github.ref_name }}-frontend,mode=max
+
+  build-nginx:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push nginx image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: nginx.Dockerfile
+          push: true
+          platforms: linux/arm64
+          tags: ${{ env.REGISTRY }}/${{ env.NGINX_IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ github.ref_name }}-nginx
+          cache-to: type=gha,scope=${{ github.ref_name }}-nginx,mode=max
 
   deploy:
-    needs: build
+    needs: [build-backend, build-frontend, build-nginx]
     runs-on: self-hosted
     steps:
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: v-song-build
-          path: ./v-song-build
+      - name: Checkout source code
+        uses: actions/checkout@v3
 
-      - name: Deploy Application
-        env:
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_DRIVER_CLASS_NAME: ${{ secrets.DB_DRIVER_CLASS_NAME }}
-          YOUTUBE_API_KEYS: ${{ secrets.YOUTUBE_API_KEYS }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          BASE_URL: ${{ secrets.BASE_URL }}
-          MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: ${{ secrets.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}
-          MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: ${{ secrets.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}
+      - name: Create .env file from secrets
         run: |
-          echo "Starting deployment..."
-          
-          sudo mkdir -p /home/opc/vsong/
-          sudo chown -R opc:opc /home/opc/vsong/
-          sudo chmod o+x /home/opc
-          sudo chmod o+x /home/opc/vsong/
-          
-          sudo rm -rf /var/www/v-song/*
-          sudo cp -R ./v-song-build/frontend/* /var/www/v-song/
+          echo "IMAGE_TAG=${{ github.sha }}" > .env
+          echo "REGISTRY=${{ env.REGISTRY }}" >> .env
+          echo "BACKEND_IMAGE_NAME=${{ env.BACKEND_IMAGE_NAME }}" >> .env
+          echo "FRONTEND_IMAGE_NAME=${{ env.FRONTEND_IMAGE_NAME }}" >> .env
+          echo "NGINX_IMAGE_NAME=${{ env.NGINX_IMAGE_NAME }}" >> .env
+          echo "DB_URL=${{ secrets.DB_URL }}" >> .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+          echo "YOUTUBE_API_KEYS=${{ secrets.YOUTUBE_API_KEYS }}" >> .env
+          echo "BASE_URL=${{ secrets.BASE_URL }}" >> .env
+          echo "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}" >> .env
+          echo "OAUTH2_REDIRECT_URL=${{ secrets.BASE_URL }}" >> .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+          echo "GEMINI_API_URL=${{ secrets.GEMINI_API_URL }}" >> .env
 
-          PROPERTIES_FILE="/home/opc/vsong/application.properties"
-          echo "Creating $PROPERTIES_FILE..."
-          
-          echo "spring.datasource.url=$DB_URL" | sudo tee $PROPERTIES_FILE
-          echo "spring.datasource.username=$DB_USERNAME" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.datasource.password=$DB_PASSWORD" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.datasource.driver-class-name=$DB_DRIVER_CLASS_NAME" | sudo tee -a $PROPERTIES_FILE
-          echo "youtube.api.keys=$YOUTUBE_API_KEYS" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.client-id=$GOOGLE_CLIENT_ID" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.client-secret=$GOOGLE_CLIENT_SECRET" | sudo tee -a $PROPERTIES_FILE
-          echo "baseUrl=$BASE_URL" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.scope=profile,email,https://www.googleapis.com/auth/youtube.readonly" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.redirect-uri=\${baseUrl}/login/oauth2/code/google" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.registration.google.client-name=Google" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.provider.google.authorization-uri=https://accounts.google.com/o/oauth2/v2/auth" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.provider.google.token-uri=https://oauth2.googleapis.com/token" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.provider.google.user-info-uri=https://www.googleapis.com/oauth2/v3/userinfo" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.security.oauth2.client.provider.google.user-name-attribute=sub" | sudo tee -a $PROPERTIES_FILE
-          echo "server.port=8080" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.jpa.hibernate.ddl-auto=update" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.jackson.time-zone=Asia/Seoul" | sudo tee -a $PROPERTIES_FILE
-          echo "spring.task.scheduling.enabled=true" | sudo tee -a $PROPERTIES_FILE
-          # Actuator 관련 설정 추가
-          echo "management.endpoints.web.exposure.include=$MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE" | sudo tee -a $PROPERTIES_FILE
-          echo "management.endpoint.health.show-details=$MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS" | sudo tee -a $PROPERTIES_FILE
+      - name: Copy SSL certificates
+        run: |
+          mkdir -p ./nginx/ssl
+          sudo cp /etc/letsencrypt/live/vsong.site/fullchain.pem ./nginx/ssl/fullchain.pem
+          sudo cp /etc/letsencrypt/live/vsong.site/privkey.pem ./nginx/ssl/privkey.pem
+          sudo cp /etc/letsencrypt/options-ssl-nginx.conf ./nginx/ssl/options-ssl-nginx.conf
+          sudo cp /etc/letsencrypt/ssl-dhparams.pem ./nginx/ssl/ssl-dhparams.pem
+          sudo chown -R ubuntu:ubuntu ./nginx/ssl
 
-          JAR_SOURCE_FILE=$(find ./v-song-build/backend/ -name "*.jar")
-          JAR_DEST_PATH="/home/opc/vsong/VSong.jar"
-          echo "Deploying $JAR_SOURCE_FILE to $JAR_DEST_PATH..."
-          sudo cp $JAR_SOURCE_FILE $JAR_DEST_PATH
-
-          echo "Restarting VSong service..."
-          sudo systemctl restart vsong
-
-          echo "Deployment finished."
+      - name: Deploy with Docker Compose
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          docker compose pull
+          docker compose up -d --force-recreate

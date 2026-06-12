@@ -15,6 +15,7 @@ public class YouTubeService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    @SuppressWarnings("PMD.LooseCoupling")
     public String updatePlaylist(String accessToken, String playlistId, Map<String, Object> updateData) {
         String url = "https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=" + playlistId;
 

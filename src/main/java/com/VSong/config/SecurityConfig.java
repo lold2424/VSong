@@ -1,99 +1,71 @@
 package com.VSong.config;
 
+import com.VSong.service.CustomOAuth2UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
-import jakarta.annotation.PostConstruct;
-import java.util.List;
-
-import org.springframework.http.MediaType;
-import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.DefaultRedirectStrategy;
-
+import java.util.Arrays;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${REDIRECT_BASE_URL:http://localhost:5173}")
-    private String redirectBaseUrl;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
-    @PostConstruct
-    public void logBaseUrl() {
-        String envBaseUrl = System.getenv("REDIRECT_BASE_URL");
-        String sysPropBaseUrl = System.getProperty("REDIRECT_BASE_URL");
-        System.out.println("Environment REDIRECT_BASE_URL: " + envBaseUrl);
-        System.out.println("System Property REDIRECT_BASE_URL: " + sysPropBaseUrl);
-        System.out.println("Configured REDIRECT_BASE_URL: " + redirectBaseUrl);
+    @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins}")
+    private String[] allowedOrigins;
+
+    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService,
+                          OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
+                          CustomAuthenticationFailureHandler customAuthenticationFailureHandler,
+                          HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository) {
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
+        this.customAuthenticationFailureHandler = customAuthenticationFailureHandler;
+        this.httpCookieOAuth2AuthorizationRequestRepository = httpCookieOAuth2AuthorizationRequestRepository;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/main", "/api/v1/vtubers/search").permitAll()
-                        .requestMatchers("/", "/login/**", "/oauth2/**", "/main/**").permitAll()
-                        .requestMatchers("/api/login/userinfo").authenticated()
-                        .anyRequest().authenticated()
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .anyRequest().permitAll()
                 )
-                .exceptionHandling(e -> {
-                    e.defaultAuthenticationEntryPointFor(
-                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED), 
-                        new MediaTypeRequestMatcher(MediaType.APPLICATION_JSON)
-                    );
-                    e.defaultAuthenticationEntryPointFor(
-                        new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/google"), 
-                        new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-                    );
-                })
                 .oauth2Login(oauth2 -> oauth2
-                        .successHandler((request, response, authentication) -> {
-                            new DefaultRedirectStrategy().sendRedirect(request, response, getRedirectBaseUrl() + "?login=success");
-                        })
-                        .failureHandler((request, response, exception) -> {
-                            new DefaultRedirectStrategy().sendRedirect(request, response, getRedirectBaseUrl() + "?login=failure");
-                        })
+                        .authorizationEndpoint(endpoint -> endpoint
+                                .baseUri("/oauth2/authorization")
+                                .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)
+                        )
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
+                        .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler(customAuthenticationFailureHandler)
                 );
 
         return http.build();
     }
 
-    private String getRedirectBaseUrl() {
-        return redirectBaseUrl;
-    }
-
     @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.art", "https://www.vsong.art"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
-        source.registerCorsConfiguration("/**", configuration);
-        return new CorsFilter(source);
-    }
-
-    @Bean
-    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://vsong.art", "https://www.vsong.art"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
