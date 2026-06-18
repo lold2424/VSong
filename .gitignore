@@ -59,5 +59,8 @@ yarn-debug.log*
 yarn-error.log*
 logs/*
 
+# Environment variables
+.env
+
 # Ignore manual http client files
 manual-add-vtuber.http
