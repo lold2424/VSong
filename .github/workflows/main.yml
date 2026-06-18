@@ -170,6 +170,8 @@ jobs:
           echo "GEMINI_API_URL=${{ secrets.GEMINI_API_URL }}" >> .env
           echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" >> .env
           echo "SPRING_THREADS_VIRTUAL_ENABLED=true" >> .env
+          echo "SESSION_COOKIE_SECURE=true" >> .env
+          echo "SESSION_COOKIE_SAME_SITE=none" >> .env
 
       - name: Copy SSL certificates
         run: |
